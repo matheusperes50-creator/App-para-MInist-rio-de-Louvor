@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Schedule, Member, Song, ScheduleAssignment } from '../types';
 import { 
   CalendarDays, 
@@ -17,7 +17,8 @@ import {
   Copy,
   RefreshCw,
   Zap,
-  Edit2
+  Edit2,
+  Filter
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -63,6 +64,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [serviceType, setServiceType] = useState('Domingo (Noite)');
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   
+  // Estado para o filtro de mês
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
+  
   const [leaderId, setLeaderId] = useState('');
   const [vocalIds, setVocalIds] = useState<string[]>([]);
   const [instruments, setInstruments] = useState<Record<string, string>>({
@@ -82,6 +86,24 @@ export const Schedules: React.FC<SchedulesProps> = ({
     'Baixo': Music,
     'Bateria': Drum
   };
+
+  // Calcula os meses disponíveis nas escalas existentes para preencher o filtro
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    schedules.forEach(s => {
+      if (s.date) {
+        const [year, month] = s.date.split('-');
+        months.add(`${year}-${month}`);
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [schedules]);
+
+  // Filtra as escalas baseadas no mês selecionado
+  const filteredSchedules = useMemo(() => {
+    if (selectedMonthFilter === 'all') return schedules;
+    return schedules.filter(s => s.date.startsWith(selectedMonthFilter));
+  }, [schedules, selectedMonthFilter]);
 
   const handleEdit = (sch: Schedule) => {
     setEditingId(sch.id);
@@ -245,6 +267,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (confirm('Remover esta escala?')) setSchedules(prev => prev.filter(s => s.id !== id));
   };
 
+  const formatMonthLabel = (yearMonth: string) => {
+    const [year, month] = yearMonth.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
+  };
+
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex justify-between items-center mb-8">
@@ -273,6 +302,33 @@ export const Schedules: React.FC<SchedulesProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Barra de Filtros */}
+      {!isAdding && schedules.length > 0 && (
+        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-2 text-slate-400">
+            <Filter size={18} />
+            <span className="text-[10px] font-black uppercase tracking-widest">Filtrar por Mês</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={() => setSelectedMonthFilter('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all border-2 ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}
+            >
+              TODAS
+            </button>
+            {availableMonths.map(month => (
+              <button
+                key={month}
+                onClick={() => setSelectedMonthFilter(month)}
+                className={`px-4 py-2 rounded-xl text-xs font-black transition-all border-2 ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}
+              >
+                {formatMonthLabel(month).toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isAdding && (
         <form onSubmit={saveSchedule} className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200">
@@ -389,7 +445,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-        {schedules.map((sch) => {
+        {filteredSchedules.map((sch) => {
           const dateFormatted = formatDateSafely(sch.date);
           const dayName = getDayOfWeek(sch.date);
           const leader = members.find(m => m.id === sch.leaderId);
@@ -473,10 +529,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
           );
         })}
 
-        {schedules.length === 0 && !isAdding && (
+        {filteredSchedules.length === 0 && !isAdding && (
           <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
             <CalendarIcon size={40} className="text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhuma escala programada</p>
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhuma escala para este período</p>
           </div>
         )}
       </div>
