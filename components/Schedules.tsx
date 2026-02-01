@@ -14,7 +14,7 @@ import {
   Drum, 
   Piano,
   MessageSquare,
-  Share2,
+  Copy,
   RefreshCw,
   Zap,
   Edit2
@@ -61,6 +61,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Domingo (Noite)');
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   
   const [leaderId, setLeaderId] = useState('');
   const [vocalIds, setVocalIds] = useState<string[]>([]);
@@ -123,7 +124,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setTempSetlist(newList);
   };
 
-  const handleShare = (sch: Schedule) => {
+  const handleCopyText = async (sch: Schedule) => {
     const dateStr = formatDateSafely(sch.date);
     const dayName = getDayOfWeek(sch.date);
     
@@ -159,8 +160,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
       text += `A definir`;
     }
 
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(sch.id);
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (err) {
+      console.error('Falha ao copiar:', err);
+      alert('Não foi possível copiar o texto automaticamente.');
+    }
   };
 
   const saveSchedule = (e: React.FormEvent) => {
@@ -387,6 +394,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
           const dayName = getDayOfWeek(sch.date);
           const leader = members.find(m => m.id === sch.leaderId);
           const vocalNames = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
+          const isCopied = copyFeedback === sch.id;
           
           return (
             <div key={sch.id} className="bg-[#0b3d2e] text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col group border-4 border-white/10 hover:border-emerald-500/30 transition-all">
@@ -403,8 +411,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   </div>
                 </div>
                 <div className="flex gap-1">
-                   <button onClick={() => handleShare(sch)} className="p-2 bg-white/10 rounded-lg hover:bg-emerald-500 transition-all text-white" title="Compartilhar no WhatsApp">
-                    <Share2 size={16} />
+                   <button 
+                    onClick={() => handleCopyText(sch)} 
+                    className={`p-2 rounded-lg transition-all flex items-center gap-1 ${isCopied ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-emerald-500 text-white'}`} 
+                    title="Copiar para WhatsApp"
+                   >
+                    {isCopied ? <Check size={16} /> : <Copy size={16} />}
+                    {isCopied && <span className="text-[10px] font-black uppercase">Copiado!</span>}
                   </button>
                    <button onClick={() => handleEdit(sch)} className="p-2 bg-white/10 rounded-lg hover:bg-blue-500 transition-all text-white" title="Editar Escala">
                     <Edit2 size={16} />
