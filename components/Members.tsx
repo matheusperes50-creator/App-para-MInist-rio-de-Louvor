@@ -9,7 +9,7 @@ interface MembersProps {
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
+export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -38,24 +38,24 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
       isActive: true,
     };
 
-    setMembers(prev => [...prev, newMember]);
+    setMembers(prev => [...(prev || []), newMember]);
     setNewName('');
     setSelectedRoles([]);
     setIsAdding(false);
   };
 
   const toggleStatus = (id: string) => {
-    setMembers(prev => prev.map(m => m.id === id ? { ...m, isActive: !m.isActive } : m));
+    setMembers(prev => (prev || []).map(m => m.id === id ? { ...m, isActive: !m.isActive } : m));
   };
 
   const removeMember = (id: string) => {
     if (confirm('Tem certeza que deseja excluir este membro?')) {
-      setMembers(prev => prev.filter(m => m.id !== id));
+      setMembers(prev => (prev || []).filter(m => m.id !== id));
     }
   };
 
-  const filteredMembers = members.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredMembers = (members || []).filter(m => 
+    m && m.name && m.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -159,61 +159,74 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredMembers.map((member) => (
-                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
-                        {member.name.charAt(0)}
+              {filteredMembers.map((member) => {
+                // Segurança extra para roles legadas (converter string para array se necessário)
+                const safeRoles = Array.isArray(member.roles) 
+                  ? member.roles 
+                  : (typeof member.roles === 'string' ? [member.roles as unknown as Role] : []);
+
+                return (
+                  <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                          {member.name ? member.name.charAt(0) : '?'}
+                        </div>
+                        <span className="font-bold text-slate-800 text-lg">{member.name}</span>
                       </div>
-                      <span className="font-bold text-slate-800 text-lg">{member.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-wrap gap-1.5">
-                      {/* Correção crítica: Verificação de segurança para member.roles */}
-                      {(Array.isArray(member.roles) ? member.roles : []).map((role, idx) => (
-                        <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
-                          {role}
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex flex-wrap gap-1.5">
+                        {safeRoles.map((role, idx) => (
+                          <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
+                            {role}
+                          </span>
+                        ))}
+                        {safeRoles.length === 0 && (
+                          <span className="text-slate-300 text-[10px] italic">Sem função</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      {member.isActive ? (
+                        <span className="text-green-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div> Ativo
                         </span>
-                      ))}
-                      {(!member.roles || (Array.isArray(member.roles) && member.roles.length === 0)) && (
-                        <span className="text-slate-300 text-[10px] italic">Sem função</span>
+                      ) : (
+                        <span className="text-slate-400 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                          <div className="w-2 h-2 rounded-full bg-slate-300"></div> Inativo
+                        </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    {member.isActive ? (
-                      <span className="text-green-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div> Ativo
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                        <div className="w-2 h-2 rounded-full bg-slate-300"></div> Inativo
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-8 py-6 text-right space-x-2">
-                    <button 
-                      onClick={() => toggleStatus(member.id)}
-                      className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                      title="Alternar Status"
-                    >
-                      <Edit2 size={18} />
-                    </button>
-                    <button 
-                      onClick={() => removeMember(member.id)}
-                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                      title="Excluir"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    </td>
+                    <td className="px-8 py-6 text-right space-x-2">
+                      <button 
+                        onClick={() => toggleStatus(member.id)}
+                        className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                        title="Alternar Status"
+                      >
+                        <Edit2 size={18} />
+                      </button>
+                      <button 
+                        onClick={() => removeMember(member.id)}
+                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Excluir"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredMembers.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium italic">
+                    Nenhum membro encontrado.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
