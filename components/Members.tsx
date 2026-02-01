@@ -37,7 +37,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
   const handleEditClick = (member: Member) => {
     setEditingMemberId(member.id);
-    setNewName(member.name);
+    setNewName(member.name || '');
     setSelectedRoles(Array.isArray(member.roles) ? member.roles : []);
     setIsAdding(false);
   };
@@ -52,13 +52,13 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     if (editingMemberId) {
       setMembers(prev => (prev || []).map(m => 
         m.id === editingMemberId 
-          ? { ...m, name: newName, roles: selectedRoles } 
+          ? { ...m, name: newName.trim(), roles: selectedRoles } 
           : m
       ));
     } else {
       const newMember: Member = {
         id: generateShortId(),
-        name: newName,
+        name: newName.trim(),
         roles: selectedRoles,
         isActive: true,
       };
@@ -78,9 +78,10 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     }
   };
 
-  const filteredMembers = (members || []).filter(m => 
-    m && m.name && m.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMembers = (members || []).filter(m => {
+    if (!m || !m.name) return false;
+    return m.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -201,6 +202,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredMembers.map((member) => {
+                if (!member) return null;
                 const safeRoles = Array.isArray(member.roles) 
                   ? member.roles 
                   : (typeof member.roles === 'string' ? [member.roles as unknown as Role] : []);
@@ -273,9 +275,22 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   </tr>
                 );
               })}
-              {filteredMembers.length === 0 && (
+              {(members || []).length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium italic">
+                  <td colSpan={4} className="px-8 py-20 text-center">
+                    <div className="flex flex-col items-center gap-4">
+                      <UserPlus size={48} className="text-slate-100" />
+                      <div>
+                        <p className="text-slate-500 font-bold">Nenhum membro cadastrado.</p>
+                        <p className="text-slate-400 text-sm">Clique em "Atualizar Dados" ou "Novo Membro" para começar.</p>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              {(members || []).length > 0 && filteredMembers.length === 0 && searchTerm && (
+                <tr>
+                  <td colSpan={4} className="px-8 py-20 text-center text-slate-400 font-medium italic">
                     Nenhum membro encontrado na busca.
                   </td>
                 </tr>

@@ -14,29 +14,74 @@ const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   
   const [members, setMembers] = useState<Member[]>(() => {
     const saved = localStorage.getItem('louvor_members');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const [songs, setSongs] = useState<Song[]>(() => {
     const saved = localStorage.getItem('louvor_songs');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
     const saved = localStorage.getItem('louvor_schedules');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
   });
 
   const isInitialMount = useRef(true);
 
-  useEffect(() => localStorage.setItem('louvor_members', JSON.stringify(members)), [members]);
-  useEffect(() => localStorage.setItem('louvor_songs', JSON.stringify(songs)), [songs]);
-  useEffect(() => localStorage.setItem('louvor_schedules', JSON.stringify(schedules)), [schedules]);
+  // Sincroniza dados da planilha para o App
+  const syncFromSheets = useCallback(async (isAuto = false) => {
+    if (!isAuto) setIsSyncing(true);
+    setSyncStatus('idle');
+    try {
+      const response = await fetch(SCRIPT_URL);
+      if (!response.ok) throw new Error('Falha na resposta');
+      const data = await response.json();
+      
+      if (data) {
+        if (Array.isArray(data.members)) setMembers(data.members);
+        if (Array.isArray(data.songs)) setSongs(data.songs);
+        if (Array.isArray(data.schedules)) setSchedules(data.schedules);
+        setHasFetchedFromCloud(true);
+        if (!isAuto) setSyncStatus('success');
+      }
+    } catch (error) {
+      console.error("Erro ao buscar dados:", error);
+      if (!isAuto) setSyncStatus('error');
+    } finally {
+      setIsSyncing(false);
+      if (!isAuto) setTimeout(() => setSyncStatus('idle'), 3000);
+    }
+  }, []);
 
+  // Carrega dados da nuvem ao iniciar o App
+  useEffect(() => {
+    syncFromSheets(true);
+  }, [syncFromSheets]);
+
+  // Salva no LocalStorage sempre que houver mudança
+  useEffect(() => {
+    localStorage.setItem('louvor_members', JSON.stringify(members));
+    localStorage.setItem('louvor_songs', JSON.stringify(songs));
+    localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
+  }, [members, songs, schedules]);
+
+  // Sincroniza dados do App para a planilha (Auto-save)
   const syncToSheets = useCallback(async () => {
+    // Só envia se já tivermos tentado carregar da nuvem pelo menos uma vez
+    // Isso evita que um App recém aberto com LocalStorage vazio limpe a planilha
+    if (!hasFetchedFromCloud) return;
+
     setIsSyncing(true);
     setSyncStatus('idle');
     try {
@@ -54,8 +99,9 @@ const App: React.FC = () => {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [members, songs, schedules]);
+  }, [members, songs, schedules, hasFetchedFromCloud]);
 
+  // Debounce para auto-save
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -63,32 +109,12 @@ const App: React.FC = () => {
     }
     const timer = setTimeout(() => {
       syncToSheets();
-    }, 3000);
+    }, 5000); // 5 segundos de espera antes de sincronizar alterações
     return () => clearTimeout(timer);
   }, [members, songs, schedules, syncToSheets]);
 
-  const syncFromSheets = useCallback(async () => {
-    setIsSyncing(true);
-    setSyncStatus('idle');
-    try {
-      const response = await fetch(SCRIPT_URL);
-      if (!response.ok) throw new Error('Falha na resposta');
-      const data = await response.json();
-      if (data.members) setMembers(data.members);
-      if (data.songs) setSongs(data.songs);
-      if (data.schedules) setSchedules(data.schedules);
-      setSyncStatus('success');
-    } catch (error) {
-      console.error("Erro ao buscar dados:", error);
-      setSyncStatus('error');
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    }
-  }, []);
-
   const renderContent = () => {
-    const syncProps = { onSync: syncFromSheets, isSyncing };
+    const syncProps = { onSync: () => syncFromSheets(false), isSyncing };
     
     switch (view) {
       case 'dashboard': 
@@ -117,8 +143,8 @@ const App: React.FC = () => {
               <span className="text-[10px] font-black uppercase tracking-tighter">Sincronizando...</span>
             </div>
           )}
-          {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600" />}
-          {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600" />}
+          {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600 animate-in zoom-in" />}
+          {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600 animate-in bounce" />}
         </div>
       </div>
       {renderContent()}

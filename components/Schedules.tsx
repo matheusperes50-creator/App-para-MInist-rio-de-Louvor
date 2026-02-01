@@ -16,7 +16,8 @@ import {
   Piano,
   MessageSquare,
   Share2,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -49,11 +50,20 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [instruments, setInstruments] = useState<Record<string, string>>({
     'Teclado': '',
     'Violão': '',
+    'Guitarra': '',
     'Baixo': '',
     'Bateria': ''
   });
 
   const [tempSetlist, setTempSetlist] = useState<{title: string, key: string}[]>([{title: '', key: ''}]);
+
+  const instrumentIcons: Record<string, any> = {
+    'Teclado': Piano,
+    'Violão': Guitar,
+    'Guitarra': Zap,
+    'Baixo': Music,
+    'Bateria': Drum
+  };
 
   const toggleVocal = (id: string) => {
     setVocalIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -81,9 +91,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
     text += `🎤 Líder: ${leader}\n`;
     text += `🗣️ Vocals: ${vocals}\n`;
     
-    (sch.assignments || []).filter(a => !['Vocal Líder', 'Vocal'].includes(a.role)).forEach(a => {
+    const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
+    (sch.assignments || []).filter(a => instrumentRoles.includes(a.role)).forEach(a => {
       const name = members.find(m => m.id === a.memberId)?.name || 'A definir';
-      text += `${a.role === 'Teclado' ? '🎹' : '🎸'} ${a.role}: ${name}\n`;
+      let emoji = '🎸';
+      if (a.role === 'Teclado') emoji = '🎹';
+      if (a.role === 'Bateria') emoji = '🥁';
+      if (a.role === 'Guitarra') emoji = '⚡';
+      
+      text += `${emoji} ${a.role}: ${name}\n`;
     });
 
     text += `\n🎶 *MÚSICAS:*\n`;
@@ -156,7 +172,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const resetForm = () => {
     setLeaderId('');
     setVocalIds([]);
-    setInstruments({ 'Teclado': '', 'Violão': '', 'Baixo': '', 'Bateria': '' });
+    setInstruments({ 'Teclado': '', 'Violão': '', 'Guitarra': '', 'Baixo': '', 'Bateria': '' });
     setTempSetlist([{title: '', key: ''}]);
   };
 
@@ -239,20 +255,26 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.keys(instruments).map(role => (
-                    <div key={role} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <label className="block text-[10px] font-black text-slate-500 mb-1 uppercase">{role}</label>
-                      <select 
-                        value={instruments[role]} 
-                        onChange={(e) => setInstruments(prev => ({...prev, [role]: e.target.value}))}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold outline-none"
-                      >
-                        <option value="">-</option>
-                        {(members || []).filter(m => m.isActive).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {Object.keys(instruments).map(role => {
+                    const Icon = instrumentIcons[role] || Music;
+                    return (
+                      <div key={role} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-emerald-600">
+                          <Icon size={16} />
+                          <label className="block text-[10px] font-black uppercase tracking-widest">{role}</label>
+                        </div>
+                        <select 
+                          value={instruments[role]} 
+                          onChange={(e) => setInstruments(prev => ({...prev, [role]: e.target.value}))}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:border-emerald-500"
+                        >
+                          <option value="">Selecione...</option>
+                          {(members || []).filter(m => m.isActive).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -336,9 +358,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
                 {(sch.assignments || []).filter(a => !['Vocal Líder', 'Vocal'].includes(a.role)).map((a, i) => {
                   const m = members.find(x => x.id === a.memberId);
+                  const Icon = instrumentIcons[a.role] || Music;
                   return (
                     <div key={i} className="flex items-center gap-3">
-                      {a.role === 'Teclado' ? <Piano size={18} className="text-emerald-400 shrink-0" /> : <Guitar size={18} className="text-emerald-400 shrink-0" />}
+                      <Icon size={18} className="text-emerald-400 shrink-0" />
                       <span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">{a.role}:</strong> {m?.name || 'A definir'}</span>
                     </div>
                   );
