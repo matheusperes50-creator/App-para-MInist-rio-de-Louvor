@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Member, Song, Schedule } from '../types.ts';
+import { Member, Song, Schedule } from '../types';
 import { 
   BarChart, 
   Bar, 
@@ -10,7 +10,7 @@ import {
   Tooltip, 
   ResponsiveContainer, 
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, CloudUpload, RefreshCw } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -77,8 +77,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           disabled={isSyncing}
           className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
         >
-          {isSyncing ? <RefreshCw className="animate-spin" size={18} /> : <CloudUpload size={18} />}
-          {isSyncing ? 'Sincronizando...' : 'Sincronizar Planilha'}
+          <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={18} />
+          {isSyncing ? 'Buscando Dados...' : 'Importar da Planilha'}
         </button>
       </header>
 

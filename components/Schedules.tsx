@@ -11,6 +11,7 @@ interface SchedulesProps {
 }
 
 export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, members, songs }) => {
+  // ... resto do componente permanece igual ...
   const [isAdding, setIsAdding] = useState(false);
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Culto de Celebração');
@@ -29,7 +30,8 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
       songs: selectedSongs,
     };
 
-    setSchedules(prev => [...prev, newSchedule].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setSchedules(prev => [...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setSchedules(prev => [newSchedule, ...prev]);
     setIsAdding(false);
     setDate('');
     setServiceType('Culto de Celebração');
@@ -72,7 +74,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-lg font-medium"
+                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 outline-none transition-all text-lg font-medium"
                 required
               />
             </div>
@@ -81,7 +83,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
               <select
                 value={serviceType}
                 onChange={(e) => setServiceType(e.target.value)}
-                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all text-lg font-medium"
+                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 outline-none transition-all text-lg font-medium"
               >
                 <option>Culto de Celebração</option>
                 <option>Culto de Oração</option>
@@ -97,27 +99,20 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
               <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
                 <Users size={18} className="text-indigo-600" /> Seleção de Equipe
               </h4>
-              <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-3 custom-scrollbar">
+              <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-3">
                 {members.filter(m => m.isActive).map(m => (
                   <label key={m.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2
                     ${selectedMembers.includes(m.id) 
-                      ? 'bg-indigo-50 border-indigo-500 shadow-md shadow-indigo-100' 
+                      ? 'bg-indigo-50 border-indigo-500 shadow-md' 
                       : 'bg-slate-50 border-transparent hover:border-slate-200'}`}>
                     <input 
                       type="checkbox" 
-                      className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 transition-all"
+                      className="w-5 h-5 rounded-lg text-indigo-600"
                       checked={selectedMembers.includes(m.id)} 
                       onChange={() => toggleSelection(m.id, selectedMembers, setSelectedMembers)}
                     />
                     <div className="flex-1">
                       <p className="font-black text-slate-800 leading-none mb-1.5">{m.name}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {(Array.isArray(m.roles) ? m.roles : [(m as any).role]).map((role, idx) => (
-                          <span key={idx} className="text-[9px] uppercase font-black text-indigo-400 bg-white/50 px-1.5 py-0.5 rounded border border-indigo-100">
-                            {role}
-                          </span>
-                        ))}
-                      </div>
                     </div>
                   </label>
                 ))}
@@ -128,21 +123,21 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
               <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
                 <Music size={18} className="text-indigo-600" /> Seleção do Setlist
               </h4>
-              <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-3 custom-scrollbar">
+              <div className="grid grid-cols-1 gap-2 max-h-[350px] overflow-y-auto pr-3">
                 {songs.map(s => (
                   <label key={s.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2
                     ${selectedSongs.includes(s.id) 
-                      ? 'bg-purple-50 border-purple-500 shadow-md shadow-purple-100' 
+                      ? 'bg-purple-50 border-purple-500 shadow-md' 
                       : 'bg-slate-50 border-transparent hover:border-slate-200'}`}>
                     <input 
                       type="checkbox" 
-                      className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500 transition-all"
+                      className="w-5 h-5 rounded-lg text-indigo-600"
                       checked={selectedSongs.includes(s.id)} 
                       onChange={() => toggleSelection(s.id, selectedSongs, setSelectedSongs)}
                     />
                     <div className="flex-1">
                       <p className="font-black text-slate-800 leading-none mb-1">{s.title}</p>
-                      <p className="text-[10px] uppercase font-black text-purple-400 tracking-tighter">{s.artist}</p>
+                      <p className="text-[10px] uppercase font-black text-purple-400">{s.artist}</p>
                     </div>
                   </label>
                 ))}
@@ -159,7 +154,7 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
 
       <div className="space-y-6">
         {schedules.map((sch) => (
-          <div key={sch.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col md:flex-row gap-8 hover:shadow-xl hover:border-indigo-100 transition-all group relative overflow-hidden">
+          <div key={sch.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col md:flex-row gap-8 hover:shadow-xl transition-all group relative overflow-hidden">
             <button 
               onClick={() => removeSchedule(sch.id)}
               className="absolute top-8 right-8 p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all opacity-0 group-hover:opacity-100"
@@ -200,9 +195,9 @@ export const Schedules: React.FC<SchedulesProps> = ({ schedules, setSchedules, m
                     {sch.songs.map((sId, idx) => {
                       const song = songs.find(s => s.id === sId);
                       return song ? (
-                        <div key={sId} className="flex items-center gap-3 text-sm group/song">
+                        <div key={sId} className="flex items-center gap-3 text-sm">
                           <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
-                          <span className="font-bold text-slate-700 group-hover/song:text-indigo-600 transition-colors">{song.title}</span>
+                          <span className="font-bold text-slate-700">{song.title}</span>
                           <span className="text-[10px] text-slate-400 uppercase font-medium">{song.artist}</span>
                         </div>
                       ) : null;

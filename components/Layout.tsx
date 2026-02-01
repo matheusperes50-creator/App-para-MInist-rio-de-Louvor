@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ViewType } from '../types.ts';
+import { ViewType } from '../types';
 import { 
   LayoutDashboard, 
   Users, 
