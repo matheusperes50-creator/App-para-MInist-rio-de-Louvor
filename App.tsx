@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -109,16 +108,16 @@ const App: React.FC = () => {
     <Layout currentView={view} setView={setView}>
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <div className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border bg-green-50 text-green-700 border-green-200 flex items-center gap-2">
+          <div className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
             <Cloud size={14} /> Nuvem Conectada
           </div>
           {isSyncing && (
-            <div className="flex items-center gap-1.5 text-indigo-500 animate-pulse">
+            <div className="flex items-center gap-1.5 text-emerald-600 animate-pulse">
               <RefreshCw size={14} className="animate-spin" />
               <span className="text-[10px] font-black uppercase tracking-tighter">Sincronizando...</span>
             </div>
           )}
-          {syncStatus === 'success' && <CheckCircle2 size={16} className="text-green-600" />}
+          {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600" />}
           {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600" />}
         </div>
       </div>

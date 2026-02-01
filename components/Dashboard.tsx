@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Member, Song, Schedule } from '../types';
 import { 
@@ -75,16 +74,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
         <button 
           onClick={onSync}
           disabled={isSyncing}
-          className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 disabled:opacity-50"
+          title="Forçar atualização dos dados com a nuvem"
+          className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50"
         >
           <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={18} />
-          {isSyncing ? 'Buscando Dados...' : 'Importar da Planilha'}
+          {isSyncing ? 'Atualizando...' : 'Atualizar Dados'}
         </button>
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600">
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
             <Users size={24} />
           </div>
           <div>
@@ -93,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-purple-50 p-3 rounded-xl text-purple-600">
+          <div className="bg-teal-50 p-3 rounded-xl text-teal-600">
             <Music size={24} />
           </div>
           <div>
@@ -102,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-pink-50 p-3 rounded-xl text-pink-600">
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-700">
             <Calendar size={24} />
           </div>
           <div>
@@ -111,7 +111,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-orange-50 p-3 rounded-xl text-orange-600">
+          <div className="bg-emerald-100 p-3 rounded-xl text-emerald-800">
             <Trophy size={24} />
           </div>
           <div>
@@ -131,10 +131,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <Tooltip 
-                  cursor={{fill: '#f8fafc'}}
+                  cursor={{fill: '#f0fdf4'}}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                 />
-                <Bar dataKey="count" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -146,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
             {topSongs.length > 0 ? topSongs.map((song, index) => (
               <div key={index} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm
-                  ${index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-slate-400' : 'bg-orange-400'}`}>
+                  ${index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-emerald-400' : 'bg-emerald-300'}`}>
                   {index + 1}
                 </div>
                 <div className="flex-1">
@@ -154,7 +154,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
                   <p className="text-xs text-slate-500">{song.artist}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-lg font-bold text-indigo-600">{song.count}</p>
+                  <p className="text-lg font-bold text-emerald-600">{song.count}</p>
                   <p className="text-[10px] uppercase font-bold text-slate-400">Vezes</p>
                 </div>
               </div>

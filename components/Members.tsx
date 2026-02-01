@@ -1,12 +1,13 @@
-
 import React, { useState } from 'react';
 import { Member, Role } from '../types';
-import { UserPlus, Search, Trash2, Edit2, UserCheck, UserX, Check } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Check } from 'lucide-react';
 
 interface MembersProps {
   members: Member[];
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
 }
+
+const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
   const [isAdding, setIsAdding] = useState(false);
@@ -31,7 +32,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
     }
 
     const newMember: Member = {
-      id: crypto.randomUUID(),
+      id: generateShortId(),
       name: newName,
       roles: selectedRoles,
       isActive: true,
@@ -66,7 +67,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
         </div>
         <button 
           onClick={() => setIsAdding(!isAdding)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-100"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-100"
         >
           <UserPlus size={18} />
           {isAdding ? 'Fechar' : 'Novo Membro'}
@@ -74,7 +75,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
       </header>
 
       {isAdding && (
-        <form onSubmit={addMember} className="bg-white p-8 rounded-3xl border border-indigo-100 shadow-xl animate-in zoom-in-95 duration-200">
+        <form onSubmit={addMember} className="bg-white p-8 rounded-3xl border border-emerald-100 shadow-xl animate-in zoom-in-95 duration-200">
           <div className="grid grid-cols-1 gap-8">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Nome Completo</label>
@@ -82,7 +83,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all placeholder:text-slate-300 text-lg"
+                className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder:text-slate-300 text-lg"
                 placeholder="Ex: João da Silva"
                 required
               />
@@ -101,8 +102,8 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
                       className={`
                         flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all border-2
                         ${isSelected 
-                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-md scale-105' 
-                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/30'}
+                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-md scale-105' 
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50/30'}
                       `}
                     >
                       {isSelected && <Check size={16} />}
@@ -111,9 +112,6 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
                   );
                 })}
               </div>
-              {selectedRoles.length === 0 && (
-                <p className="text-xs text-amber-600 mt-2 font-medium">Selecione pelo menos uma habilidade para o membro.</p>
-              )}
             </div>
           </div>
           
@@ -127,7 +125,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
             </button>
             <button 
               type="submit"
-              className="px-10 py-3 bg-indigo-600 text-white font-black uppercase tracking-wider rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+              className="px-10 py-3 bg-emerald-600 text-white font-black uppercase tracking-wider rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
             >
               Salvar Membro
             </button>
@@ -136,15 +134,15 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
       )}
 
       <div className="relative group">
-        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-500 transition-colors">
+        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-500 transition-colors">
           <Search size={20} />
         </div>
         <input
           type="text"
-          placeholder="Buscar por nome ou função..."
+          placeholder="Buscar por nome..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-14 pr-6 py-4 rounded-3xl bg-white border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 outline-none transition-all shadow-sm text-lg"
+          className="w-full pl-14 pr-6 py-4 rounded-3xl bg-white border border-slate-200 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all shadow-sm text-lg"
         />
       </div>
 
@@ -153,6 +151,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
           <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest font-black">
             <tr>
               <th className="px-8 py-5">Membro</th>
+              <th className="px-8 py-5">ID</th>
               <th className="px-8 py-5">Funções</th>
               <th className="px-8 py-5">Status</th>
               <th className="px-8 py-5 text-right">Ações</th>
@@ -163,16 +162,19 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
               <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
                 <td className="px-8 py-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
                       {member.name.charAt(0)}
                     </div>
                     <span className="font-bold text-slate-800 text-lg">{member.name}</span>
                   </div>
                 </td>
                 <td className="px-8 py-6">
+                  <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
+                </td>
+                <td className="px-8 py-6">
                   <div className="flex flex-wrap gap-1.5">
-                    {(Array.isArray(member.roles) ? member.roles : [(member as any).role]).map((role, idx) => (
-                      <span key={idx} className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-indigo-100">
+                    {member.roles.map((role, idx) => (
+                      <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
                         {role}
                       </span>
                     ))}
@@ -192,7 +194,7 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
                 <td className="px-8 py-6 text-right space-x-2">
                   <button 
                     onClick={() => toggleStatus(member.id)}
-                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                   >
                     <Edit2 size={18} />
                   </button>
