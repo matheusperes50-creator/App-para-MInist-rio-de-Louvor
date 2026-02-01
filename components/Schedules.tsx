@@ -32,6 +32,22 @@ interface SchedulesProps {
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
+// Helper para formatar data sem erro de fuso horário (YYYY-MM-DD -> DD/MM/AAAA)
+const formatDateSafely = (dateStr: string) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-');
+  return `${day}/${month}/${year}`;
+};
+
+// Helper para pegar o dia da semana sem erro de fuso
+const getDayOfWeek = (dateStr: string) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const dayName = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+  return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+};
+
 export const Schedules: React.FC<SchedulesProps> = ({ 
   schedules = [], 
   setSchedules, 
@@ -108,26 +124,25 @@ export const Schedules: React.FC<SchedulesProps> = ({
   };
 
   const handleShare = (sch: Schedule) => {
-    const d = new Date(sch.date);
-    const dateStr = d.toLocaleDateString('pt-BR');
-    const dayName = d.toLocaleDateString('pt-BR', { weekday: 'long' });
-    const formattedDay = dayName ? dayName.charAt(0).toUpperCase() + dayName.slice(1) : '';
+    const dateStr = formatDateSafely(sch.date);
+    const dayName = getDayOfWeek(sch.date);
     
     const leader = members.find(m => m.id === sch.leaderId)?.name || 'A definir';
-    const vocals = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(', ') || 'A definir';
+    const vocalList = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
+    const vocals = vocalList.length > 0 ? vocalList.join(', ') : 'A definir';
     
     let text = `*ESCALA DE LOUVOR* 🕊️\n`;
-    text += `📅 *${dateStr}* - ${formattedDay} (${sch.serviceType})\n\n`;
+    text += `🗓️ *${dateStr}* - ${dayName} (${sch.serviceType})\n\n`;
+    
     text += `🎤 Líder: ${leader}\n`;
     text += `🗣️ Vocals: ${vocals}\n`;
     
     const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
     (sch.assignments || []).filter(a => instrumentRoles.includes(a.role)).forEach(a => {
       const name = members.find(m => m.id === a.memberId)?.name || 'A definir';
-      let emoji = '🎸';
+      let emoji = '🎸'; // Padrão Violão/Guitarra/Baixo
       if (a.role === 'Teclado') emoji = '🎹';
       if (a.role === 'Bateria') emoji = '🥁';
-      if (a.role === 'Guitarra') emoji = '⚡';
       
       text += `${emoji} ${a.role}: ${name}\n`;
     });
@@ -203,7 +218,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (editingId) {
       setSchedules(prev => prev.map(s => s.id === editingId ? scheduleData : s));
     } else {
-      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
     }
 
     setIsAdding(false);
@@ -368,7 +383,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
         {schedules.map((sch) => {
-          const d = new Date(sch.date);
+          const dateFormatted = formatDateSafely(sch.date);
+          const dayName = getDayOfWeek(sch.date);
           const leader = members.find(m => m.id === sch.leaderId);
           const vocalNames = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
           
@@ -382,7 +398,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   <div>
                     <h3 className="font-black text-lg leading-tight uppercase tracking-tight">Escala de Louvor 🕊️</h3>
                     <p className="text-emerald-300 text-[11px] font-bold uppercase tracking-widest">
-                      {d.toLocaleDateString('pt-BR')} - {d.toLocaleDateString('pt-BR', { weekday: 'long' })} ({sch.serviceType})
+                      {dateFormatted} - {dayName} ({sch.serviceType})
                     </p>
                   </div>
                 </div>
