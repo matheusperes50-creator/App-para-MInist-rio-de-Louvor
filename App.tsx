@@ -16,6 +16,7 @@ const App: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   
+  // Inicialização segura garantindo que sempre existam arrays vazios
   const [members, setMembers] = useState<Member[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_members');
@@ -99,7 +100,7 @@ const App: React.FC = () => {
         schedules: schedules || [] 
       };
 
-      // Usamos text/plain com JSON stringified para contornar problemas de CORS simples com Apps Script
+      // POST com text/plain evita pré-vôo de CORS complexo no Apps Script
       await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors', 
@@ -117,7 +118,6 @@ const App: React.FC = () => {
     }
   }, [members, songs, schedules, hasFetchedFromCloud, initialLoading]);
 
-  // Auto-save após mudanças (debounce de 5 segundos)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
