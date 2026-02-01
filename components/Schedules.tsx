@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Schedule, Member, Song } from '../types';
-import { CalendarDays, Plus, Calendar as CalendarIcon, Users, Music, Trash2, X, Check, ExternalLink } from 'lucide-react';
+import { CalendarDays, Plus, Calendar as CalendarIcon, Users, Music, Trash2, X, Check, Mic2, Star } from 'lucide-react';
 
 interface SchedulesProps {
   schedules: Schedule[];
@@ -23,6 +23,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Culto de Celebração');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [leaderId, setLeaderId] = useState<string>('');
   
   const [tempSetlist, setTempSetlist] = useState<{title: string, key: string}[]>([{title: '', key: ''}]);
 
@@ -44,9 +45,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const d = new Date(sch.date);
     const dateStr = d.toISOString().replace(/-|:|\.\d\d\d/g, "");
     const title = encodeURIComponent(`LouvorPIBJE: ${sch.serviceType}`);
+    const leaderName = members.find(m => m.id === sch.leaderId)?.name || 'N/A';
     const memberNames = sch.members.map(mId => members.find(m => m.id === mId)?.name).filter(Boolean).join(', ');
     const songNames = sch.songs.map(sId => songs.find(s => s.id === sId)?.title).filter(Boolean).join(', ');
-    const details = encodeURIComponent(`Equipe: ${memberNames}\n\nSetlist:\n${songNames}`);
+    const details = encodeURIComponent(`Líder: ${leaderName}\nEquipe: ${memberNames}\n\nSetlist:\n${songNames}`);
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
   };
 
@@ -54,6 +56,11 @@ export const Schedules: React.FC<SchedulesProps> = ({
     e.preventDefault();
     if (!date || selectedMembers.length === 0) {
       alert("Selecione a data e pelo menos um membro.");
+      return;
+    }
+
+    if (!leaderId) {
+      alert("Por favor, defina quem será o Vocal Líder desta escala.");
       return;
     }
 
@@ -87,6 +94,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
       serviceType,
       members: selectedMembers,
       songs: finalSongIds,
+      leaderId: leaderId
     };
 
     setSchedules(prev => [newSchedule, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -95,6 +103,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setDate('');
     setServiceType('Culto de Celebração');
     setSelectedMembers([]);
+    setLeaderId('');
     setTempSetlist([{title: '', key: ''}]);
   };
 
@@ -105,7 +114,17 @@ export const Schedules: React.FC<SchedulesProps> = ({
   };
 
   const toggleMember = (id: string) => {
-    setSelectedMembers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSelectedMembers(prev => {
+      const isSelected = prev.includes(id);
+      const newList = isSelected ? prev.filter(x => x !== id) : [...prev, id];
+      
+      // Se desmarcar o membro que era líder, limpa o leaderId
+      if (isSelected && leaderId === id) {
+        setLeaderId('');
+      }
+      
+      return newList;
+    });
   };
 
   return (
@@ -113,7 +132,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Escalas</h2>
-          <p className="text-slate-500">Organize a equipe e o setlist do dia.</p>
+          <p className="text-slate-500">Organize a equipe, defina o líder e o setlist.</p>
         </div>
         <button 
           onClick={() => setIsAdding(!isAdding)}
@@ -156,34 +175,57 @@ export const Schedules: React.FC<SchedulesProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <section>
-              <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
-                <Users size={18} className="text-emerald-600" /> Equipe
-              </h4>
-              <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2">
-                {members.filter(m => m.isActive).map(m => (
-                  <label key={m.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2
-                    ${selectedMembers.includes(m.id) 
-                      ? 'bg-emerald-50 border-emerald-500' 
-                      : 'bg-slate-50 border-transparent hover:border-slate-200'}`}>
-                    <input 
-                      type="checkbox" 
-                      className="hidden"
-                      checked={selectedMembers.includes(m.id)} 
-                      onChange={() => toggleMember(m.id)}
-                    />
-                    <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedMembers.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
-                      {selectedMembers.includes(m.id) && <Check size={14} />}
-                    </div>
-                    <span className="font-bold text-slate-800">{m.name}</span>
-                  </label>
-                ))}
+            <section className="space-y-6">
+              <div>
+                <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
+                  <Users size={18} className="text-emerald-600" /> Equipe do Louvor
+                </h4>
+                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                  {members.filter(m => m.isActive).map(m => (
+                    <label key={m.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2
+                      ${selectedMembers.includes(m.id) 
+                        ? 'bg-emerald-50 border-emerald-500' 
+                        : 'bg-slate-50 border-transparent hover:border-slate-200'}`}>
+                      <input 
+                        type="checkbox" 
+                        className="hidden"
+                        checked={selectedMembers.includes(m.id)} 
+                        onChange={() => toggleMember(m.id)}
+                      />
+                      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedMembers.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
+                        {selectedMembers.includes(m.id) && <Check size={14} />}
+                      </div>
+                      <span className="font-bold text-slate-800 flex-1">{m.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
+
+              {selectedMembers.length > 0 && (
+                <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 animate-in fade-in slide-in-from-top-2">
+                  <label className="block text-xs font-black text-emerald-800 mb-3 uppercase tracking-widest flex items-center gap-2">
+                    <Mic2 size={14} /> Quem será o Vocal Líder?
+                  </label>
+                  <select
+                    value={leaderId}
+                    onChange={(e) => setLeaderId(e.target.value)}
+                    required
+                    className="w-full px-5 py-3 rounded-xl bg-white border border-emerald-200 text-emerald-900 font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  >
+                    <option value="">Selecione o líder...</option>
+                    {selectedMembers.map(mId => {
+                      const m = members.find(member => member.id === mId);
+                      return <option key={mId} value={mId}>{m?.name}</option>;
+                    })}
+                  </select>
+                  <p className="text-[10px] text-emerald-600 mt-2 font-medium italic">O líder será responsável por ministrar e conduzir o louvor.</p>
+                </div>
+              )}
             </section>
 
             <section>
               <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
-                <Music size={18} className="text-emerald-600" /> Setlist (Preencha as Músicas)
+                <Music size={18} className="text-emerald-600" /> Setlist do Dia
               </h4>
               <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
                 {tempSetlist.map((item, index) => (
@@ -259,15 +301,26 @@ export const Schedules: React.FC<SchedulesProps> = ({
             </div>
 
             <div className="flex-1">
-              <h3 className="text-2xl font-black text-slate-800 mb-4">{sch.serviceType}</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                <h3 className="text-2xl font-black text-slate-800">{sch.serviceType}</h3>
+                {sch.leaderId && (
+                  <div className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-1.5 rounded-full shadow-md shadow-emerald-100">
+                    <Mic2 size={14} />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Líder: {members.find(m => m.id === sch.leaderId)?.name}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Membros na Escala</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Integrantes Escalados</p>
                   <div className="flex flex-wrap gap-2">
                     {sch.members.map(mId => {
                       const member = members.find(m => m.id === mId);
+                      const isLeader = sch.leaderId === mId;
                       return member ? (
-                        <span key={mId} className="bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 rounded-xl text-xs font-bold">
+                        <span key={mId} className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border transition-all ${isLeader ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-2 ring-emerald-500/10' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                          {isLeader && <Star size={10} className="fill-emerald-500 text-emerald-500" />}
                           {member.name}
                         </span>
                       ) : null;
@@ -275,7 +328,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Setlist</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Setlist do Louvor</p>
                   <div className="space-y-2">
                     {sch.songs.map((sId, idx) => {
                       const song = songs.find(s => s.id === sId);
@@ -293,6 +346,16 @@ export const Schedules: React.FC<SchedulesProps> = ({
             </div>
           </div>
         ))}
+
+        {schedules.length === 0 && (
+          <div className="py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CalendarIcon size={32} className="text-slate-200" />
+            </div>
+            <p className="text-slate-400 font-bold">Nenhuma escala programada.</p>
+            <button onClick={() => setIsAdding(true)} className="mt-4 text-emerald-600 font-black uppercase text-xs tracking-widest hover:underline">Clique para criar a primeira</button>
+          </div>
+        )}
       </div>
     </div>
   );

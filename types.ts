@@ -29,6 +29,7 @@ export interface Schedule {
   serviceType: string;
   members: string[]; // Member IDs
   songs: string[];   // Song IDs
+  leaderId?: string; // ID do Vocal Líder
 }
 
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Member, Role } from '../types';
-import { UserPlus, Search, Trash2, Edit2, Check } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Check, X, Power } from 'lucide-react';
 
 interface MembersProps {
   members: Member[];
@@ -11,6 +11,7 @@ const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpper
 
 export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   
   const [newName, setNewName] = useState('');
@@ -24,24 +25,47 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
     );
   };
 
-  const addMember = (e: React.FormEvent) => {
+  const resetForm = () => {
+    setNewName('');
+    setSelectedRoles([]);
+    setIsAdding(false);
+    setEditingMemberId(null);
+  };
+
+  const handleEditClick = (member: Member) => {
+    setEditingMemberId(member.id);
+    setNewName(member.name);
+    // Garantir que roles seja um array
+    setSelectedRoles(Array.isArray(member.roles) ? member.roles : []);
+    setIsAdding(false);
+  };
+
+  const saveMember = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || selectedRoles.length === 0) {
       alert("Por favor, preencha o nome e selecione pelo menos uma função.");
       return;
     }
 
-    const newMember: Member = {
-      id: generateShortId(),
-      name: newName,
-      roles: selectedRoles,
-      isActive: true,
-    };
+    if (editingMemberId) {
+      // Atualizar membro existente
+      setMembers(prev => (prev || []).map(m => 
+        m.id === editingMemberId 
+          ? { ...m, name: newName, roles: selectedRoles } 
+          : m
+      ));
+    } else {
+      // Criar novo membro
+      const newMember: Member = {
+        id: generateShortId(),
+        name: newName,
+        roles: selectedRoles,
+        isActive: true,
+      };
+      setMembers(prev => [...(prev || []), newMember]);
+    }
 
-    setMembers(prev => [...(prev || []), newMember]);
-    setNewName('');
-    setSelectedRoles([]);
-    setIsAdding(false);
+    resetForm();
   };
 
   const toggleStatus = (id: string) => {
@@ -66,16 +90,24 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
           <p className="text-slate-500">Gerencie todos os integrantes e suas habilidades.</p>
         </div>
         <button 
-          onClick={() => setIsAdding(!isAdding)}
+          onClick={() => {
+            if (editingMemberId) resetForm();
+            setIsAdding(!isAdding);
+          }}
           className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-100"
         >
-          <UserPlus size={18} />
-          {isAdding ? 'Fechar' : 'Novo Membro'}
+          {isAdding || editingMemberId ? <X size={18} /> : <UserPlus size={18} />}
+          {isAdding || editingMemberId ? 'Cancelar' : 'Novo Membro'}
         </button>
       </header>
 
-      {isAdding && (
-        <form onSubmit={addMember} className="bg-white p-8 rounded-3xl border border-emerald-100 shadow-xl animate-in zoom-in-95 duration-200">
+      {(isAdding || editingMemberId) && (
+        <form onSubmit={saveMember} className="bg-white p-8 rounded-3xl border border-emerald-100 shadow-xl animate-in zoom-in-95 duration-200">
+          <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+            {editingMemberId ? <Edit2 className="text-emerald-500" size={20} /> : <UserPlus className="text-emerald-500" size={20} />}
+            {editingMemberId ? 'Editar Cadastro' : 'Novo Cadastro de Membro'}
+          </h3>
+          
           <div className="grid grid-cols-1 gap-8">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Nome Completo</label>
@@ -118,7 +150,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
           <div className="mt-10 flex justify-end gap-3 pt-6 border-t border-slate-50">
             <button 
               type="button" 
-              onClick={() => setIsAdding(false)}
+              onClick={resetForm}
               className="px-6 py-3 text-slate-500 font-bold hover:bg-slate-100 rounded-2xl transition-all"
             >
               Cancelar
@@ -127,7 +159,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
               type="submit"
               className="px-10 py-3 bg-emerald-600 text-white font-black uppercase tracking-wider rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100"
             >
-              Salvar Membro
+              {editingMemberId ? 'Salvar Alterações' : 'Confirmar Cadastro'}
             </button>
           </div>
         </form>
@@ -152,15 +184,13 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest font-black">
               <tr>
                 <th className="px-8 py-5">Membro</th>
-                <th className="px-8 py-5">ID</th>
                 <th className="px-8 py-5">Funções</th>
-                <th className="px-8 py-5">Status</th>
+                <th className="px-8 py-5 text-center">Status</th>
                 <th className="px-8 py-5 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredMembers.map((member) => {
-                // Segurança extra para roles legadas (converter string para array se necessário)
                 const safeRoles = Array.isArray(member.roles) 
                   ? member.roles 
                   : (typeof member.roles === 'string' ? [member.roles as unknown as Role] : []);
@@ -169,19 +199,21 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
                   <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-xl shadow-inner ${member.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
                           {member.name ? member.name.charAt(0) : '?'}
                         </div>
-                        <span className="font-bold text-slate-800 text-lg">{member.name}</span>
+                        <div>
+                          <span className={`font-bold text-lg block ${member.isActive ? 'text-slate-800' : 'text-slate-400 line-through'}`}>
+                            {member.name}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-300 font-bold uppercase">{member.id}</span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
                     </td>
                     <td className="px-8 py-6">
                       <div className="flex flex-wrap gap-1.5">
                         {safeRoles.map((role, idx) => (
-                          <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
+                          <span key={idx} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border ${member.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
                             {role}
                           </span>
                         ))}
@@ -190,32 +222,43 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
                         )}
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      {member.isActive ? (
-                        <span className="text-green-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div> Ativo
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                          <div className="w-2 h-2 rounded-full bg-slate-300"></div> Inativo
-                        </span>
-                      )}
+                    <td className="px-8 py-6 text-center">
+                      <div className="flex justify-center">
+                        {member.isActive ? (
+                          <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-100 flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div> Ativo
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-slate-100">
+                            Inativo
+                          </span>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-8 py-6 text-right space-x-2">
-                      <button 
-                        onClick={() => toggleStatus(member.id)}
-                        className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                        title="Alternar Status"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button 
-                        onClick={() => removeMember(member.id)}
-                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        title="Excluir"
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                    <td className="px-8 py-6 text-right">
+                      <div className="flex justify-end gap-1">
+                        <button 
+                          onClick={() => handleEditClick(member)}
+                          className="p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                          title="Alterar Cadastro"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => toggleStatus(member.id)}
+                          className={`p-2.5 rounded-xl transition-all ${member.isActive ? 'text-slate-400 hover:text-orange-600 hover:bg-orange-50' : 'text-emerald-500 hover:bg-emerald-50'}`}
+                          title={member.isActive ? "Desativar Membro" : "Reativar Membro"}
+                        >
+                          <Power size={18} />
+                        </button>
+                        <button 
+                          onClick={() => removeMember(member.id)}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          title="Excluir Definitivamente"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );
@@ -223,7 +266,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
               {filteredMembers.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-8 py-20 text-center text-slate-400 font-medium italic">
-                    Nenhum membro encontrado.
+                    Nenhum membro encontrado na busca.
                   </td>
                 </tr>
               )}
