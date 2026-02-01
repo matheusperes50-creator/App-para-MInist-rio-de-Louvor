@@ -17,17 +17,19 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
   const [hasSearched, setHasSearched] = useState(false);
 
   const searchSongsOnline = async () => {
-    if (!searchTerm || searchTerm.length < 2) return;
+    if (!searchTerm || searchTerm.trim().length < 2) return;
     
     setIsSearchingOnline(true);
     setHasSearched(true);
     setOnlineResults([]);
     
     try {
+      // Inicialização da API seguindo as diretrizes de segurança
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Encontre músicas de louvor cristãs (nacionais ou internacionais) que correspondam a: "${searchTerm}". Retorne uma lista de até 6 músicas com título, artista, tom sugerido (key) e bpm aproximado.`,
+        contents: `Encontre músicas de louvor cristãs (nacionais ou internacionais) que correspondam a ou sejam similares a: "${searchTerm}". Retorne uma lista de até 6 músicas com título, artista, tom sugerido (key) e bpm aproximado.`,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -46,12 +48,18 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
         }
       });
       
-      if (response.text) {
-        const data = JSON.parse(response.text);
-        setOnlineResults(data);
+      const textResponse = response.text;
+      if (textResponse) {
+        const data = JSON.parse(textResponse);
+        if (Array.isArray(data)) {
+          setOnlineResults(data);
+        } else {
+          console.error("Formato de resposta inesperado:", data);
+        }
       }
     } catch (error) {
-      console.error("Erro na busca global:", error);
+      console.error("Erro na busca global via Gemini:", error);
+      alert("Não foi possível realizar a busca agora. Verifique sua conexão ou tente novamente.");
     } finally {
       setIsSearchingOnline(false);
     }
@@ -67,7 +75,6 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
     };
 
     setSongs(prev => [newSong, ...prev]);
-    // Limpar resultados após incluir para focar no repertório
     setOnlineResults([]);
     setHasSearched(false);
     setSearchTerm('');
@@ -124,8 +131,7 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {isSearchingOnline ? (
-              // Skeleton Loading
-              [1, 2, 3, 4].map(i => (
+              [1, 2, 3, 4, 5, 6].map(i => (
                 <div key={i} className="bg-white/50 h-24 rounded-2xl animate-pulse border border-emerald-50"></div>
               ))
             ) : (
@@ -154,6 +160,9 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
               ))
             )}
           </div>
+          {!isSearchingOnline && onlineResults.length === 0 && (
+            <div className="text-center py-4 text-emerald-800/50 text-sm font-medium">Nenhum resultado encontrado na internet para este termo.</div>
+          )}
         </section>
       )}
 
