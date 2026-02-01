@@ -11,7 +11,7 @@ export enum Role {
 export interface Member {
   id: string;
   name: string;
-  roles: Role[]; // Alterado para array
+  roles: Role[];
   isActive: boolean;
 }
 
@@ -23,13 +23,19 @@ export interface Song {
   key?: string;
 }
 
+export interface ScheduleAssignment {
+  role: string;
+  memberId: string;
+}
+
 export interface Schedule {
   id: string;
   date: string;
   serviceType: string;
-  members: string[]; // Member IDs
-  songs: string[];   // Song IDs
-  leaderId?: string; // ID do Vocal Líder
+  members: string[]; // Mantido para compatibilidade, mas assignments é o principal
+  assignments: ScheduleAssignment[];
+  songs: string[];
+  leaderId: string; // ID do Vocal Líder (redunante com assignments mas útil)
 }
 
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';

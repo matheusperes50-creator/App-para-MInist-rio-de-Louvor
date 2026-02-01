@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Schedule, Member, Song } from '../types';
-import { CalendarDays, Plus, Calendar as CalendarIcon, Users, Music, Trash2, X, Check, Mic2, Star } from 'lucide-react';
+import { Schedule, Member, Song, ScheduleAssignment, Role } from '../types';
+import { CalendarDays, Plus, Calendar as CalendarIcon, Users, Music, Trash2, X, Check, Mic2, Star, Guitar, Drum, Piano } from 'lucide-react';
 
 interface SchedulesProps {
   schedules: Schedule[];
@@ -22,9 +22,18 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Culto de Celebração');
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [leaderId, setLeaderId] = useState<string>('');
   
+  // Estado para gerenciar as atribuições por função
+  const [assignments, setAssignments] = useState<Record<string, string>>({
+    'Vocal Líder': '',
+    'Backing Vocal 1': '',
+    'Backing Vocal 2': '',
+    'Violão/Guitarra': '',
+    'Baixo': '',
+    'Bateria': '',
+    'Teclado': ''
+  });
+
   const [tempSetlist, setTempSetlist] = useState<{title: string, key: string}[]>([{title: '', key: ''}]);
 
   const addSetlistItem = () => {
@@ -41,25 +50,31 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setTempSetlist(newList);
   };
 
+  const updateAssignment = (role: string, memberId: string) => {
+    setAssignments(prev => ({ ...prev, [role]: memberId }));
+  };
+
   const getGoogleCalendarUrl = (sch: Schedule) => {
     const d = new Date(sch.date);
     const dateStr = d.toISOString().replace(/-|:|\.\d\d\d/g, "");
     const title = encodeURIComponent(`LouvorPIBJE: ${sch.serviceType}`);
     const leaderName = members.find(m => m.id === sch.leaderId)?.name || 'N/A';
-    const memberNames = sch.members.map(mId => members.find(m => m.id === mId)?.name).filter(Boolean).join(', ');
+    const assignmentsText = sch.assignments
+      .map(a => `${a.role}: ${members.find(m => m.id === a.memberId)?.name}`)
+      .join('\n');
     const songNames = sch.songs.map(sId => songs.find(s => s.id === sId)?.title).filter(Boolean).join(', ');
-    const details = encodeURIComponent(`Líder: ${leaderName}\nEquipe: ${memberNames}\n\nSetlist:\n${songNames}`);
+    const details = encodeURIComponent(`Líder: ${leaderName}\n\nEscala:\n${assignmentsText}\n\nSetlist:\n${songNames}`);
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${dateStr}/${dateStr}&details=${details}`;
   };
 
   const addSchedule = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!date || selectedMembers.length === 0) {
-      alert("Selecione a data e pelo menos um membro.");
+    if (!date) {
+      alert("Selecione a data.");
       return;
     }
 
-    if (!leaderId) {
+    if (!assignments['Vocal Líder']) {
       alert("Por favor, defina quem será o Vocal Líder desta escala.");
       return;
     }
@@ -88,13 +103,18 @@ export const Schedules: React.FC<SchedulesProps> = ({
       setSongs(prev => [...prev, ...newSongsToRepertoire]);
     }
 
+    const finalAssignments: ScheduleAssignment[] = Object.entries(assignments)
+      .filter(([_, memberId]) => memberId !== '')
+      .map(([role, memberId]) => ({ role, memberId }));
+
     const newSchedule: Schedule = {
       id: generateShortId(),
       date,
       serviceType,
-      members: selectedMembers,
+      members: finalAssignments.map(a => a.memberId),
+      assignments: finalAssignments,
       songs: finalSongIds,
-      leaderId: leaderId
+      leaderId: assignments['Vocal Líder']
     };
 
     setSchedules(prev => [newSchedule, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
@@ -102,8 +122,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setIsAdding(false);
     setDate('');
     setServiceType('Culto de Celebração');
-    setSelectedMembers([]);
-    setLeaderId('');
+    setAssignments({
+      'Vocal Líder': '',
+      'Backing Vocal 1': '',
+      'Backing Vocal 2': '',
+      'Violão/Guitarra': '',
+      'Baixo': '',
+      'Bateria': '',
+      'Teclado': ''
+    });
     setTempSetlist([{title: '', key: ''}]);
   };
 
@@ -113,18 +140,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
   };
 
-  const toggleMember = (id: string) => {
-    setSelectedMembers(prev => {
-      const isSelected = prev.includes(id);
-      const newList = isSelected ? prev.filter(x => x !== id) : [...prev, id];
-      
-      // Se desmarcar o membro que era líder, limpa o leaderId
-      if (isSelected && leaderId === id) {
-        setLeaderId('');
-      }
-      
-      return newList;
-    });
+  const roleIcons: Record<string, any> = {
+    'Vocal Líder': Mic2,
+    'Backing Vocal 1': Users,
+    'Backing Vocal 2': Users,
+    'Violão/Guitarra': Guitar,
+    'Baixo': Music,
+    'Bateria': Drum,
+    'Teclado': Piano
   };
 
   return (
@@ -132,7 +155,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-bold text-slate-900">Escalas</h2>
-          <p className="text-slate-500">Organize a equipe, defina o líder e o setlist.</p>
+          <p className="text-slate-500">Defina os responsáveis por cada função e o setlist.</p>
         </div>
         <button 
           onClick={() => setIsAdding(!isAdding)}
@@ -144,7 +167,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
       </header>
 
       {isAdding && (
-        <form onSubmit={addSchedule} className="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200 max-w-5xl mx-auto">
+        <form onSubmit={addSchedule} className="bg-white p-8 rounded-[2.5rem] border border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200 max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <label className="block text-sm font-black text-slate-700 mb-2 uppercase tracking-widest">Data do Culto</label>
@@ -174,60 +197,50 @@ export const Schedules: React.FC<SchedulesProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            {/* Seção de Funções/Escalação */}
             <section className="space-y-6">
-              <div>
-                <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
-                  <Users size={18} className="text-emerald-600" /> Equipe do Louvor
-                </h4>
-                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
-                  {members.filter(m => m.isActive).map(m => (
-                    <label key={m.id} className={`flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all border-2
-                      ${selectedMembers.includes(m.id) 
-                        ? 'bg-emerald-50 border-emerald-500' 
-                        : 'bg-slate-50 border-transparent hover:border-slate-200'}`}>
-                      <input 
-                        type="checkbox" 
-                        className="hidden"
-                        checked={selectedMembers.includes(m.id)} 
-                        onChange={() => toggleMember(m.id)}
-                      />
-                      <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedMembers.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 bg-white'}`}>
-                        {selectedMembers.includes(m.id) && <Check size={14} />}
+              <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
+                <Users size={18} className="text-emerald-600" /> Escalação por Função
+              </h4>
+              
+              <div className="space-y-4">
+                {Object.keys(assignments).map((roleName) => {
+                  const Icon = roleIcons[roleName] || Users;
+                  const isLeader = roleName === 'Vocal Líder';
+                  
+                  return (
+                    <div key={roleName} className={`p-4 rounded-2xl border transition-all ${assignments[roleName] ? 'bg-emerald-50 border-emerald-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                        <div className={`flex items-center gap-2 min-w-[140px] ${isLeader ? 'text-emerald-700 font-black' : 'text-slate-500 font-bold'}`}>
+                          <Icon size={16} />
+                          <span className="text-xs uppercase tracking-tight">{roleName}</span>
+                          {isLeader && <span className="text-[9px] bg-emerald-600 text-white px-1.5 py-0.5 rounded ml-1">OBRIGATÓRIO</span>}
+                        </div>
+                        
+                        <select
+                          value={assignments[roleName]}
+                          onChange={(e) => updateAssignment(roleName, e.target.value)}
+                          className={`flex-1 px-4 py-2.5 rounded-xl border outline-none transition-all font-bold ${assignments[roleName] ? 'bg-white border-emerald-300 text-emerald-900' : 'bg-white/50 border-slate-200 text-slate-400'}`}
+                        >
+                          <option value="">Selecione um membro...</option>
+                          {members.filter(m => m.isActive).map(m => (
+                            <option key={m.id} value={m.id}>{m.name}</option>
+                          ))}
+                        </select>
                       </div>
-                      <span className="font-bold text-slate-800 flex-1">{m.name}</span>
-                    </label>
-                  ))}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-
-              {selectedMembers.length > 0 && (
-                <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 animate-in fade-in slide-in-from-top-2">
-                  <label className="block text-xs font-black text-emerald-800 mb-3 uppercase tracking-widest flex items-center gap-2">
-                    <Mic2 size={14} /> Quem será o Vocal Líder?
-                  </label>
-                  <select
-                    value={leaderId}
-                    onChange={(e) => setLeaderId(e.target.value)}
-                    required
-                    className="w-full px-5 py-3 rounded-xl bg-white border border-emerald-200 text-emerald-900 font-bold outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all"
-                  >
-                    <option value="">Selecione o líder...</option>
-                    {selectedMembers.map(mId => {
-                      const m = members.find(member => member.id === mId);
-                      return <option key={mId} value={mId}>{m?.name}</option>;
-                    })}
-                  </select>
-                  <p className="text-[10px] text-emerald-600 mt-2 font-medium italic">O líder será responsável por ministrar e conduzir o louvor.</p>
-                </div>
-              )}
             </section>
 
+            {/* Seção de Músicas */}
             <section>
               <h4 className="font-black text-slate-800 mb-5 flex items-center gap-3 border-b pb-3 border-slate-100 uppercase text-xs tracking-widest">
                 <Music size={18} className="text-emerald-600" /> Setlist do Dia
               </h4>
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
                 {tempSetlist.map((item, index) => (
                   <div key={index} className="flex gap-2 items-start group">
                     <div className="flex-1 bg-slate-50 p-4 rounded-2xl border border-slate-200 focus-within:border-emerald-500 transition-all flex gap-3">
@@ -246,13 +259,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
                         className="bg-white border border-slate-200 px-3 py-1 rounded-lg outline-none font-black text-emerald-600 text-xs w-16 uppercase text-center"
                       />
                     </div>
-                    <button 
-                      type="button" 
-                      onClick={() => removeSetlistItem(index)}
-                      className="mt-4 p-2 text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <X size={16} />
-                    </button>
+                    {tempSetlist.length > 1 && (
+                      <button 
+                        type="button" 
+                        onClick={() => removeSetlistItem(index)}
+                        className="mt-4 p-2 text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
                   </div>
                 ))}
                 <button 
@@ -273,6 +288,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
         </form>
       )}
 
+      {/* Listagem de Escalas */}
       <div className="space-y-6">
         {schedules.map((sch) => (
           <div key={sch.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col md:flex-row gap-8 hover:shadow-xl transition-all group relative">
@@ -301,42 +317,60 @@ export const Schedules: React.FC<SchedulesProps> = ({
             </div>
 
             <div className="flex-1">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <h3 className="text-2xl font-black text-slate-800">{sch.serviceType}</h3>
-                {sch.leaderId && (
-                  <div className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-1.5 rounded-full shadow-md shadow-emerald-100">
-                    <Mic2 size={14} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Líder: {members.find(m => m.id === sch.leaderId)?.name}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 bg-emerald-600 text-white px-4 py-1.5 rounded-full shadow-md shadow-emerald-100">
+                  <Mic2 size={14} />
+                  <span className="text-[10px] font-black uppercase tracking-widest">
+                    Líder: {members.find(m => m.id === sch.leaderId)?.name || 'Não definido'}
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Integrantes Escalados</p>
-                  <div className="flex flex-wrap gap-2">
-                    {sch.members.map(mId => {
-                      const member = members.find(m => m.id === mId);
-                      const isLeader = sch.leaderId === mId;
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Escalação Completa</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {sch.assignments?.map((assignment, idx) => {
+                      const member = members.find(m => m.id === assignment.memberId);
+                      const isLeader = assignment.role === 'Vocal Líder';
+                      const Icon = roleIcons[assignment.role] || Users;
+                      
                       return member ? (
-                        <span key={mId} className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold border transition-all ${isLeader ? 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-2 ring-emerald-500/10' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                          {isLeader && <Star size={10} className="fill-emerald-500 text-emerald-500" />}
-                          {member.name}
-                        </span>
+                        <div key={idx} className={`flex items-center justify-between p-3 rounded-xl border ${isLeader ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-100'}`}>
+                          <div className="flex items-center gap-2">
+                            <Icon size={14} className={isLeader ? 'text-emerald-600' : 'text-slate-400'} />
+                            <span className={`text-[11px] font-black uppercase tracking-tighter ${isLeader ? 'text-emerald-800' : 'text-slate-500'}`}>{assignment.role}</span>
+                          </div>
+                          <span className={`text-sm font-bold ${isLeader ? 'text-emerald-900' : 'text-slate-700'}`}>{member.name}</span>
+                        </div>
                       ) : null;
-                    })}
+                    }) || (
+                      <div className="flex flex-wrap gap-2">
+                         {sch.members.map(mId => {
+                            const member = members.find(m => m.id === mId);
+                            return member ? (
+                              <span key={mId} className="px-3 py-1 rounded-xl text-xs font-bold border bg-slate-50 text-slate-600 border-slate-200">
+                                {member.name}
+                              </span>
+                            ) : null;
+                          })}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Setlist do Louvor</p>
-                  <div className="space-y-2">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">Setlist do Louvor</p>
+                  <div className="space-y-3">
                     {sch.songs.map((sId, idx) => {
                       const song = songs.find(s => s.id === sId);
                       return song ? (
-                        <div key={sId} className="flex items-center gap-2 text-sm">
-                          <span className="w-5 h-5 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px] font-black">{idx + 1}</span>
-                          <span className="font-bold text-slate-700">{song.title}</span>
-                          {song.key && <span className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded font-black text-slate-400">{song.key}</span>}
+                        <div key={sId} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
+                          <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
+                          <div className="flex-1">
+                            <span className="font-bold text-slate-700 text-sm block leading-none">{song.title}</span>
+                          </div>
+                          {song.key && <span className="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded-lg font-black text-emerald-600">{song.key}</span>}
                         </div>
                       ) : null;
                     })}
