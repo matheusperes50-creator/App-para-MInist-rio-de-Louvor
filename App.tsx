@@ -7,7 +7,6 @@ import { Schedules } from './components/Schedules';
 import { Member, Song, Schedule, ViewType } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
-// URL interna da planilha (Google Apps Script)
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgTH_QOKSPlFXJROYxQWRk-53YM1dc5ZWs6Iyi-AZs8_HdJJdwseL14f5qcvqtQhLV/exec';
 
 const App: React.FC = () => {
@@ -32,7 +31,6 @@ const App: React.FC = () => {
 
   const isInitialMount = useRef(true);
 
-  // Persistência local como fallback
   useEffect(() => localStorage.setItem('louvor_members', JSON.stringify(members)), [members]);
   useEffect(() => localStorage.setItem('louvor_songs', JSON.stringify(songs)), [songs]);
   useEffect(() => localStorage.setItem('louvor_schedules', JSON.stringify(schedules)), [schedules]);
@@ -57,7 +55,6 @@ const App: React.FC = () => {
     }
   }, [members, songs, schedules]);
 
-  // Sincronização automática ao alterar dados
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -98,7 +95,7 @@ const App: React.FC = () => {
       case 'songs': 
         return <Songs songs={songs} setSongs={setSongs} />;
       case 'schedules': 
-        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} />;
+        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} />;
       default: 
         return null;
     }

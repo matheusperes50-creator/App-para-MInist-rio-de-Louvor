@@ -1,5 +1,5 @@
 {
-  "name": "LouvorManager Pro",
-  "description": "Uma plataforma completa para gestão de ministérios de louvor, permitindo controle de escalas, repertório musical e dashboards analíticos de participação e frequência das músicas.",
+  "name": "LouvorPIBJE",
+  "description": "Uma plataforma completa para gestão do ministério de louvor da PIBJE, permitindo controle de escalas, repertório musical e dashboards analíticos.",
   "requestFramePermissions": []
 }

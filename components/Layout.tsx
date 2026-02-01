@@ -33,7 +33,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
       <header className="md:hidden bg-emerald-700 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
-        <h1 className="font-bold text-xl tracking-tight">LouvorManager</h1>
+        <div className="flex flex-col">
+          <h1 className="font-black text-xl tracking-tight leading-none">LouvorPIBJE</h1>
+          <p className="text-[9px] text-emerald-200 font-bold uppercase tracking-tighter">Gestão do Ministério de Louvor</p>
+        </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
@@ -45,10 +48,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
       `}>
         <div className="flex flex-col h-full p-6">
           <div className="hidden md:block mb-10">
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center text-emerald-900 font-black">L</div>
-              LouvorManager
+            <h1 className="text-2xl font-black tracking-tight text-white leading-tight">
+              LouvorPIBJE
             </h1>
+            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mt-0.5">
+              Gestão do Ministério de Louvor
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -76,10 +81,10 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
           <div className="mt-auto pt-6 border-t border-emerald-800">
             <p className="text-xs text-emerald-400 font-medium uppercase tracking-wider mb-2">Igreja Local</p>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs">AD</div>
+              <div className="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs">PIB</div>
               <div>
                 <p className="text-sm font-semibold">Administrador</p>
-                <p className="text-xs text-emerald-400">Ministério de Louvor</p>
+                <p className="text-xs text-emerald-400">Louvor & Adoração</p>
               </div>
             </div>
           </div>
