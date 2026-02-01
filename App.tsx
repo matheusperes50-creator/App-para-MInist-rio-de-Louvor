@@ -32,42 +32,34 @@ const App: React.FC = () => {
   });
 
   const isInitialMount = useRef(true);
-  const skipNextSync = useRef(false);
 
-  // Sincroniza dados da planilha para o App (Prioridade Máxima)
   const syncFromSheets = useCallback(async (isAuto = false) => {
     if (!isAuto) setIsSyncing(true);
     setSyncStatus('idle');
     
     try {
-      const response = await fetch(SCRIPT_URL, { cache: 'no-store' });
-      if (!response.ok) throw new Error('Servidor da planilha não respondeu corretamente.');
+      const response = await fetch(SCRIPT_URL, { 
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store' 
+      });
       
-      const data = await response.json();
+      if (!response.ok) throw new Error('Falha na conexão');
       
-      // Validação rigorosa dos dados recebidos
+      const text = await response.text();
+      const data = JSON.parse(text);
+      
       if (data && typeof data === 'object') {
-        // Se a planilha tem membros, atualizamos. Se retornar vazio, mas for um objeto válido, 
-        // assumimos que a planilha está realmente vazia.
-        const cloudMembers = Array.isArray(data.members) ? data.members : [];
-        const cloudSongs = Array.isArray(data.songs) ? data.songs : [];
-        const cloudSchedules = Array.isArray(data.schedules) ? data.schedules : [];
-
-        // Só atualiza o estado se houver algo ou se for a primeira carga
-        // para evitar "piscadas" de dados sumindo
-        setMembers(cloudMembers);
-        setSongs(cloudSongs);
-        setSchedules(cloudSchedules);
+        if (Array.isArray(data.members)) setMembers(data.members);
+        if (Array.isArray(data.songs)) setSongs(data.songs);
+        if (Array.isArray(data.schedules)) setSchedules(data.schedules);
         
         setHasFetchedFromCloud(true);
         if (!isAuto) setSyncStatus('success');
       }
     } catch (error) {
-      console.error("Erro crítico na sincronização de entrada:", error);
-      if (!isAuto) {
-        setSyncStatus('error');
-        alert("Não foi possível carregar os dados da planilha. Verifique sua internet ou o link do Script.");
-      }
+      console.error("Erro ao sincronizar:", error);
+      if (!isAuto) setSyncStatus('error');
     } finally {
       setIsSyncing(false);
       setInitialLoading(false);
@@ -75,38 +67,24 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // Carregamento inicial obrigatório da Nuvem
   useEffect(() => {
     syncFromSheets(true);
   }, [syncFromSheets]);
 
-  // Salva no LocalStorage sempre que houver mudança local (Backup de segurança)
   useEffect(() => {
     localStorage.setItem('louvor_members', JSON.stringify(members));
     localStorage.setItem('louvor_songs', JSON.stringify(songs));
     localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
   }, [members, songs, schedules]);
 
-  // Sincroniza dados do App para a planilha (Auto-save inteligente)
   const syncToSheets = useCallback(async () => {
-    // REGRA DE OURO: Nunca salve na nuvem se você ainda não conseguiu ler da nuvem!
-    // Isso evita que um app offline ou com erro de carga apague a planilha.
-    if (!hasFetchedFromCloud || initialLoading) {
-      console.warn("Sincronização de saída bloqueada: Dados da nuvem ainda não validados.");
-      return;
-    }
+    if (!hasFetchedFromCloud || initialLoading) return;
 
     setIsSyncing(true);
     setSyncStatus('idle');
     
     try {
-      const payload = { 
-        members, 
-        songs, 
-        schedules,
-        lastUpdate: new Date().toISOString(),
-        source: 'WebApp_V3'
-      };
+      const payload = { members, songs, schedules };
 
       await fetch(SCRIPT_URL, {
         method: 'POST',
@@ -117,7 +95,7 @@ const App: React.FC = () => {
       
       setSyncStatus('success');
     } catch (error) {
-      console.error("Erro ao salvar na planilha:", error);
+      console.error("Erro ao salvar:", error);
       setSyncStatus('error');
     } finally {
       setIsSyncing(false);
@@ -125,73 +103,38 @@ const App: React.FC = () => {
     }
   }, [members, songs, schedules, hasFetchedFromCloud, initialLoading]);
 
-  // Debounce para evitar excesso de requisições ao digitar
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    
-    const timer = setTimeout(() => {
-      syncToSheets();
-    }, 4000); 
-
+    const timer = setTimeout(() => syncToSheets(), 5000);
     return () => clearTimeout(timer);
   }, [members, songs, schedules, syncToSheets]);
 
   const renderContent = () => {
-    if (initialLoading && members.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center py-20 gap-4 animate-in fade-in duration-700">
-          <Loader2 size={48} className="text-emerald-500 animate-spin" />
-          <div className="text-center">
-            <h3 className="font-black text-slate-800 text-xl">Sincronizando com a nuvem...</h3>
-            <p className="text-slate-400 font-medium">Buscando as informações mais recentes da sua planilha.</p>
-          </div>
-        </div>
-      );
-    }
-
     const syncProps = { onSync: () => syncFromSheets(false), isSyncing };
     
     switch (view) {
-      case 'dashboard': 
-        return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
-      case 'members': 
-        return <Members members={members} setMembers={setMembers} {...syncProps} />;
-      case 'songs': 
-        return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
-      case 'schedules': 
-        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
-      default: 
-        return null;
+      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
+      case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
+      case 'songs': return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
+      default: return null;
     }
   };
 
   return (
     <Layout currentView={view} setView={setView}>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
-          <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            <Cloud size={14} /> {hasFetchedFromCloud ? 'Nuvem Conectada' : 'Aguardando Nuvem'}
+          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+            <Cloud size={14} /> {hasFetchedFromCloud ? 'Planilha Conectada' : 'Sincronizando...'}
           </div>
-          
-          {isSyncing && (
-            <div className="flex items-center gap-1.5 text-emerald-600 animate-pulse">
-              <RefreshCw size={14} className="animate-spin" />
-              <span className="text-[10px] font-black uppercase tracking-tighter">Sincronizando...</span>
-            </div>
-          )}
-          
+          {isSyncing && <RefreshCw size={14} className="text-emerald-600 animate-spin" />}
           {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600 animate-in zoom-in" />}
           {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600 animate-in bounce" />}
         </div>
-        
-        {hasFetchedFromCloud && (
-          <div className="text-[9px] font-bold text-slate-300 uppercase tracking-tighter">
-            Total na Nuvem: {members.length} Membros
-          </div>
-        )}
       </div>
       {renderContent()}
     </Layout>
