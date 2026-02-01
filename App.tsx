@@ -5,7 +5,7 @@ import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
 import { Member, Song, Schedule, ViewType } from './types';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
@@ -16,7 +16,6 @@ const App: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   
-  // Inicialização segura para evitar undefined
   const [members, setMembers] = useState<Member[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_members');
@@ -94,8 +93,13 @@ const App: React.FC = () => {
     setSyncStatus('idle');
     
     try {
-      const payload = { members, songs, schedules };
+      const payload = { 
+        members: members || [], 
+        songs: songs || [], 
+        schedules: schedules || [] 
+      };
 
+      // Usamos text/plain com JSON stringified para contornar problemas de CORS simples com Apps Script
       await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors', 
@@ -113,6 +117,7 @@ const App: React.FC = () => {
     }
   }, [members, songs, schedules, hasFetchedFromCloud, initialLoading]);
 
+  // Auto-save após mudanças (debounce de 5 segundos)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -126,10 +131,10 @@ const App: React.FC = () => {
     const syncProps = { onSync: () => syncFromSheets(false), isSyncing };
     
     switch (view) {
-      case 'dashboard': return <Dashboard members={members || []} songs={songs || []} schedules={schedules || []} {...syncProps} />;
-      case 'members': return <Members members={members || []} setMembers={setMembers} {...syncProps} />;
-      case 'songs': return <Songs songs={songs || []} setSongs={setSongs} {...syncProps} />;
-      case 'schedules': return <Schedules schedules={schedules || []} setSchedules={setSchedules} members={members || []} songs={songs || []} setSongs={setSongs} {...syncProps} />;
+      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
+      case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
+      case 'songs': return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
       default: return null;
     }
   };
