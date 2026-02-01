@@ -1,15 +1,18 @@
+
 import React, { useState } from 'react';
 import { Member, Role } from '../types';
-import { UserPlus, Search, Trash2, Edit2, Check, X, Power } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Check, X, Power, RefreshCw } from 'lucide-react';
 
 interface MembersProps {
   members: Member[];
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
+  onSync: () => void;
+  isSyncing: boolean;
 }
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) => {
+export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSync, isSyncing }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,7 +38,6 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
   const handleEditClick = (member: Member) => {
     setEditingMemberId(member.id);
     setNewName(member.name);
-    // Garantir que roles seja um array
     setSelectedRoles(Array.isArray(member.roles) ? member.roles : []);
     setIsAdding(false);
   };
@@ -48,14 +50,12 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
     }
 
     if (editingMemberId) {
-      // Atualizar membro existente
       setMembers(prev => (prev || []).map(m => 
         m.id === editingMemberId 
           ? { ...m, name: newName, roles: selectedRoles } 
           : m
       ));
     } else {
-      // Criar novo membro
       const newMember: Member = {
         id: generateShortId(),
         name: newName,
@@ -89,16 +89,26 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers }) =>
           <h2 className="text-3xl font-bold text-slate-900">Membros</h2>
           <p className="text-slate-500">Gerencie todos os integrantes e suas habilidades.</p>
         </div>
-        <button 
-          onClick={() => {
-            if (editingMemberId) resetForm();
-            setIsAdding(!isAdding);
-          }}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-100"
-        >
-          {isAdding || editingMemberId ? <X size={18} /> : <UserPlus size={18} />}
-          {isAdding || editingMemberId ? 'Cancelar' : 'Novo Membro'}
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={onSync}
+            disabled={isSyncing}
+            className="p-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all disabled:opacity-50"
+            title="Atualizar dados da nuvem"
+          >
+            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+          </button>
+          <button 
+            onClick={() => {
+              if (editingMemberId) resetForm();
+              setIsAdding(!isAdding);
+            }}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-emerald-100"
+          >
+            {isAdding || editingMemberId ? <X size={18} /> : <UserPlus size={18} />}
+            {isAdding || editingMemberId ? 'Cancelar' : 'Novo Membro'}
+          </button>
+        </div>
       </header>
 
       {(isAdding || editingMemberId) && (

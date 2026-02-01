@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
@@ -87,15 +88,17 @@ const App: React.FC = () => {
   }, []);
 
   const renderContent = () => {
+    const syncProps = { onSync: syncFromSheets, isSyncing };
+    
     switch (view) {
       case 'dashboard': 
-        return <Dashboard members={members} songs={songs} schedules={schedules} onSync={syncFromSheets} isSyncing={isSyncing} />;
+        return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
       case 'members': 
-        return <Members members={members} setMembers={setMembers} />;
+        return <Members members={members} setMembers={setMembers} {...syncProps} />;
       case 'songs': 
-        return <Songs songs={songs} setSongs={setSongs} />;
+        return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
       case 'schedules': 
-        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} />;
+        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
       default: 
         return null;
     }

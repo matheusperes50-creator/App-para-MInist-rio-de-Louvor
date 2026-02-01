@@ -1,13 +1,16 @@
+
 import React, { useState } from 'react';
 import { Song } from '../types';
-import { Music, Search, Trash2, Hash, Library } from 'lucide-react';
+import { Music, Search, Trash2, Hash, Library, RefreshCw } from 'lucide-react';
 
 interface SongsProps {
   songs: Song[];
   setSongs: React.Dispatch<React.SetStateAction<Song[]>>;
+  onSync: () => void;
+  isSyncing: boolean;
 }
 
-export const Songs: React.FC<SongsProps> = ({ songs = [], setSongs }) => {
+export const Songs: React.FC<SongsProps> = ({ songs = [], setSongs, onSync, isSyncing }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const removeSong = (id: string) => {
@@ -25,9 +28,19 @@ export const Songs: React.FC<SongsProps> = ({ songs = [], setSongs }) => {
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-      <header>
-        <h2 className="text-3xl font-bold text-slate-900">Repertório</h2>
-        <p className="text-slate-500">Músicas cadastradas automaticamente através das escalas.</p>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-slate-900">Repertório</h2>
+          <p className="text-slate-500">Músicas cadastradas automaticamente através das escalas.</p>
+        </div>
+        <button 
+          onClick={onSync}
+          disabled={isSyncing}
+          className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 disabled:opacity-50"
+        >
+          <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={18} />
+          {isSyncing ? 'Atualizando...' : 'Atualizar Dados'}
+        </button>
       </header>
 
       <div className="relative group">

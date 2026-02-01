@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Schedule, Member, Song, ScheduleAssignment } from '../types';
 import { 
@@ -14,7 +15,8 @@ import {
   Drum, 
   Piano,
   MessageSquare,
-  Share2
+  Share2,
+  RefreshCw
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -23,6 +25,8 @@ interface SchedulesProps {
   members: Member[];
   songs: Song[];
   setSongs: React.Dispatch<React.SetStateAction<Song[]>>;
+  onSync: () => void;
+  isSyncing: boolean;
 }
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -32,7 +36,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
   setSchedules, 
   members = [], 
   songs = [], 
-  setSongs 
+  setSongs,
+  onSync,
+  isSyncing
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [date, setDate] = useState('');
@@ -165,13 +171,23 @@ export const Schedules: React.FC<SchedulesProps> = ({
           <h2 className="text-3xl font-black text-slate-900">Escalas</h2>
           <p className="text-slate-500 font-medium">Gestão de louvor da igreja.</p>
         </div>
-        <button 
-          onClick={() => setIsAdding(!isAdding)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg"
-        >
-          {isAdding ? <X size={20} /> : <Plus size={20} />}
-          {isAdding ? 'CANCELAR' : 'NOVA ESCALA'}
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={onSync}
+            disabled={isSyncing}
+            className="p-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all disabled:opacity-50"
+            title="Atualizar dados da nuvem"
+          >
+            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+          </button>
+          <button 
+            onClick={() => setIsAdding(!isAdding)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg"
+          >
+            {isAdding ? <X size={20} /> : <Plus size={20} />}
+            {isAdding ? 'CANCELAR' : 'NOVA ESCALA'}
+          </button>
+        </div>
       </header>
 
       {isAdding && (
