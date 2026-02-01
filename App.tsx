@@ -7,7 +7,7 @@ import { Schedules } from './components/Schedules';
 import { Member, Song, Schedule, ViewType } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwgTH_QOKSPlFXJROYxQWRk-53YM1dc5ZWs6Iyi-AZs8_HdJJdwseL14f5qcvqtQhLV/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
@@ -16,19 +16,29 @@ const App: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   
+  // Inicialização segura para evitar undefined
   const [members, setMembers] = useState<Member[]>(() => {
-    const saved = localStorage.getItem('louvor_members');
-    try { return saved ? JSON.parse(saved) : []; } catch { return []; }
+    try {
+      const saved = localStorage.getItem('louvor_members');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const [songs, setSongs] = useState<Song[]>(() => {
-    const saved = localStorage.getItem('louvor_songs');
-    try { return saved ? JSON.parse(saved) : []; } catch { return []; }
+    try {
+      const saved = localStorage.getItem('louvor_songs');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
-    const saved = localStorage.getItem('louvor_schedules');
-    try { return saved ? JSON.parse(saved) : []; } catch { return []; }
+    try {
+      const saved = localStorage.getItem('louvor_schedules');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
   });
 
   const isInitialMount = useRef(true);
@@ -50,15 +60,15 @@ const App: React.FC = () => {
       const data = JSON.parse(text);
       
       if (data && typeof data === 'object') {
-        if (Array.isArray(data.members)) setMembers(data.members);
-        if (Array.isArray(data.songs)) setSongs(data.songs);
-        if (Array.isArray(data.schedules)) setSchedules(data.schedules);
+        setMembers(Array.isArray(data.members) ? data.members : []);
+        setSongs(Array.isArray(data.songs) ? data.songs : []);
+        setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
         
         setHasFetchedFromCloud(true);
         if (!isAuto) setSyncStatus('success');
       }
     } catch (error) {
-      console.error("Erro ao sincronizar:", error);
+      console.error("Erro ao sincronizar da nuvem:", error);
       if (!isAuto) setSyncStatus('error');
     } finally {
       setIsSyncing(false);
@@ -95,7 +105,7 @@ const App: React.FC = () => {
       
       setSyncStatus('success');
     } catch (error) {
-      console.error("Erro ao salvar:", error);
+      console.error("Erro ao salvar na nuvem:", error);
       setSyncStatus('error');
     } finally {
       setIsSyncing(false);
@@ -116,10 +126,10 @@ const App: React.FC = () => {
     const syncProps = { onSync: () => syncFromSheets(false), isSyncing };
     
     switch (view) {
-      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
-      case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
-      case 'songs': return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
-      case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'dashboard': return <Dashboard members={members || []} songs={songs || []} schedules={schedules || []} {...syncProps} />;
+      case 'members': return <Members members={members || []} setMembers={setMembers} {...syncProps} />;
+      case 'songs': return <Songs songs={songs || []} setSongs={setSongs} {...syncProps} />;
+      case 'schedules': return <Schedules schedules={schedules || []} setSchedules={setSchedules} members={members || []} songs={songs || []} setSongs={setSongs} {...syncProps} />;
       default: return null;
     }
   };

@@ -19,41 +19,56 @@ interface DashboardProps {
   isSyncing: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules, onSync, isSyncing }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  members = [], 
+  songs = [], 
+  schedules = [], 
+  onSync, 
+  isSyncing 
+}) => {
+  const safeSchedules = Array.isArray(schedules) ? schedules : [];
+  const safeMembers = Array.isArray(members) ? members : [];
+  const safeSongs = Array.isArray(songs) ? songs : [];
+
   const memberParticipation = useMemo(() => {
     const participation: Record<string, number> = {};
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
-    schedules.forEach(sch => {
+    safeSchedules.forEach(sch => {
+      if (!sch || !sch.date) return;
       const schDate = new Date(sch.date);
       if (schDate.getMonth() === currentMonth && schDate.getFullYear() === currentYear) {
-        sch.members.forEach(mId => {
-          participation[mId] = (participation[mId] || 0) + 1;
+        if (Array.isArray(sch.members)) {
+          sch.members.forEach(mId => {
+            if (mId) participation[mId] = (participation[mId] || 0) + 1;
+          });
+        }
+      }
+    });
+
+    return safeMembers
+      .map(m => ({
+        name: m.name || 'Sem Nome',
+        count: participation[m.id] || 0
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [safeMembers, safeSchedules]);
+
+  const topSongs = useMemo(() => {
+    const counts: Record<string, number> = {};
+    safeSchedules.forEach(sch => {
+      if (sch && Array.isArray(sch.songs)) {
+        sch.songs.forEach(sId => {
+          if (sId) counts[sId] = (counts[sId] || 0) + 1;
         });
       }
     });
 
-    return members
-      .map(m => ({
-        name: m.name,
-        count: participation[m.id] || 0
-      }))
-      .sort((a, b) => b.count - a.count);
-  }, [members, schedules]);
-
-  const topSongs = useMemo(() => {
-    const counts: Record<string, number> = {};
-    schedules.forEach(sch => {
-      sch.songs.forEach(sId => {
-        counts[sId] = (counts[sId] || 0) + 1;
-      });
-    });
-
     return Object.entries(counts)
       .map(([sId, count]) => {
-        const song = songs.find(s => s.id === sId);
+        const song = safeSongs.find(s => s.id === sId);
         return {
           title: song ? song.title : 'Desconhecida',
           artist: song ? song.artist : '-',
@@ -62,7 +77,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
       })
       .sort((a, b) => b.count - a.count)
       .slice(0, 3);
-  }, [songs, schedules]);
+  }, [safeSongs, safeSchedules]);
+
+  const totalSongsPlayed = useMemo(() => {
+    return safeSchedules.reduce((acc, s) => acc + (Array.isArray(s?.songs) ? s.songs.length : 0), 0);
+  }, [safeSchedules]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -89,7 +108,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Membros</p>
-            <p className="text-2xl font-bold">{members.length}</p>
+            <p className="text-2xl font-bold">{safeMembers.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -98,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Repertório</p>
-            <p className="text-2xl font-bold">{songs.length}</p>
+            <p className="text-2xl font-bold">{safeSongs.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -107,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Escalas</p>
-            <p className="text-2xl font-bold">{schedules.length}</p>
+            <p className="text-2xl font-bold">{safeSchedules.length}</p>
           </div>
         </div>
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -116,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
           </div>
           <div>
             <p className="text-sm font-medium text-slate-500">Músicas Tocadas</p>
-            <p className="text-2xl font-bold">{schedules.reduce((acc, s) => acc + s.songs.length, 0)}</p>
+            <p className="text-2xl font-bold">{totalSongsPlayed}</p>
           </div>
         </div>
       </div>
@@ -159,7 +178,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
                 </div>
               </div>
             )) : (
-              <div className="text-center py-10 text-slate-400">Nenhuma música registrada.</div>
+              <div className="text-center py-10 text-slate-400">Nenhuma música registrada nas escalas.</div>
             )}
           </div>
         </div>
