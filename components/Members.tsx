@@ -147,68 +147,76 @@ export const Members: React.FC<MembersProps> = ({ members, setMembers }) => {
       </div>
 
       <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest font-black">
-            <tr>
-              <th className="px-8 py-5">Membro</th>
-              <th className="px-8 py-5">ID</th>
-              <th className="px-8 py-5">Funções</th>
-              <th className="px-8 py-5">Status</th>
-              <th className="px-8 py-5 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {filteredMembers.map((member) => (
-              <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
-                <td className="px-8 py-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
-                      {member.name.charAt(0)}
-                    </div>
-                    <span className="font-bold text-slate-800 text-lg">{member.name}</span>
-                  </div>
-                </td>
-                <td className="px-8 py-6">
-                  <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
-                </td>
-                <td className="px-8 py-6">
-                  <div className="flex flex-wrap gap-1.5">
-                    {member.roles.map((role, idx) => (
-                      <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
-                        {role}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-8 py-6">
-                  {member.isActive ? (
-                    <span className="text-green-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div> Ativo
-                    </span>
-                  ) : (
-                    <span className="text-slate-400 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
-                      <div className="w-2 h-2 rounded-full bg-slate-300"></div> Inativo
-                    </span>
-                  )}
-                </td>
-                <td className="px-8 py-6 text-right space-x-2">
-                  <button 
-                    onClick={() => toggleStatus(member.id)}
-                    className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                  >
-                    <Edit2 size={18} />
-                  </button>
-                  <button 
-                    onClick={() => removeMember(member.id)}
-                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-widest font-black">
+              <tr>
+                <th className="px-8 py-5">Membro</th>
+                <th className="px-8 py-5">ID</th>
+                <th className="px-8 py-5">Funções</th>
+                <th className="px-8 py-5">Status</th>
+                <th className="px-8 py-5 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredMembers.map((member) => (
+                <tr key={member.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xl shadow-inner">
+                        {member.name.charAt(0)}
+                      </div>
+                      <span className="font-bold text-slate-800 text-lg">{member.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className="font-mono text-xs text-slate-400 font-bold">{member.id}</span>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="flex flex-wrap gap-1.5">
+                      {/* Correção crítica: Verificação de segurança para member.roles */}
+                      {(Array.isArray(member.roles) ? member.roles : []).map((role, idx) => (
+                        <span key={idx} className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter border border-emerald-100">
+                          {role}
+                        </span>
+                      ))}
+                      {(!member.roles || (Array.isArray(member.roles) && member.roles.length === 0)) && (
+                        <span className="text-slate-300 text-[10px] italic">Sem função</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    {member.isActive ? (
+                      <span className="text-green-600 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div> Ativo
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 flex items-center gap-2 text-xs font-black uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-slate-300"></div> Inativo
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-8 py-6 text-right space-x-2">
+                    <button 
+                      onClick={() => toggleStatus(member.id)}
+                      className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                      title="Alternar Status"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => removeMember(member.id)}
+                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      title="Excluir"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
