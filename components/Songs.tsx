@@ -7,7 +7,7 @@ interface SongsProps {
   setSongs: React.Dispatch<React.SetStateAction<Song[]>>;
 }
 
-export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
+export const Songs: React.FC<SongsProps> = ({ songs = [], setSongs }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const removeSong = (id: string) => {
@@ -16,10 +16,12 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
     }
   };
 
-  const filteredSongs = songs.filter(s => 
-    s.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    s.artist.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSongs = (songs || []).filter(s => {
+    const term = searchTerm.toLowerCase();
+    const title = (s.title || "").toLowerCase();
+    const artist = (s.artist || "").toLowerCase();
+    return title.includes(term) || artist.includes(term);
+  });
 
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
@@ -42,7 +44,7 @@ export const Songs: React.FC<SongsProps> = ({ songs, setSongs }) => {
       <section>
         <div className="flex items-center gap-2 mb-6 text-slate-400">
           <Library size={20} />
-          <h3 className="font-black uppercase tracking-widest text-sm">Biblioteca de Músicas ({songs.length})</h3>
+          <h3 className="font-black uppercase tracking-widest text-sm">Biblioteca de Músicas ({(songs || []).length})</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

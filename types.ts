@@ -1,4 +1,3 @@
-
 export enum Role {
   VOCAL = 'Vocal',
   GUITAR = 'Violão/Guitarra',
@@ -32,10 +31,11 @@ export interface Schedule {
   id: string;
   date: string;
   serviceType: string;
-  members: string[]; // Mantido para compatibilidade, mas assignments é o principal
+  members: string[]; 
   assignments: ScheduleAssignment[];
   songs: string[];
-  leaderId: string; // ID do Vocal Líder (redunante com assignments mas útil)
+  leaderId: string;
+  vocalIds?: string[]; // Novos campos para organização sugerida
 }
 
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';
