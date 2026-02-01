@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Schedule, Member, Song, ScheduleAssignment } from '../types';
 import { 
@@ -17,7 +16,8 @@ import {
   MessageSquare,
   Share2,
   RefreshCw,
-  Zap
+  Zap,
+  Edit2
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -42,6 +42,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   isSyncing
 }) => {
   const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Domingo (Noite)');
   
@@ -63,6 +64,35 @@ export const Schedules: React.FC<SchedulesProps> = ({
     'Guitarra': Zap,
     'Baixo': Music,
     'Bateria': Drum
+  };
+
+  const handleEdit = (sch: Schedule) => {
+    setEditingId(sch.id);
+    setDate(sch.date);
+    setServiceType(sch.serviceType);
+    setLeaderId(sch.leaderId || '');
+    setVocalIds(sch.vocalIds || []);
+    
+    // Mapear instrumentos de volta para o estado local
+    const newInstruments: Record<string, string> = {
+      'Teclado': '', 'Violão': '', 'Guitarra': '', 'Baixo': '', 'Bateria': ''
+    };
+    sch.assignments.forEach(a => {
+      if (newInstruments.hasOwnProperty(a.role)) {
+        newInstruments[a.role] = a.memberId;
+      }
+    });
+    setInstruments(newInstruments);
+
+    // Mapear músicas de volta
+    const currentSongs = sch.songs.map(sId => {
+      const song = songs.find(s => s.id === sId);
+      return { title: song?.title || '', key: song?.key || '' };
+    });
+    setTempSetlist(currentSongs.length > 0 ? currentSongs : [{title: '', key: ''}]);
+    
+    setIsAdding(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const toggleVocal = (id: string) => {
@@ -118,7 +148,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     window.open(whatsappUrl, '_blank');
   };
 
-  const addSchedule = (e: React.FormEvent) => {
+  const saveSchedule = (e: React.FormEvent) => {
     e.preventDefault();
     if (!date || !leaderId) {
       alert("Por favor, preencha a data e o Líder.");
@@ -126,6 +156,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     const finalSongIds: string[] = [];
+    const newSongsToRegister: Song[] = [];
+
     tempSetlist.forEach(item => {
       if (!item.title || !item.title.trim()) return;
       
@@ -142,10 +174,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
           artist: 'Manual', 
           key: (item.key || '').toUpperCase() 
         };
-        setSongs(prev => [...prev, newSong]);
+        newSongsToRegister.push(newSong);
         finalSongIds.push(newId);
       }
     });
+
+    if (newSongsToRegister.length > 0) {
+      setSongs(prev => [...prev, ...newSongsToRegister]);
+    }
 
     const finalAssignments: ScheduleAssignment[] = [
       { role: 'Vocal Líder', memberId: leaderId },
@@ -153,8 +189,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
       ...Object.entries(instruments).filter(([_, id]) => id !== '').map(([role, id]) => ({ role, memberId: id }))
     ];
 
-    const newSchedule: Schedule = {
-      id: generateShortId(),
+    const scheduleData: Schedule = {
+      id: editingId || generateShortId(),
       date,
       serviceType,
       members: [leaderId, ...vocalIds, ...Object.values(instruments).filter(id => id !== '')],
@@ -164,16 +200,23 @@ export const Schedules: React.FC<SchedulesProps> = ({
       vocalIds
     };
 
-    setSchedules(prev => [newSchedule, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if (editingId) {
+      setSchedules(prev => prev.map(s => s.id === editingId ? scheduleData : s));
+    } else {
+      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    }
+
     setIsAdding(false);
     resetForm();
   };
 
   const resetForm = () => {
+    setEditingId(null);
     setLeaderId('');
     setVocalIds([]);
     setInstruments({ 'Teclado': '', 'Violão': '', 'Guitarra': '', 'Baixo': '', 'Bateria': '' });
     setTempSetlist([{title: '', key: ''}]);
+    setDate('');
   };
 
   const removeSchedule = (id: string) => {
@@ -197,7 +240,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
           </button>
           <button 
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => {
+              if (isAdding) resetForm();
+              setIsAdding(!isAdding);
+            }}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg"
           >
             {isAdding ? <X size={20} /> : <Plus size={20} />}
@@ -207,7 +253,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
       </header>
 
       {isAdding && (
-        <form onSubmit={addSchedule} className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200">
+        <form onSubmit={saveSchedule} className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200">
+          <h3 className="text-xl font-black text-emerald-800 uppercase tracking-tighter">
+            {editingId ? 'Editar Escala' : 'Criar Nova Escala'}
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">DATA DO EVENTO</label>
@@ -309,8 +358,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
           </div>
 
           <div className="pt-6 border-t flex justify-end gap-4">
-            <button type="button" onClick={() => setIsAdding(false)} className="px-6 py-3 font-bold text-slate-400">CANCELAR</button>
-            <button type="submit" className="px-10 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">SALVAR ESCALA</button>
+            <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400">CANCELAR</button>
+            <button type="submit" className="px-10 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">
+              {editingId ? 'ATUALIZAR ESCALA' : 'SALVAR ESCALA'}
+            </button>
           </div>
         </form>
       )}
@@ -338,6 +389,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 <div className="flex gap-1">
                    <button onClick={() => handleShare(sch)} className="p-2 bg-white/10 rounded-lg hover:bg-emerald-500 transition-all text-white" title="Compartilhar no WhatsApp">
                     <Share2 size={16} />
+                  </button>
+                   <button onClick={() => handleEdit(sch)} className="p-2 bg-white/10 rounded-lg hover:bg-blue-500 transition-all text-white" title="Editar Escala">
+                    <Edit2 size={16} />
                   </button>
                   <button onClick={() => removeSchedule(sch.id)} className="p-2 bg-white/10 rounded-lg hover:bg-red-500 transition-all text-white">
                     <Trash2 size={16} />
