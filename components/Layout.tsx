@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ViewType } from '../types';
+import { ViewType } from '../types.ts';
 import { 
   LayoutDashboard, 
   Users, 
@@ -33,7 +33,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
-      {/* Mobile Header */}
       <header className="md:hidden bg-indigo-700 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
         <h1 className="font-bold text-xl tracking-tight">LouvorManager</h1>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
@@ -41,7 +40,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
         </button>
       </header>
 
-      {/* Sidebar Navigation */}
       <nav className={`
         fixed inset-0 z-40 bg-indigo-900 text-slate-100 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-64 md:flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -79,9 +77,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
           <div className="mt-auto pt-6 border-t border-indigo-800">
             <p className="text-xs text-indigo-400 font-medium uppercase tracking-wider mb-2">Igreja Local</p>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-indigo-700 overflow-hidden">
-                <img src="https://picsum.photos/32/32" alt="Avatar" />
-              </div>
+              <div className="w-8 h-8 rounded-full bg-indigo-700 flex items-center justify-center font-bold text-xs">AD</div>
               <div>
                 <p className="text-sm font-semibold">Administrador</p>
                 <p className="text-xs text-indigo-400">Ministério de Louvor</p>
@@ -91,7 +87,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView }
         </div>
       </nav>
 
-      {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           {children}

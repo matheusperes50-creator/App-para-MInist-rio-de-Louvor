@@ -1,6 +1,6 @@
 
 import React, { useMemo } from 'react';
-import { Member, Song, Schedule } from '../types';
+import { Member, Song, Schedule } from '../types.ts';
 import { 
   BarChart, 
   Bar, 
@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900">Visão Geral</h2>
+          <h2 className="text-3xl font-bold text-slate-900 font-sans">Visão Geral</h2>
           <p className="text-slate-500">Acompanhe as métricas do seu ministério.</p>
         </div>
         <button 
@@ -128,8 +128,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={memberParticipation}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <Tooltip 
                   cursor={{fill: '#f8fafc'}}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -150,8 +150,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ members, songs, schedules,
                   {index + 1}
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-slate-800">{song.title}</p>
-                  <p className="text-sm text-slate-500">{song.artist}</p>
+                  <p className="font-bold text-slate-800 text-sm line-clamp-1">{song.title}</p>
+                  <p className="text-xs text-slate-500">{song.artist}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-indigo-600">{song.count}</p>

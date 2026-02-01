@@ -1,19 +1,31 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Layout } from './components/Layout';
-import { Dashboard } from './components/Dashboard';
-import { Members } from './components/Members';
-import { Songs } from './components/Songs';
-import { Schedules } from './components/Schedules';
-import { Member, Song, Schedule, ViewType } from './types';
+import { Layout } from './components/Layout.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { Members } from './components/Members.tsx';
+import { Songs } from './components/Songs.tsx';
+import { Schedules } from './components/Schedules.tsx';
+import { Member, Song, Schedule, ViewType } from './types.ts';
 import { Cloud, CloudOff, RefreshCw, Settings, CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
-  const [scriptUrl, setScriptUrl] = useState<string>(() => localStorage.getItem('louvor_script_url') || '');
+  
+  // Verificação resiliente para evitar erro Uncaught TypeError
+  const [scriptUrl, setScriptUrl] = useState<string>(() => {
+    try {
+      // @ts-ignore
+      const env = typeof import.meta !== 'undefined' && (import.meta as any).env 
+        ? (import.meta as any).env 
+        : {};
+      return env.VITE_SCRIPT_URL || localStorage.getItem('louvor_script_url') || '';
+    } catch (e) {
+      return localStorage.getItem('louvor_script_url') || '';
+    }
+  });
+
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [lastSync, setLastSync] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
   const [members, setMembers] = useState<Member[]>(() => {
@@ -31,7 +43,6 @@ const App: React.FC = () => {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Ref para evitar loop infinito na sincronização automática
   const isInitialMount = useRef(true);
 
   useEffect(() => {
@@ -47,18 +58,15 @@ const App: React.FC = () => {
     setIsSyncing(true);
     setSyncStatus('idle');
     try {
-      // Usamos 'text/plain' para evitar problemas de CORS Preflight no Google Apps Script
       await fetch(scriptUrl, {
         method: 'POST',
         mode: 'no-cors', 
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ members, songs, schedules })
       });
-      
-      setLastSync(new Date().toLocaleTimeString());
       setSyncStatus('success');
     } catch (error) {
-      console.error("Erro ao salvar dados:", error);
+      console.error("Erro ao salvar:", error);
       setSyncStatus('error');
     } finally {
       setIsSyncing(false);
@@ -66,7 +74,6 @@ const App: React.FC = () => {
     }
   }, [scriptUrl, members, songs, schedules]);
 
-  // Sincronização Automática: Salva na nuvem sempre que os dados mudarem (após o mount inicial)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
@@ -74,7 +81,7 @@ const App: React.FC = () => {
     }
     const timer = setTimeout(() => {
       if (scriptUrl) syncToSheets();
-    }, 2000); // Debounce de 2 segundos para não sobrecarregar a API
+    }, 2000);
     return () => clearTimeout(timer);
   }, [members, songs, schedules, syncToSheets, scriptUrl]);
 
@@ -84,17 +91,15 @@ const App: React.FC = () => {
     setSyncStatus('idle');
     try {
       const response = await fetch(scriptUrl);
-      if (!response.ok) throw new Error('Falha na resposta do servidor');
+      if (!response.ok) throw new Error('Falha');
       const data = await response.json();
       if (data.members) setMembers(data.members);
       if (data.songs) setSongs(data.songs);
       if (data.schedules) setSchedules(data.schedules);
-      setLastSync(new Date().toLocaleTimeString());
       setSyncStatus('success');
     } catch (error) {
-      console.error("Erro ao buscar dados:", error);
+      console.error("Erro ao buscar:", error);
       setSyncStatus('error');
-      alert("Não foi possível baixar os dados. Verifique a URL e se a implantação no Google está como 'Qualquer Pessoa'.");
     } finally {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
@@ -104,48 +109,28 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (showSettings) {
       return (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-100 animate-in fade-in zoom-in-95">
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2 text-slate-800">
-            <Settings className="text-indigo-600" /> Configuração da Nuvem
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-[2.5rem] shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-300">
+          <h2 className="text-3xl font-black text-slate-800 flex items-center gap-3 mb-6">
+            <Settings className="text-indigo-600" size={32} /> Nuvem
           </h2>
-          
-          <div className="bg-indigo-50 p-5 rounded-2xl mb-6 border border-indigo-100 space-y-3">
-            <h4 className="text-indigo-800 font-bold text-sm flex items-center gap-2">
-              <Info size={16} /> Como conectar sua Planilha
-            </h4>
-            <ol className="text-xs text-indigo-700 space-y-2 list-decimal ml-4 font-medium">
-              <li>Na sua Planilha Google, vá em <strong>Extensões > Apps Script</strong>.</li>
-              <li>Cole o código do backend (fornecido anteriormente).</li>
-              <li>Clique em <strong>Implantar > Nova Implantação</strong>.</li>
-              <li>Tipo: <strong>App da Web</strong> | Acesso: <strong>Qualquer pessoa</strong>.</li>
-              <li>Copie a URL gerada e cole no campo abaixo.</li>
-            </ol>
-          </div>
-
           <div className="space-y-6">
+            <div className="bg-indigo-50 p-6 rounded-3xl border border-indigo-100">
+              <h4 className="text-indigo-800 font-bold flex items-center gap-2 mb-2"><Info size={16} /> Configuração</h4>
+              <p className="text-xs text-indigo-600 leading-relaxed">Insira a URL do seu Google Apps Script para sincronizar os dados em tempo real com sua planilha.</p>
+            </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">URL de Implantação do Google</label>
+              <label className="block text-xs font-black text-slate-400 mb-2 uppercase tracking-widest">URL do Script</label>
               <input 
                 type="text" 
                 value={scriptUrl}
                 onChange={(e) => setScriptUrl(e.target.value)}
                 placeholder="https://script.google.com/macros/s/.../exec"
-                className="w-full px-5 py-3.5 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:bg-white focus:border-indigo-500 outline-none transition-all font-mono text-sm"
               />
             </div>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setShowSettings(false)}
-                className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-all"
-              >
-                Fechar
-              </button>
-              <button 
-                onClick={() => { syncFromSheets(); setShowSettings(false); }}
-                className="flex-1 px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all"
-              >
-                Testar Conexão
-              </button>
+            <div className="flex gap-4">
+              <button onClick={() => setShowSettings(false)} className="flex-1 px-6 py-4 bg-slate-100 text-slate-700 font-black rounded-2xl hover:bg-slate-200 transition-all">Fechar</button>
+              <button onClick={() => { syncFromSheets(); setShowSettings(false); }} className="flex-1 px-6 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 shadow-lg shadow-indigo-100">Testar Conexão</button>
             </div>
           </div>
         </div>
@@ -153,64 +138,28 @@ const App: React.FC = () => {
     }
 
     switch (view) {
-      case 'dashboard':
-        return <Dashboard members={members} songs={songs} schedules={schedules} onSync={syncToSheets} isSyncing={isSyncing} />;
-      case 'members':
-        return <Members members={members} setMembers={setMembers} />;
-      case 'songs':
-        return <Songs songs={songs} setSongs={setSongs} />;
-      case 'schedules':
-        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} />;
-      default:
-        return <Dashboard members={members} songs={songs} schedules={schedules} onSync={syncToSheets} isSyncing={isSyncing} />;
+      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} onSync={syncToSheets} isSyncing={isSyncing} />;
+      case 'members': return <Members members={members} setMembers={setMembers} />;
+      case 'songs': return <Songs songs={songs} setSongs={setSongs} />;
+      case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} />;
+      default: return null;
     }
   };
 
   return (
     <Layout currentView={view} setView={setView}>
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-2">
-          {scriptUrl ? (
-            <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full text-[10px] font-black uppercase border border-green-100 tracking-tight">
-              <Cloud size={12} /> Sincronização Ativa
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-[10px] font-black uppercase border border-amber-100 tracking-tight">
-              <CloudOff size={12} /> Modo Local
-            </div>
-          )}
-          
-          {isSyncing && (
-            <div className="flex items-center gap-1 text-indigo-500 animate-pulse">
-              <RefreshCw size={12} className="animate-spin" />
-              <span className="text-[10px] font-bold">Salvando...</span>
-            </div>
-          )}
-
-          {syncStatus === 'success' && !isSyncing && (
-            <div className="flex items-center gap-1 text-green-600">
-              <CheckCircle2 size={12} />
-              <span className="text-[10px] font-bold">Nuvem Atualizada</span>
-            </div>
-          )}
-          
-          {syncStatus === 'error' && (
-            <div className="flex items-center gap-1 text-red-600">
-              <AlertCircle size={12} />
-              <span className="text-[10px] font-bold">Falha na Nuvem</span>
-            </div>
-          )}
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex items-center gap-3">
+          <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${scriptUrl ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+            {scriptUrl ? 'Nuvem Ativa' : 'Offline'}
+          </div>
+          {isSyncing && <RefreshCw size={14} className="text-indigo-500 animate-spin" />}
+          {syncStatus === 'success' && <CheckCircle2 size={14} className="text-green-600" />}
+          {syncStatus === 'error' && <AlertCircle size={14} className="text-red-600" />}
         </div>
-        
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setShowSettings(!showSettings)}
-            className={`p-2 transition-all rounded-lg border shadow-sm ${showSettings ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-400 border-slate-100 hover:text-indigo-600'}`}
-            title="Configurar Planilha"
-          >
-            <Settings size={20} />
-          </button>
-        </div>
+        <button onClick={() => setShowSettings(!showSettings)} className={`p-3 rounded-2xl border transition-all ${showSettings ? 'bg-indigo-600 text-white shadow-xl rotate-90' : 'bg-white text-slate-400 hover:text-indigo-600'}`}>
+          <Settings size={22} />
+        </button>
       </div>
       {renderContent()}
     </Layout>
