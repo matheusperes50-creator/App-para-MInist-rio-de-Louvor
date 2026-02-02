@@ -7,6 +7,8 @@ export enum Role {
   OTHER = 'Outro'
 }
 
+export type UserRoleType = 'admin' | 'member' | 'guest';
+
 export interface Member {
   id: string;
   name: string;
@@ -22,6 +24,11 @@ export interface Song {
   key?: string;
 }
 
+export interface ScheduleSong {
+  id: string;
+  key: string;
+}
+
 export interface ScheduleAssignment {
   role: string;
   memberId: string;
@@ -33,9 +40,9 @@ export interface Schedule {
   serviceType: string;
   members: string[]; 
   assignments: ScheduleAssignment[];
-  songs: string[];
-  leaderId: string;
-  vocalIds?: string[]; // Novos campos para organização sugerida
+  songs: (string | ScheduleSong)[];
+  leaderIds: string[]; // Mudado de leaderId para leaderIds (array)
+  vocalIds?: string[];
 }
 
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';

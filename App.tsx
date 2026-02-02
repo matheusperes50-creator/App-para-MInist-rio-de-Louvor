@@ -4,19 +4,23 @@ import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
-import { Member, Song, Schedule, ViewType } from './types';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Login } from './components/Login';
+import { Member, Song, Schedule, ViewType, UserRoleType } from './types';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
+  const [userRole, setUserRole] = useState<UserRoleType>(() => {
+    const saved = localStorage.getItem('louvor_user_role');
+    return (saved as UserRoleType) || 'guest';
+  });
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   
-  // Inicialização segura garantindo que sempre existam arrays vazios
   const [members, setMembers] = useState<Member[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_members');
@@ -42,6 +46,16 @@ const App: React.FC = () => {
   });
 
   const isInitialMount = useRef(true);
+
+  const handleLogin = (role: UserRoleType) => {
+    setUserRole(role);
+    localStorage.setItem('louvor_user_role', role);
+  };
+
+  const handleLogout = () => {
+    setUserRole('guest');
+    localStorage.removeItem('louvor_user_role');
+  };
 
   const syncFromSheets = useCallback(async (isAuto = false) => {
     if (!isAuto) setIsSyncing(true);
@@ -78,17 +92,21 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    syncFromSheets(true);
-  }, [syncFromSheets]);
+    if (userRole !== 'guest') {
+      syncFromSheets(true);
+    }
+  }, [syncFromSheets, userRole]);
 
   useEffect(() => {
-    localStorage.setItem('louvor_members', JSON.stringify(members));
-    localStorage.setItem('louvor_songs', JSON.stringify(songs));
-    localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
-  }, [members, songs, schedules]);
+    if (userRole !== 'guest') {
+      localStorage.setItem('louvor_members', JSON.stringify(members));
+      localStorage.setItem('louvor_songs', JSON.stringify(songs));
+      localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
+    }
+  }, [members, songs, schedules, userRole]);
 
   const syncToSheets = useCallback(async () => {
-    if (!hasFetchedFromCloud || initialLoading) return;
+    if (!hasFetchedFromCloud || initialLoading || userRole !== 'admin') return;
 
     setIsSyncing(true);
     setSyncStatus('idle');
@@ -100,7 +118,6 @@ const App: React.FC = () => {
         schedules: schedules || [] 
       };
 
-      // POST com text/plain evita pré-vôo de CORS complexo no Apps Script
       await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors', 
@@ -116,40 +133,54 @@ const App: React.FC = () => {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [members, songs, schedules, hasFetchedFromCloud, initialLoading]);
+  }, [members, songs, schedules, hasFetchedFromCloud, initialLoading, userRole]);
 
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    const timer = setTimeout(() => syncToSheets(), 5000);
-    return () => clearTimeout(timer);
-  }, [members, songs, schedules, syncToSheets]);
+    if (userRole === 'admin') {
+      const timer = setTimeout(() => syncToSheets(), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [members, songs, schedules, syncToSheets, userRole]);
+
+  if (userRole === 'guest') {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
-    const syncProps = { onSync: () => syncFromSheets(false), isSyncing };
+    const isAdmin = userRole === 'admin';
+    const syncProps = { onSync: () => syncFromSheets(false), isSyncing, isAdmin };
     
     switch (view) {
       case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
       case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
-      case 'songs': return <Songs songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
       default: return null;
     }
   };
 
   return (
-    <Layout currentView={view} setView={setView}>
+    <Layout currentView={view} setView={setView} userRole={userRole}>
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            <Cloud size={14} /> {hasFetchedFromCloud ? 'Planilha Conectada' : 'Sincronizando...'}
+            <Cloud size={14} /> {hasFetchedFromCloud ? 'Sincronizado' : 'Offline'}
           </div>
           {isSyncing && <RefreshCw size={14} className="text-emerald-600 animate-spin" />}
           {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600 animate-in zoom-in" />}
           {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600 animate-in bounce" />}
         </div>
+        
+        <button 
+          onClick={handleLogout}
+          className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors"
+        >
+          Sair <LogOut size={14} />
+        </button>
       </div>
       {renderContent()}
     </Layout>
