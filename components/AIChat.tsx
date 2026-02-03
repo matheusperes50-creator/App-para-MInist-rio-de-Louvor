@@ -1,6 +1,6 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw } from 'lucide-react';
+import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw, AlertCircle } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -12,6 +12,7 @@ export const AIChat: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -26,15 +27,21 @@ export const AIChat: React.FC = () => {
     const textToSend = textOverride || input;
     if (!textToSend.trim() || isLoading) return;
 
+    setErrorDetails(null);
     const userMessage: Message = { role: 'user', content: textToSend };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // Inicializa o SDK usando a variável de ambiente injetada
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Use the API_KEY from process.env as strictly required
+      const apiKey = process.env.API_KEY;
+      
+      if (!apiKey || apiKey === '' || apiKey === 'undefined') {
+        throw new Error("API_KEY_NOT_FOUND");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
@@ -65,9 +72,22 @@ export const AIChat: React.FC = () => {
       }
     } catch (error: any) {
       console.error("Erro na comunicação com a IA:", error);
+      
+      let displayMessage = "O serviço de IA está temporariamente indisponível.";
+      
+      if (error.message === "API_KEY_NOT_FOUND") {
+        displayMessage = "Configuração incompleta: API_KEY não encontrada no ambiente.";
+      } else if (error.message?.includes("API key not valid")) {
+        displayMessage = "A chave de API fornecida é inválida ou expirou.";
+      } else if (error.message?.includes("model not found")) {
+        displayMessage = "O modelo de IA solicitado não está disponível no momento.";
+      }
+
+      setErrorDetails(displayMessage);
+      
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: `⚠️ O serviço de IA está temporariamente indisponível. Por favor, verifique a configuração da API_KEY no ambiente de execução.` 
+        content: `⚠️ Erro: ${displayMessage}\n\nPor favor, verifique se a chave API foi inserida corretamente nas Variáveis de Ambiente (Environment Variables) do seu servidor.` 
       }]);
     } finally {
       setIsLoading(false);
@@ -144,37 +164,4 @@ export const AIChat: React.FC = () => {
                 <div className="flex gap-1 items-center py-1">
                   <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce"></div>
                   <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                  <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <div className="p-4 md:p-6 bg-white border-t border-slate-50">
-        <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="relative">
-          <input 
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua dúvida ou pedido..."
-            disabled={isLoading}
-            className="w-full pl-5 pr-14 py-4 bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl outline-none font-bold text-slate-700 placeholder:text-slate-400 transition-all text-sm"
-          />
-          <button 
-            type="submit"
-            disabled={!input.trim() || isLoading}
-            className="absolute right-1.5 top-1.5 p-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-30 text-white rounded-xl shadow-lg transition-all active:scale-95"
-          >
-            {isLoading ? <RefreshCcw className="animate-spin" size={18} /> : <Send size={18} />}
-          </button>
-        </form>
-        <p className="text-center text-[8px] font-black text-slate-300 uppercase tracking-widest mt-4">
-          Baseado em Gemini Flash • Respostas podem conter erros
-        </p>
-      </div>
-    </div>
-  );
-};
+                  <div className="w-1.
