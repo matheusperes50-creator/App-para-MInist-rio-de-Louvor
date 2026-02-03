@@ -1,5 +1,5 @@
+import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw } from 'lucide-react';
 
 interface Message {
@@ -27,38 +27,51 @@ export const AIChat: React.FC = () => {
     if (!textToSend.trim() || isLoading) return;
 
     const userMessage: Message = { role: 'user', content: textToSend };
-    setMessages(prev => [...prev, userMessage]);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
     setInput('');
     setIsLoading(true);
 
     try {
+      // Inicializa o cliente GenAI logo antes da chamada para garantir o uso da chave atualizada
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const streamResponse = await ai.models.generateContentStream({
+      
+      // Cria a instância de chat conforme as diretrizes para multi-turn
+      const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
-        contents: [...messages, userMessage].map(m => ({
-          role: m.role === 'user' ? 'user' : 'model',
-          parts: [{ text: m.content }]
-        })),
         config: {
           systemInstruction: 'Você é um assistente especializado para um Ministério de Louvor cristão. Ajude com sugestões de músicas, planejamento de setlists, escrita de devocionais para a equipe e conselhos ministeriais. Seja encorajador, bíblico e prático. Use português brasileiro.',
-        }
+          thinkingConfig: { thinkingBudget: 0 } // Desabilita thinking para menor latência em chat simples
+        },
+        // Opcional: injetar histórico se necessário, mas para streaming direto usamos a mensagem atual
       });
 
+      // Se for a primeira mensagem, o histórico está vazio. Se não, idealmente passaríamos o histórico.
+      // Para simplificar e seguir o padrão de sendMessageStream:
+      const streamResponse = await chat.sendMessageStream({ message: textToSend });
+
       let assistantContent = '';
+      // Adiciona a bolha de resposta vazia que será preenchida pelo stream
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       for await (const chunk of streamResponse) {
-        const text = chunk.text;
-        assistantContent += text;
-        setMessages(prev => {
-          const newMessages = [...prev];
-          newMessages[newMessages.length - 1].content = assistantContent;
-          return newMessages;
-        });
+        const c = chunk as GenerateContentResponse;
+        const text = c.text;
+        if (text) {
+          assistantContent += text;
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1].content = assistantContent;
+            return updated;
+          });
+        }
       }
     } catch (error) {
       console.error("Erro na IA:", error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Desculpe, tive um problema ao processar sua solicitação. Verifique sua conexão.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Desculpe, tive um problema ao processar sua solicitação no servidor. Verifique se a API_KEY está configurada corretamente no Vercel.' 
+      }]);
     } finally {
       setIsLoading(false);
     }
