@@ -10,8 +10,7 @@ import {
   ShieldCheck,
   User,
   Key,
-  Check,
-  Sparkles
+  Check
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -34,7 +33,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'schedules' as ViewType, label: 'Escalas', icon: CalendarDays, adminOnly: false },
     { id: 'songs' as ViewType, label: 'Músicas', icon: Music, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
-    { id: 'chat' as ViewType, label: 'Assistente IA', icon: Sparkles, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {
@@ -56,7 +54,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
 
   return (
     <div className="h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden">
-      {/* Mobile Header - Fixed Height, part of flex-col */}
       <header className="md:hidden bg-emerald-700 text-white p-4 flex justify-between items-center z-50 shadow-md h-16 shrink-0">
         <div className="flex flex-col">
           <h1 className="font-black text-base tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
@@ -71,7 +68,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         </button>
       </header>
 
-      {/* Navigation Overlay (Mobile only) */}
       {isMobileMenuOpen && (
         <div 
           className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] transition-opacity"
@@ -79,7 +75,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         />
       )}
 
-      {/* Navigation Sidebar */}
       <nav className={`
         fixed inset-y-0 left-0 z-[70] bg-emerald-900 text-slate-100 transition-transform duration-300 ease-out md:relative md:translate-x-0 md:w-64 md:flex-shrink-0
         ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
@@ -136,14 +131,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         </div>
       </nav>
 
-      {/* Main Content Area - Scrollable */}
       <main className="flex-1 overflow-y-auto bg-slate-50 relative">
         <div className="max-w-6xl mx-auto p-4 md:p-8 pb-24 md:pb-8">
           {children}
         </div>
       </main>
 
-      {/* Change Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-xs w-full shadow-2xl animate-in zoom-in-95 duration-200">

@@ -41,8 +41,8 @@ export interface Schedule {
   members: string[]; 
   assignments: ScheduleAssignment[];
   songs: (string | ScheduleSong)[];
-  leaderIds: string[]; // Mudado de leaderId para leaderIds (array)
+  leaderIds: string[]; 
   vocalIds?: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'chat';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';

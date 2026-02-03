@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { Member, Song, Schedule } from '../types';
 import { 
@@ -11,7 +10,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -22,7 +21,6 @@ interface DashboardProps {
   isAdmin: boolean;
 }
 
-// Fix: Implemented the missing Dashboard component with stats and visualization
 export const Dashboard: React.FC<DashboardProps> = ({ 
   members = [], 
   songs = [], 
@@ -30,13 +28,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSync, 
   isSyncing 
 }) => {
-  // Stats calculations
   const totalMembers = members.length;
   const activeMembers = members.filter(m => m.isActive).length;
   const totalSongs = songs.length;
   const totalSchedules = schedules.length;
 
-  // Most played songs for the chart
   const songStats = useMemo(() => {
     const counts: Record<string, number> = {};
     schedules.forEach(s => {
@@ -75,7 +71,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </button>
       </header>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
           <div className="flex justify-between items-start mb-4">
@@ -119,7 +114,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <div className="flex items-center gap-3 mb-8">
@@ -157,14 +151,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="relative z-10">
             <h3 className="text-2xl font-black uppercase tracking-tighter mb-4">Gestão Ministerial</h3>
             <p className="text-emerald-200 text-sm font-medium mb-8 leading-relaxed">
-              Utilize o sistema para gerenciar escalas, repertório e membros da equipe. Todos os dados são sincronizados automaticamente com a nuvem via Google Sheets.
+              Mantenha os dados da sua equipe sempre atualizados para garantir uma escala equilibrada e um repertório diversificado.
             </p>
             <div className="space-y-4">
               <div className="flex items-center gap-3 bg-white/10 p-4 rounded-2xl border border-white/5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black">1</div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black"><Heart size={18} /></div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Dica</p>
-                  <p className="text-sm font-bold">Use o Assistente IA para novas setlists</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Dica Ministerial</p>
+                  <p className="text-sm font-bold">Revise as escalas semanalmente</p>
                 </div>
               </div>
             </div>
