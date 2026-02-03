@@ -12,10 +12,10 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJ
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
-  const [userRole, setUserRole] = useState<UserRoleType>(() => {
-    const saved = localStorage.getItem('louvor_user_role');
-    return (saved as UserRoleType) || 'guest';
-  });
+  
+  // Alterado para sempre iniciar como 'guest', forçando a tela de login no reinício
+  const [userRole, setUserRole] = useState<UserRoleType>('guest');
+  
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -49,12 +49,11 @@ const App: React.FC = () => {
 
   const handleLogin = (role: UserRoleType) => {
     setUserRole(role);
-    localStorage.setItem('louvor_user_role', role);
+    // Persistência removida propositalmente para atender ao pedido do usuário
   };
 
   const handleLogout = () => {
     setUserRole('guest');
-    localStorage.removeItem('louvor_user_role');
   };
 
   const syncFromSheets = useCallback(async (isAuto = false) => {
@@ -98,6 +97,8 @@ const App: React.FC = () => {
   }, [syncFromSheets, userRole]);
 
   useEffect(() => {
+    // Mantemos a persistência dos dados (membros, músicas, escalas) 
+    // para que o App funcione offline, mas o acesso (role) é resetado.
     if (userRole !== 'guest') {
       localStorage.setItem('louvor_members', JSON.stringify(members));
       localStorage.setItem('louvor_songs', JSON.stringify(songs));
