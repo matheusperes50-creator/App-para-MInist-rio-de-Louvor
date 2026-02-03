@@ -1,6 +1,7 @@
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -12,7 +13,6 @@ export const AIChat: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copying, setCopying] = useState(false);
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,21 +27,14 @@ export const AIChat: React.FC = () => {
     const textToSend = textOverride || input;
     if (!textToSend.trim() || isLoading) return;
 
-    setErrorDetails(null);
     const userMessage: Message = { role: 'user', content: textToSend };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // Use the API_KEY from process.env directly
-      const apiKey = process.env.API_KEY;
-      
-      if (!apiKey || apiKey === '' || apiKey === 'undefined') {
-        throw new Error("API_KEY_NOT_FOUND");
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
+      // Padrão obrigatório de inicialização conforme documentação
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
@@ -73,27 +66,18 @@ export const AIChat: React.FC = () => {
     } catch (error: any) {
       console.error("Erro na comunicação com a IA:", error);
       
-      let displayMessage = "O serviço de IA está temporariamente indisponível.";
-      
-      if (error.message === "API_KEY_NOT_FOUND") {
-        displayMessage = "Configuração incompleta: API_KEY não encontrada no ambiente.";
-      } else if (error.message?.includes("API key not valid")) {
-        displayMessage = "A chave de API fornecida é inválida ou expirou.";
+      let errorMsg = "O serviço de IA está temporariamente indisponível.";
+      if (error.message?.includes("API key not valid")) {
+        errorMsg = "A chave de API configurada não é válida.";
       }
 
-      setErrorDetails(displayMessage);
-      
       setMessages(prev => {
         const updated = [...prev];
-        // Se já adicionamos um placeholder para o assistente, removemos ou atualizamos
         if (updated.length > 0 && updated[updated.length - 1].role === 'assistant' && updated[updated.length - 1].content === '') {
-           updated[updated.length - 1].content = `⚠️ Erro: ${displayMessage}\n\nVerifique se a chave API foi configurada corretamente no seu ambiente.`;
+           updated[updated.length - 1].content = `⚠️ ${errorMsg}`;
            return updated;
         }
-        return [...prev, { 
-          role: 'assistant', 
-          content: `⚠️ Erro: ${displayMessage}` 
-        }];
+        return [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }];
       });
     } finally {
       setIsLoading(false);
