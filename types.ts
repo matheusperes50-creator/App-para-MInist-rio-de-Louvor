@@ -45,4 +45,4 @@ export interface Schedule {
   vocalIds?: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'chat';

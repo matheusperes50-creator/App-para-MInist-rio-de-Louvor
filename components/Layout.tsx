@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ViewType, UserRoleType } from '../types';
 import { 
@@ -11,7 +10,8 @@ import {
   ShieldCheck,
   User,
   Key,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -34,6 +34,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'schedules' as ViewType, label: 'Escalas', icon: CalendarDays, adminOnly: false },
     { id: 'songs' as ViewType, label: 'Músicas', icon: Music, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
+    { id: 'chat' as ViewType, label: 'Assistente IA', icon: Sparkles, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {

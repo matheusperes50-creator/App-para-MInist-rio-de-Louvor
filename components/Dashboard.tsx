@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Member, Song, Schedule } from '../types';
 import { 
   BarChart, 
@@ -9,7 +9,7 @@ import {
   Tooltip, 
   ResponsiveContainer, 
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, Filter } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -26,20 +26,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSync, 
   isSyncing 
 }) => {
+  const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
+
   const safeSchedules = Array.isArray(schedules) ? schedules : [];
   const safeMembers = Array.isArray(members) ? members : [];
   const safeSongs = Array.isArray(songs) ? songs : [];
 
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    safeSchedules.forEach(s => {
+      if (s.date) {
+        const [year, month] = s.date.split('-');
+        months.add(`${year}-${month}`);
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [safeSchedules]);
+
+  const formatMonthLabel = (yearMonth: string) => {
+    const [year, month] = yearMonth.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
+  };
+
   const memberParticipation = useMemo(() => {
     const participation: Record<string, number> = {};
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
 
     safeSchedules.forEach(sch => {
       if (!sch || !sch.date) return;
-      const [y, m] = sch.date.split('-').map(Number);
-      if (m - 1 === currentMonth && y === currentYear) {
+      
+      const isMatch = selectedMonthFilter === 'all' || sch.date.startsWith(selectedMonthFilter);
+      
+      if (isMatch) {
         // Usar Set para garantir que um membro não conte 2x na mesma escala (se tiver 2 funções)
         const uniqueMembersInSchedule = new Set(sch.members || []);
         uniqueMembersInSchedule.forEach(mId => {
@@ -53,9 +72,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
         name: m.name || 'Sem Nome',
         count: participation[m.id] || 0
       }))
+      .filter(m => m.count > 0)
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  }, [safeMembers, safeSchedules]);
+      .slice(0, 15);
+  }, [safeMembers, safeSchedules, selectedMonthFilter]);
 
   const topSongs = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -123,17 +143,68 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-semibold mb-6">Participação dos Membros (Mês Atual)</h3>
-          <div className="h-64 w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <h3 className="text-lg font-semibold">Participação dos Membros</h3>
+            
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar max-w-full">
+              <div className="bg-slate-50 p-1 rounded-xl border border-slate-100 flex gap-1">
+                <button 
+                  onClick={() => setSelectedMonthFilter('all')} 
+                  className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all uppercase tracking-tight ${selectedMonthFilter === 'all' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-emerald-600'}`}
+                >
+                  Todos
+                </button>
+                {availableMonths.slice(0, 3).map(month => (
+                  <button 
+                    key={month} 
+                    onClick={() => setSelectedMonthFilter(month)} 
+                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all uppercase tracking-tight whitespace-nowrap ${selectedMonthFilter === month ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-emerald-600'}`}
+                  >
+                    {month.split('-')[1]}/{month.split('-')[0].slice(2)}
+                  </button>
+                ))}
+              </div>
+              
+              {availableMonths.length > 3 && (
+                <select 
+                  value={availableMonths.includes(selectedMonthFilter) ? selectedMonthFilter : 'all'}
+                  onChange={(e) => setSelectedMonthFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-100 text-[10px] font-black uppercase tracking-tight py-2 px-3 rounded-xl outline-none text-slate-500 focus:border-emerald-500"
+                >
+                  <option value="all">Ver mais...</option>
+                  {availableMonths.map(month => (
+                    <option key={month} value={month}>{formatMonthLabel(month)}</option>
+                  ))}
+                </select>
+              )}
+            </div>
+          </div>
+
+          <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={memberParticipation}>
+              <BarChart data={memberParticipation} margin={{ bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  interval={0}
+                  angle={-45}
+                  textAnchor="end"
+                  tick={{fill: '#64748b', fontSize: 10, fontWeight: 600}} 
+                />
                 <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 10}} />
                 <Tooltip cursor={{fill: '#f0fdf4'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
                 <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          </div>
+          
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Filter size={12} className="text-slate-300" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Mostrando: {selectedMonthFilter === 'all' ? 'Todo o período' : formatMonthLabel(selectedMonthFilter)}
+            </p>
           </div>
         </div>
 

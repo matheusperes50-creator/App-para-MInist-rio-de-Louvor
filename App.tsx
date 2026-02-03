@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
+import { AIChat } from './components/AIChat';
 import { Login } from './components/Login';
 import { Member, Song, Schedule, ViewType, UserRoleType } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
@@ -159,6 +160,7 @@ const App: React.FC = () => {
       case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
       case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'chat': return <AIChat />;
       default: return null;
     }
   };
