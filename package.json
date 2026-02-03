@@ -1,3 +1,4 @@
+
 {
   "name": "louvor-manager-pro",
   "private": true,
@@ -15,6 +16,7 @@
     "recharts": "^2.13.0",
     "clsx": "^2.1.1",
     "tailwind-merge": "^2.5.4",
+    "xlsx": "^0.18.5",
     "@google/genai": "^1.39.0"
   },
   "devDependencies": {
