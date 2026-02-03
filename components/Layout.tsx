@@ -55,20 +55,34 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50">
-      <header className="md:hidden bg-emerald-700 text-white p-4 flex justify-between items-center sticky top-0 z-50 shadow-md">
+    <div className="h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden">
+      {/* Mobile Header - Fixed Height, part of flex-col */}
+      <header className="md:hidden bg-emerald-700 text-white p-4 flex justify-between items-center z-50 shadow-md h-16 shrink-0">
         <div className="flex flex-col">
-          <h1 className="font-black text-lg tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
-          <p className="text-[8px] text-emerald-200 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
+          <h1 className="font-black text-base tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
+          <p className="text-[7px] text-emerald-200 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1">
-          {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+        <button 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          className="p-2 active:bg-emerald-600 rounded-lg transition-colors"
+          aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
+        >
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </header>
 
+      {/* Navigation Overlay (Mobile only) */}
+      {isMobileMenuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Navigation Sidebar */}
       <nav className={`
-        fixed inset-0 z-40 bg-emerald-900 text-slate-100 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:w-64 md:flex-shrink-0
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+        fixed inset-y-0 left-0 z-[70] bg-emerald-900 text-slate-100 transition-transform duration-300 ease-out md:relative md:translate-x-0 md:w-64 md:flex-shrink-0
+        ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex flex-col h-full p-6">
           <div className="hidden md:block mb-10">
@@ -80,7 +94,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1 md:space-y-2 overflow-y-auto flex-1 no-scrollbar">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
@@ -89,22 +103,22 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
                   key={item.id}
                   onClick={() => handleNavClick(item.id)}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all
+                    w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all
                     ${isActive 
                       ? 'bg-emerald-600 text-white shadow-lg' 
                       : 'text-emerald-200 hover:bg-emerald-800 hover:text-white'}
                   `}
                 >
-                  <Icon size={20} />
-                  {item.label}
+                  <Icon size={20} className={isActive ? 'scale-110' : ''} />
+                  <span className="tracking-tight">{item.label}</span>
                 </button>
               );
             })}
           </div>
 
-          <div className="mt-auto pt-6 border-t border-emerald-800">
+          <div className="mt-auto pt-6 border-t border-emerald-800 shrink-0">
             <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-3">Sessão Atual</p>
-            <div className="flex items-center gap-3 bg-emerald-800/50 p-3 rounded-2xl border border-emerald-700 group relative">
+            <div className="flex items-center gap-3 bg-emerald-800/50 p-3 rounded-2xl border border-emerald-700">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shrink-0 ${isAdmin ? 'bg-emerald-500' : 'bg-slate-600'}`}>
                 {isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
               </div>
@@ -121,6 +135,13 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           </div>
         </div>
       </nav>
+
+      {/* Main Content Area - Scrollable */}
+      <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+        <div className="max-w-6xl mx-auto p-4 md:p-8 pb-24 md:pb-8">
+          {children}
+        </div>
+      </main>
 
       {/* Change Password Modal */}
       {showPasswordModal && (
@@ -144,7 +165,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
               </div>
 
               {passStatus === 'success' ? (
-                <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs animate-in fade-in">
+                <div className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center justify-center gap-2 font-black text-xs">
                   <Check size={18} /> SENHA ALTERADA!
                 </div>
               ) : (
@@ -152,7 +173,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
                   <button 
                     onClick={handleChangePassword}
                     disabled={newPass.length < 4}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-900/20"
                   >
                     CONFIRMAR
                   </button>
@@ -168,12 +189,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           </div>
         </div>
       )}
-
-      <main className="flex-1 overflow-y-auto p-4 md:p-8">
-        <div className="max-w-6xl mx-auto">
-          {children}
-        </div>
-      </main>
     </div>
   );
 };

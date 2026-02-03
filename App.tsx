@@ -167,21 +167,21 @@ const App: React.FC = () => {
 
   return (
     <Layout currentView={view} setView={setView} userRole={userRole}>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
         <div className="flex items-center gap-3">
-          <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            <Cloud size={14} /> {hasFetchedFromCloud ? 'Sincronizado' : 'Offline'}
+          <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+            <Cloud size={12} /> {hasFetchedFromCloud ? 'Sincronizado' : 'Offline'}
           </div>
-          {isSyncing && <RefreshCw size={14} className="text-emerald-600 animate-spin" />}
-          {syncStatus === 'success' && <CheckCircle2 size={16} className="text-emerald-600 animate-in zoom-in" />}
-          {syncStatus === 'error' && <AlertCircle size={16} className="text-red-600 animate-in bounce" />}
+          {isSyncing && <RefreshCw size={12} className="text-emerald-600 animate-spin" />}
+          {syncStatus === 'success' && <CheckCircle2 size={14} className="text-emerald-600" />}
+          {syncStatus === 'error' && <AlertCircle size={14} className="text-red-600" />}
         </div>
         
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-2 text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors"
+          className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors"
         >
-          Sair <LogOut size={14} />
+          Sair <LogOut size={12} />
         </button>
       </div>
       {renderContent()}
