@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw } from 'lucide-react';
+import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw, AlertTriangle } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -13,6 +13,7 @@ export const AIChat: React.FC = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copying, setCopying] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,14 +28,21 @@ export const AIChat: React.FC = () => {
     const textToSend = textOverride || input;
     if (!textToSend.trim() || isLoading) return;
 
+    setLastError(null);
     const userMessage: Message = { role: 'user', content: textToSend };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
-      // Padrão obrigatório de inicialização conforme documentação
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      // Cria a instância no momento do envio para garantir que pegue a chave atualizada
+      const apiKey = process.env.API_KEY;
+      
+      if (!apiKey) {
+        throw new Error("Chave de API não configurada. Verifique as configurações de ambiente.");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
@@ -64,20 +72,19 @@ export const AIChat: React.FC = () => {
         }
       }
     } catch (error: any) {
-      console.error("Erro na comunicação com a IA:", error);
-      
-      let errorMsg = "O serviço de IA está temporariamente indisponível.";
-      if (error.message?.includes("API key not valid")) {
-        errorMsg = "A chave de API configurada não é válida.";
-      }
+      console.error("Erro Gemini:", error);
+      const errorDetail = error.message || "Erro desconhecido na API";
+      setLastError(errorDetail);
 
       setMessages(prev => {
         const updated = [...prev];
+        const errorMessage = `⚠️ Erro de Conexão: ${errorDetail}. Certifique-se de que a API_KEY está correta e ativa.`;
+        
         if (updated.length > 0 && updated[updated.length - 1].role === 'assistant' && updated[updated.length - 1].content === '') {
-           updated[updated.length - 1].content = `⚠️ ${errorMsg}`;
+           updated[updated.length - 1].content = errorMessage;
            return updated;
         }
-        return [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }];
+        return [...prev, { role: 'assistant', content: errorMessage }];
       });
     } finally {
       setIsLoading(false);
@@ -95,8 +102,7 @@ export const AIChat: React.FC = () => {
   const suggestions = [
     "Dicas para melhorar o entrosamento do vocal",
     "Sugira 3 músicas para o tema Adoração",
-    "Escreva um devocional para o ensaio de hoje",
-    "Dicas de organização para o líder de louvor"
+    "Escreva um devocional para o ensaio de hoje"
   ];
 
   return (
@@ -108,7 +114,7 @@ export const AIChat: React.FC = () => {
           </div>
           <div>
             <h2 className="text-white font-black text-base uppercase leading-none tracking-tight">Assistente IA</h2>
-            <p className="text-emerald-300 text-[9px] font-bold uppercase tracking-widest mt-1">Inteligência Ministerial</p>
+            <p className="text-emerald-300 text-[9px] font-bold uppercase tracking-widest mt-1">Ministério PIBJE</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -128,8 +134,8 @@ export const AIChat: React.FC = () => {
               <Bot size={40} />
             </div>
             <div className="space-y-2">
-              <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Olá! Como posso ajudar hoje?</h3>
-              <p className="text-slate-400 text-xs font-medium">Estou pronto para auxiliar na gestão e espiritualidade da sua equipe.</p>
+              <h3 className="text-lg font-black text-slate-800 uppercase tracking-tight">Como posso ajudar?</h3>
+              <p className="text-slate-400 text-xs font-medium">Estou aqui para apoiar o seu ministério com música e palavra.</p>
             </div>
             <div className="grid grid-cols-1 gap-2 w-full">
               {suggestions.map((s, idx) => (
@@ -160,6 +166,13 @@ export const AIChat: React.FC = () => {
             </div>
           </div>
         ))}
+        {lastError && (
+          <div className="flex justify-center p-2">
+            <div className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-xl text-[10px] font-bold border border-red-100 uppercase tracking-tight">
+              <AlertTriangle size={14} /> Erro detectado. Verifique sua chave API.
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -169,7 +182,7 @@ export const AIChat: React.FC = () => {
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua dúvida ou pedido..."
+            placeholder="Digite aqui sua dúvida ministerial..."
             disabled={isLoading}
             className="w-full pl-5 pr-14 py-4 bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl outline-none font-bold text-slate-700 placeholder:text-slate-400 transition-all text-sm"
           />
@@ -182,7 +195,7 @@ export const AIChat: React.FC = () => {
           </button>
         </form>
         <p className="text-center text-[8px] font-black text-slate-300 uppercase tracking-widest mt-4">
-          Baseado em Gemini Flash • Respostas podem conter erros
+          Inteligência Artificial Gemini Flash
         </p>
       </div>
     </div>
