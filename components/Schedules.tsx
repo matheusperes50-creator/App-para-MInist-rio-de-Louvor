@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Schedule, Member, Song, ScheduleAssignment, ScheduleSong } from '../types';
+// Added SongStatus to the import list
+import { Schedule, Member, Song, ScheduleAssignment, ScheduleSong, SongStatus } from '../types';
 import * as XLSX from 'xlsx';
 import { 
   CalendarDays, 
@@ -336,7 +337,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
           id: newId, 
           title: item.title.trim(), 
           artist: 'Manual', 
-          key: (item.key || '').toUpperCase() 
+          key: (item.key || '').toUpperCase(),
+          status: SongStatus.PENDING,
+          youtubeUrl: '' // Empty default
         };
         newSongsToRegister.push(newSong);
         finalSongs.push({ id: newId, key: (item.key || '').toUpperCase() });

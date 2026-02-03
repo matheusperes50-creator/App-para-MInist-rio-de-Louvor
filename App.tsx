@@ -5,7 +5,7 @@ import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
 import { Login } from './components/Login';
-import { Member, Song, Schedule, ViewType, UserRoleType } from './types';
+import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
@@ -33,7 +33,9 @@ const App: React.FC = () => {
     try {
       const saved = localStorage.getItem('louvor_songs');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : [];
+      const validSongs = Array.isArray(parsed) ? parsed : [];
+      // Garantir que todas as músicas tenham status
+      return validSongs.map(s => ({ ...s, status: s.status || SongStatus.READY }));
     } catch { return []; }
   });
 
@@ -49,7 +51,6 @@ const App: React.FC = () => {
 
   const handleLogin = (role: UserRoleType) => {
     setUserRole(role);
-    // Persistência removida propositalmente para atender ao pedido do usuário
   };
 
   const handleLogout = () => {
@@ -74,7 +75,13 @@ const App: React.FC = () => {
       
       if (data && typeof data === 'object') {
         setMembers(Array.isArray(data.members) ? data.members : []);
-        setSongs(Array.isArray(data.songs) ? data.songs : []);
+        
+        const cloudSongs = Array.isArray(data.songs) ? data.songs : [];
+        setSongs(cloudSongs.map((s: any) => ({
+          ...s,
+          status: s.status || SongStatus.READY
+        })));
+        
         setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
         
         setHasFetchedFromCloud(true);
@@ -97,8 +104,6 @@ const App: React.FC = () => {
   }, [syncFromSheets, userRole]);
 
   useEffect(() => {
-    // Mantemos a persistência dos dados (membros, músicas, escalas) 
-    // para que o App funcione offline, mas o acesso (role) é resetado.
     if (userRole !== 'guest') {
       localStorage.setItem('louvor_members', JSON.stringify(members));
       localStorage.setItem('louvor_songs', JSON.stringify(songs));
@@ -158,7 +163,8 @@ const App: React.FC = () => {
     switch (view) {
       case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
       case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
-      case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} {...syncProps} />;
+      case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
+      case 'new-songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
       default: return null;
     }

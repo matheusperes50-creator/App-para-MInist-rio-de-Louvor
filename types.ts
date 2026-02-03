@@ -7,6 +7,12 @@ export enum Role {
   OTHER = 'Outro'
 }
 
+export enum SongStatus {
+  PENDING = 'Pendente',
+  REHEARSING = 'Ensaiando',
+  READY = 'Pronta'
+}
+
 export type UserRoleType = 'admin' | 'member' | 'guest';
 
 export interface Member {
@@ -22,6 +28,8 @@ export interface Song {
   artist: string;
   bpm?: number;
   key?: string;
+  status: SongStatus;
+  youtubeUrl?: string;
 }
 
 export interface ScheduleSong {
@@ -45,4 +53,4 @@ export interface Schedule {
   vocalIds?: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs';

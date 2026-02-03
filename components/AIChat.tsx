@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Sparkles, Trash2, Copy, Bot, User, Check, RefreshCcw, AlertTriangle } from 'lucide-react';
@@ -35,14 +34,8 @@ export const AIChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Cria a instância no momento do envio para garantir que pegue a chave atualizada
-      const apiKey = process.env.API_KEY;
-      
-      if (!apiKey) {
-        throw new Error("Chave de API não configurada. Verifique as configurações de ambiente.");
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
+      // Fixed: Strictly following initialization guidelines for GoogleGenAI with process.env.API_KEY
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',

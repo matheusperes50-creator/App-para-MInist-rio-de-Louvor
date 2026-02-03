@@ -10,7 +10,9 @@ import {
   ShieldCheck,
   User,
   Key,
-  Check
+  Check,
+  Sparkles,
+  Library
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -31,8 +33,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
   const navItems = [
     { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
     { id: 'schedules' as ViewType, label: 'Escalas', icon: CalendarDays, adminOnly: false },
-    { id: 'songs' as ViewType, label: 'Músicas', icon: Music, adminOnly: false },
+    { id: 'songs' as ViewType, label: 'Repertório', icon: Library, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
+    { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {
