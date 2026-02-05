@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-// Added SongStatus to the import list
 import { Schedule, Member, Song, ScheduleAssignment, ScheduleSong, SongStatus } from '../types';
 import * as XLSX from 'xlsx';
 import { 
@@ -23,7 +22,10 @@ import {
   Filter,
   Search,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  MessageCircle,
+  Square,
+  CheckSquare
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -68,10 +70,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Domingo (Noite)');
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  const [monthCopyFeedback, setMonthCopyFeedback] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
   const [activeSuggestionIdx, setActiveSuggestionIdx] = useState<number | null>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportMonth, setExportMonth] = useState('');
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const [leaderIds, setLeaderIds] = useState<string[]>([]);
@@ -116,9 +121,113 @@ export const Schedules: React.FC<SchedulesProps> = ({
   }, [schedules]);
 
   const filteredSchedules = useMemo(() => {
-    if (selectedMonthFilter === 'all') return schedules;
-    return schedules.filter(s => s.date.startsWith(selectedMonthFilter));
+    const list = selectedMonthFilter === 'all' 
+      ? schedules 
+      : schedules.filter(s => s.date.startsWith(selectedMonthFilter));
+    return [...list].sort((a, b) => a.date.localeCompare(b.date));
   }, [schedules, selectedMonthFilter]);
+
+  const formatMonthLabel = (yearMonth: string) => {
+    const [year, month] = yearMonth.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
+  };
+
+  const toggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const getScheduleText = (sch: Schedule) => {
+    const dateStr = formatDateSafely(sch.date);
+    const dayName = getDayOfWeek(sch.date);
+    const leaderList = (sch.leaderIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
+    const leaders = leaderList.length > 0 ? leaderList.join(', ') : 'A definir';
+    const vocalList = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
+    const vocals = vocalList.length > 0 ? vocalList.join(', ') : 'A definir';
+    
+    let text = `🗓️ *${dateStr}* - ${dayName} (${sch.serviceType})\n`;
+    text += `🎤 Líder(es): ${leaders}\n`;
+    text += `🗣️ Vocals: ${vocals}\n`;
+    
+    const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
+    const assignments = (sch.assignments || []).filter(a => instrumentRoles.includes(a.role));
+    
+    instrumentRoles.forEach(role => {
+      const a = assignments.find(x => x.role === role);
+      const name = members.find(m => m.id === a?.memberId)?.name || 'A definir';
+      let emoji = '🎸';
+      if (role === 'Teclado') emoji = '🎹';
+      if (role === 'Bateria') emoji = '🥁';
+      text += `${emoji} ${role}: ${name}\n`;
+    });
+
+    text += `🎶 *MÚSICAS:*\n`;
+    if (sch.songs && sch.songs.length > 0) {
+      sch.songs.forEach((songData, i) => {
+        const sId = typeof songData === 'string' ? songData : songData.id;
+        const sKey = typeof songData === 'string' ? '' : songData.key;
+        const s = songs.find(x => x.id === sId);
+        if (s) {
+          const displayKey = sKey || s.key;
+          text += `${i+1}. ${s.title}${displayKey ? ` (${displayKey})` : ''}\n`;
+        }
+      });
+    } else {
+      text += `A definir\n`;
+    }
+    return text;
+  };
+
+  const handleCopyMonthReport = async () => {
+    let reportSchedules = [];
+    
+    if (isSelectionMode) {
+      if (selectedIds.size === 0) {
+        alert("Selecione ao menos uma escala para copiar.");
+        return;
+      }
+      reportSchedules = filteredSchedules.filter(s => selectedIds.has(s.id));
+    } else {
+      if (filteredSchedules.length === 0) return;
+      reportSchedules = filteredSchedules;
+    }
+
+    let title = "*ESCALAS DE LOUVOR* 🕊️\n";
+    if (selectedMonthFilter !== 'all' && !isSelectionMode) {
+      title = `*ESCALAS DE ${formatMonthLabel(selectedMonthFilter).toUpperCase()}* 🕊️\n`;
+    }
+    
+    let fullReport = `${title}--------------------------\n\n`;
+    
+    reportSchedules.forEach((sch, idx) => {
+      fullReport += getScheduleText(sch);
+      if (idx < reportSchedules.length - 1) {
+        fullReport += `\n--------------------------\n\n`;
+      }
+    });
+
+    fullReport += `\n_Gerado pelo App Minist. Louvor Pibje_`;
+
+    try {
+      await navigator.clipboard.writeText(fullReport);
+      setMonthCopyFeedback(true);
+      setTimeout(() => {
+        setMonthCopyFeedback(false);
+        if (isSelectionMode) {
+          setIsSelectionMode(false);
+          setSelectedIds(new Set());
+        }
+      }, 3000);
+    } catch (err) {
+      console.error('Falha ao copiar relatório:', err);
+    }
+  };
 
   const handleExportExcel = () => {
     if (!exportMonth) {
@@ -267,42 +376,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   };
 
   const handleCopyText = async (sch: Schedule) => {
-    const dateStr = formatDateSafely(sch.date);
-    const dayName = getDayOfWeek(sch.date);
-    const leaderList = (sch.leaderIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
-    const leaders = leaderList.length > 0 ? leaderList.join(', ') : 'A definir';
-    const vocalList = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
-    const vocals = vocalList.length > 0 ? vocalList.join(', ') : 'A definir';
-    
-    let text = `*ESCALA DE LOUVOR* 🕊️\n`;
-    text += `🗓️ *${dateStr}* - ${dayName} (${sch.serviceType})\n\n`;
-    text += `🎤 Líder(es): ${leaders}\n`;
-    text += `🗣️ Vocals: ${vocals}\n`;
-    
-    const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
-    (sch.assignments || []).filter(a => instrumentRoles.includes(a.role)).forEach(a => {
-      const name = members.find(m => m.id === a.memberId)?.name || 'A definir';
-      let emoji = '🎸';
-      if (a.role === 'Teclado') emoji = '🎹';
-      if (a.role === 'Bateria') emoji = '🥁';
-      text += `${emoji} ${a.role}: ${name}\n`;
-    });
-
-    text += `\n🎶 *MÚSICAS:*\n`;
-    if (sch.songs && sch.songs.length > 0) {
-      sch.songs.forEach((songData, i) => {
-        const sId = typeof songData === 'string' ? songData : songData.id;
-        const sKey = typeof songData === 'string' ? '' : songData.key;
-        const s = songs.find(x => x.id === sId);
-        if (s) {
-          const displayKey = sKey || s.key;
-          text += `${i+1}. ${s.title}${displayKey ? ` (${displayKey})` : ''}\n`;
-        }
-      });
-    } else {
-      text += `A definir`;
-    }
-
+    const text = getScheduleText(sch);
     try {
       await navigator.clipboard.writeText(text);
       setCopyFeedback(sch.id);
@@ -339,7 +413,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
           artist: 'Manual', 
           key: (item.key || '').toUpperCase(),
           status: SongStatus.PENDING,
-          youtubeUrl: '' // Empty default
+          youtubeUrl: ''
         };
         newSongsToRegister.push(newSong);
         finalSongs.push({ id: newId, key: (item.key || '').toUpperCase() });
@@ -400,51 +474,83 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (confirm('Remover esta escala?')) setSchedules(prev => prev.filter(s => s.id !== id));
   };
 
-  const formatMonthLabel = (yearMonth: string) => {
-    const [year, month] = yearMonth.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
-    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
-  };
-
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-black text-slate-900">Escalas</h2>
           <p className="text-slate-500 font-medium">Gestão de louvor da igreja.</p>
         </div>
-        <div className="flex gap-2">
-          <button 
-            onClick={() => setShowExportModal(true)}
-            className="p-3 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl transition-all shadow-sm"
-            title="Exportar para Excel"
-          >
-            <FileSpreadsheet size={20} />
-          </button>
-          <button 
-            onClick={onSync}
-            disabled={isSyncing}
-            className="p-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all disabled:opacity-50"
-            title="Atualizar dados da nuvem"
-          >
-            <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
-          </button>
-          {isAdmin && (
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          {isSelectionMode ? (
+            <div className="flex gap-2 w-full md:w-auto">
+               <button 
+                onClick={handleCopyMonthReport}
+                className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all"
+              >
+                {monthCopyFeedback ? <Check size={18} /> : <MessageCircle size={18} />}
+                COPIAR {selectedIds.size} SELECIONADAS
+              </button>
+              <button 
+                onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
+                className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+              >
+                CANCELAR
+              </button>
+            </div>
+          ) : (
             <button 
-              onClick={() => {
-                if (isAdding) resetForm();
-                setIsAdding(!isAdding);
-              }}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg"
+              onClick={() => setIsSelectionMode(true)}
+              className="flex-1 md:flex-none p-3 bg-white text-emerald-600 border border-slate-200 rounded-2xl hover:bg-emerald-50 transition-all shadow-sm font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+              title="Selecionar escalas específicas para relatório"
             >
-              {isAdding ? <X size={20} /> : <Plus size={20} />}
-              {isAdding ? 'CANCELAR' : 'NOVA ESCALA'}
+              <CheckSquare size={18} /> Selecionar Escalas
             </button>
+          )}
+
+          {!isSelectionMode && (
+            <>
+              <button 
+                onClick={handleCopyMonthReport}
+                disabled={filteredSchedules.length === 0}
+                className={`flex-1 md:flex-none p-3 rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest border ${monthCopyFeedback ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
+                title="Copiar todas as escalas visíveis para WhatsApp"
+              >
+                <MessageCircle size={18} /> Relatório Completo
+              </button>
+              <button 
+                onClick={() => setShowExportModal(true)}
+                className="p-3 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl transition-all shadow-sm"
+                title="Exportar para Excel"
+              >
+                <FileSpreadsheet size={20} />
+              </button>
+              <button 
+                onClick={onSync}
+                disabled={isSyncing}
+                className="p-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all disabled:opacity-50"
+                title="Atualizar dados da nuvem"
+              >
+                <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+              </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => {
+                    if (isAdding) resetForm();
+                    setIsAdding(!isAdding);
+                  }}
+                  className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg text-[10px] uppercase tracking-widest"
+                >
+                  {isAdding ? <X size={20} /> : <Plus size={20} />}
+                  {isAdding ? 'CANCELAR' : 'NOVA ESCALA'}
+                </button>
+              )}
+            </>
           )}
         </div>
       </header>
 
+      {/* Export Modal (remains same) */}
       {showExportModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
@@ -482,21 +588,23 @@ export const Schedules: React.FC<SchedulesProps> = ({
         </div>
       )}
 
+      {/* Filters (remains same) */}
       {!isAdding && schedules.length > 0 && (
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in duration-300">
-          <div className="flex items-center gap-2 text-slate-400">
+        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in duration-300 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 text-slate-400 shrink-0">
             <Filter size={18} />
             <span className="text-[10px] font-black uppercase tracking-widest">Filtrar por Mês</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-xs font-black transition-all border-2 ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>TODAS</button>
+          <div className="flex gap-2">
+            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>TODAS</button>
             {availableMonths.map(month => (
-              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-xs font-black transition-all border-2 ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
+              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
             ))}
           </div>
         </div>
       )}
 
+      {/* Add/Edit Form (remains same) */}
       {isAdding && isAdmin && (
         <form onSubmit={saveSchedule} className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200">
           <h3 className="text-xl font-black text-emerald-800 uppercase tracking-tighter">{editingId ? 'Editar Escala' : 'Criar Nova Escala'}</h3>
@@ -599,6 +707,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
         </form>
       )}
 
+      {/* Grid of Schedules */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
         {filteredSchedules.map((sch) => {
           const dateFormatted = formatDateSafely(sch.date);
@@ -606,21 +715,45 @@ export const Schedules: React.FC<SchedulesProps> = ({
           const leaderNames = (sch.leaderIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
           const vocalNames = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
           const isCopied = copyFeedback === sch.id;
+          const isSelected = selectedIds.has(sch.id);
+
           return (
-            <div key={sch.id} className="bg-[#0b3d2e] text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col group border-4 border-white/10 hover:border-emerald-500/30 transition-all">
+            <div 
+              key={sch.id} 
+              onClick={() => isSelectionMode && toggleSelection(sch.id)}
+              className={`
+                bg-[#0b3d2e] text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col group border-4 transition-all
+                ${isSelectionMode ? 'cursor-pointer hover:border-emerald-400' : 'border-white/10 hover:border-emerald-500/30'}
+                ${isSelected ? 'border-emerald-500 scale-[0.98]' : ''}
+              `}
+            >
+              {isSelectionMode && (
+                <div className={`absolute top-4 left-4 z-10 p-1.5 rounded-lg border-2 transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white/10 border-white/20 text-white/40'}`}>
+                  {isSelected ? <Check size={20} /> : <Square size={20} />}
+                </div>
+              )}
+
               <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
+                <div className={`flex items-center gap-3 transition-transform ${isSelectionMode ? 'translate-x-10' : ''}`}>
                   <div className="bg-white/10 p-2.5 rounded-xl"><CalendarIcon size={20} className="text-emerald-400" /></div>
                   <div>
                     <h3 className="font-black text-lg leading-tight uppercase tracking-tight">Escala de Louvor 🕊️</h3>
                     <p className="text-emerald-300 text-[11px] font-bold uppercase tracking-widest">{dateFormatted} - {dayName} ({sch.serviceType})</p>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <button onClick={() => handleCopyText(sch)} className={`p-2 rounded-lg transition-all flex items-center gap-1 ${isCopied ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-emerald-500 text-white'}`} title="Copiar para WhatsApp">{isCopied ? <Check size={16} /> : <Copy size={16} />}{isCopied && <span className="text-[10px] font-black uppercase">Copiado!</span>}</button>
-                  {isAdmin && (<><button onClick={() => handleEdit(sch)} className="p-2 bg-white/10 rounded-lg hover:bg-blue-500 transition-all text-white" title="Editar Escala"><Edit2 size={16} /></button><button onClick={() => removeSchedule(sch.id)} className="p-2 bg-white/10 rounded-lg hover:bg-red-500 transition-all text-white"><Trash2 size={16} /></button></>)}
-                </div>
+                {!isSelectionMode && (
+                  <div className="flex gap-1">
+                    <button onClick={(e) => { e.stopPropagation(); handleCopyText(sch); }} className={`p-2 rounded-lg transition-all flex items-center gap-1 ${isCopied ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-emerald-500 text-white'}`} title="Copiar para WhatsApp">{isCopied ? <Check size={16} /> : <Copy size={16} />}{isCopied && <span className="text-[10px] font-black uppercase">Copiado!</span>}</button>
+                    {isAdmin && (
+                      <>
+                        <button onClick={(e) => { e.stopPropagation(); handleEdit(sch); }} className="p-2 bg-white/10 rounded-lg hover:bg-blue-500 transition-all text-white" title="Editar Escala"><Edit2 size={16} /></button>
+                        <button onClick={(e) => { e.stopPropagation(); removeSchedule(sch.id); }} className="p-2 bg-white/10 rounded-lg hover:bg-red-500 transition-all text-white"><Trash2 size={16} /></button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
+              
               <div className="space-y-3 mt-4 flex-1">
                 <div className="flex items-center gap-3"><Mic2 size={18} className="text-emerald-400 shrink-0" /><span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Líder(es):</strong> {leaderNames.join(', ') || 'A definir'}</span></div>
                 <div className="flex items-start gap-3"><MessageSquare size={18} className="text-emerald-400 shrink-0 mt-1" /><span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Vocals:</strong> {vocalNames.join(', ') || 'A definir'}</span></div>
@@ -634,6 +767,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   );
                 })}
               </div>
+              
               <div className="mt-6 pt-4 border-t border-white/5">
                 <h4 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3"><Music size={14} /> Músicas do Dia</h4>
                 <div className="space-y-1.5">
@@ -655,7 +789,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
           );
         })}
         {filteredSchedules.length === 0 && !isAdding && (
-          <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100"><CalendarIcon size={40} className="text-slate-200 mx-auto mb-4" /><p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhuma escala para este período</p></div>
+          <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
+            <CalendarIcon size={40} className="text-slate-200 mx-auto mb-4" />
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhuma escala para este período</p>
+          </div>
         )}
       </div>
     </div>
