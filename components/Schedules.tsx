@@ -68,7 +68,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState('');
-  const [serviceType, setServiceType] = useState('Domingo (Noite)');
+  const [serviceType, setServiceType] = useState('Domingo');
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [monthCopyFeedback, setMonthCopyFeedback] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
@@ -616,6 +616,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">PERÍODO / TIPO</label>
               <select value={serviceType} onChange={(e) => setServiceType(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold">
+                <option>Domingo</option>
                 <option>Domingo (Noite)</option>
                 <option>Domingo (Manhã)</option>
                 <option>Quarta-feira</option>
