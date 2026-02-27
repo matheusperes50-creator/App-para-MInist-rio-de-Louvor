@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Member, Song, Schedule } from '../types';
 import { 
   BarChart, 
@@ -10,7 +10,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2 } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -28,10 +28,45 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onSync, 
   isSyncing 
 }) => {
+  const [searchInputValue, setSearchInputValue] = useState('');
+  const [confirmedSearchName, setConfirmedSearchName] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  const today = new Date().toISOString().split('T')[0];
+  
   const totalMembers = members.length;
   const activeMembers = members.filter(m => m.isActive).length;
   const totalSongs = songs.length;
   const totalSchedules = schedules.length;
+
+  const nextSchedule = useMemo(() => {
+    return [...schedules]
+      .filter(s => s.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))[0];
+  }, [schedules, today]);
+
+  const suggestions = useMemo(() => {
+    if (!searchInputValue.trim() || !showSuggestions) return [];
+    const term = searchInputValue.toLowerCase();
+    return members
+      .filter(m => m.name.toLowerCase().includes(term))
+      .slice(0, 5);
+  }, [searchInputValue, members, showSuggestions]);
+
+  const searchResults = useMemo(() => {
+    if (!confirmedSearchName.trim()) return { schedules: [], matchingMemberIds: new Set<string>() };
+    
+    const term = confirmedSearchName.toLowerCase();
+    const matchingMembers = members.filter(m => m.name.toLowerCase().includes(term));
+    const matchingMemberIds = new Set(matchingMembers.map(m => m.id));
+    
+    const filteredSchedules = schedules
+      .filter(s => s.date >= today) // Only upcoming
+      .filter(s => s.members.some(mId => matchingMemberIds.has(mId)))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { schedules: filteredSchedules, matchingMemberIds };
+  }, [confirmedSearchName, members, schedules, today]);
 
   const songStats = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -70,6 +105,127 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
         </button>
       </header>
+
+      {/* Próxima Escala e Busca */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card de Próxima Escala */}
+        <div className="lg:col-span-2 bg-emerald-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden">
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-6">
+              <CalendarDays size={20} className="text-emerald-200" />
+              <h3 className="font-black uppercase text-xs tracking-[0.2em] text-emerald-200">Próxima Escala</h3>
+            </div>
+            
+            {nextSchedule ? (
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                  <h4 className="text-4xl font-black tracking-tighter mb-2">
+                    {new Date(nextSchedule.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                  </h4>
+                  <p className="text-emerald-100 font-bold text-lg uppercase tracking-widest">
+                    {nextSchedule.serviceType}
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-3">
+                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                    <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Ministro</p>
+                    <p className="text-sm font-bold">
+                      {nextSchedule.leaderIds.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(', ') || 'A definir'}
+                    </p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                    <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Músicas</p>
+                    <p className="text-sm font-bold">{nextSchedule.songs?.length || 0} canções</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-emerald-100 font-bold">Nenhuma escala futura agendada.</p>
+            )}
+          </div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
+        </div>
+
+        {/* Busca de Integrante */}
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col relative">
+          <div className="flex items-center gap-2 mb-6">
+            <Search size={20} className="text-slate-400" />
+            <h3 className="font-black uppercase text-xs tracking-widest text-slate-400">Minha Escala</h3>
+          </div>
+          
+          <div className="flex gap-2 mb-4 relative">
+            <div className="flex-1 relative">
+              <input 
+                type="text" 
+                placeholder="Digite seu nome..." 
+                value={searchInputValue}
+                onChange={(e) => {
+                  setSearchInputValue(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onFocus={() => setShowSuggestions(true)}
+                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl py-4 px-6 outline-none font-bold transition-all"
+              />
+              
+              {/* Sugestões */}
+              {suggestions.length > 0 && (
+                <div className="absolute z-20 left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {suggestions.map(m => (
+                    <button
+                      key={m.id}
+                      onClick={() => {
+                        setSearchInputValue(m.name);
+                        setShowSuggestions(false);
+                      }}
+                      className="w-full text-left px-6 py-3 hover:bg-emerald-50 transition-colors font-bold text-slate-700 text-sm border-b border-slate-50 last:border-0"
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <button
+              onClick={() => {
+                setConfirmedSearchName(searchInputValue);
+                setShowSuggestions(false);
+              }}
+              className="bg-emerald-600 text-white p-4 rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center shrink-0"
+              title="Pesquisar"
+            >
+              <Search size={20} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-[180px] space-y-3 pr-2 custom-scrollbar">
+            {confirmedSearchName.trim() ? (
+              searchResults.schedules.length > 0 ? (
+                searchResults.schedules.map(s => (
+                  <div key={s.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                        {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                      </p>
+                      <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+                        {s.serviceType.split(' ')[0]}
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase">
+                      {s.assignments.find(a => searchResults.matchingMemberIds.has(a.memberId))?.role || 'Integrante'}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center py-8 text-xs font-bold text-slate-400 uppercase italic">Nenhuma escala futura encontrada para "{confirmedSearchName}".</p>
+              )
+            ) : (
+              <p className="text-center py-8 text-xs font-bold text-slate-400 uppercase italic">Busque seu nome para ver suas escalas.</p>
+            )}
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
