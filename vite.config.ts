@@ -7,15 +7,6 @@ export default defineConfig({
     port: 3000
   },
   build: {
-    chunkSizeWarningLimit: 1600,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-charts': ['recharts'],
-          'vendor-excel': ['xlsx'],
-          'vendor-icons': ['lucide-react']
-        }
-      }
-    }
+    chunkSizeWarningLimit: 2000
   }
 });

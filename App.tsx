@@ -199,10 +199,6 @@ const App: React.FC = () => {
     }
   }, [userRole, hasFetchedFromCloud, logAccess]);
 
-  if (userRole === 'guest') {
-    return <Login onLogin={handleLogin} />;
-  }
-
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
     // Força uma sincronização mais rápida para avisos
@@ -210,6 +206,10 @@ const App: React.FC = () => {
       setTimeout(() => syncToSheets(), 1000);
     }
   }, [userRole, syncToSheets]);
+
+  if (userRole === 'guest') {
+    return <Login onLogin={handleLogin} />;
+  }
 
   const renderContent = () => {
     const isAdmin = userRole === 'admin';

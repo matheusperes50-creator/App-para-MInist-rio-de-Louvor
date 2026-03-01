@@ -10,8 +10,6 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X } from 'lucide-react';
 
 interface DashboardProps {
@@ -390,14 +388,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex-1 flex flex-col">
                 <div className="flex-1 text-emerald-100 text-sm font-medium leading-relaxed overflow-y-auto max-h-[180px] custom-scrollbar pr-2 markdown-announcements">
                   {announcements ? (
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" />
-                      }}
-                    >
+                    <div className="whitespace-pre-wrap">
                       {announcements}
-                    </ReactMarkdown>
+                    </div>
                   ) : (
                     "Nenhum aviso no momento. Administradores podem adicionar avisos, links e temas aqui."
                   )}
