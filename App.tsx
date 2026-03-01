@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
+  const hasFetchedRef = useRef(false);
   
   const [members, setMembers] = useState<Member[]>(() => {
     try {
@@ -93,9 +94,20 @@ const App: React.FC = () => {
         })));
         
         setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
-        setAnnouncements(data.announcements || '');
+        
+        setAnnouncements(prev => {
+          // Se a nuvem tem dados, usa os dados da nuvem
+          if (data.announcements) return data.announcements;
+          // Se não tem dados na nuvem mas já tínhamos sincronizado antes, 
+          // significa que os avisos foram apagados na nuvem
+          if (hasFetchedRef.current) return '';
+          // Se é a primeira sincronização e a nuvem está vazia, mantém o que está no localStorage
+          return prev || '';
+        });
+
         setAccessLogs(Array.isArray(data.accessLogs) ? data.accessLogs : []);
         
+        hasFetchedRef.current = true;
         setHasFetchedFromCloud(true);
         if (!isAuto) setSyncStatus('success');
       }
@@ -116,13 +128,11 @@ const App: React.FC = () => {
   }, [syncFromSheets, userRole]);
 
   useEffect(() => {
-    if (userRole !== 'guest') {
-      localStorage.setItem('louvor_members', JSON.stringify(members));
-      localStorage.setItem('louvor_songs', JSON.stringify(songs));
-      localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
-      localStorage.setItem('louvor_announcements', announcements);
-    }
-  }, [members, songs, schedules, announcements, userRole]);
+    localStorage.setItem('louvor_members', JSON.stringify(members));
+    localStorage.setItem('louvor_songs', JSON.stringify(songs));
+    localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
+    localStorage.setItem('louvor_announcements', announcements);
+  }, [members, songs, schedules, announcements]);
 
   const syncToSheets = useCallback(async () => {
     if (!hasFetchedFromCloud || initialLoading || userRole !== 'admin') return;
@@ -162,7 +172,7 @@ const App: React.FC = () => {
       return;
     }
     if (userRole === 'admin') {
-      const timer = setTimeout(() => syncToSheets(), 5000);
+      const timer = setTimeout(() => syncToSheets(), 2000);
       return () => clearTimeout(timer);
     }
   }, [members, songs, schedules, announcements, accessLogs, syncToSheets, userRole]);
@@ -193,12 +203,20 @@ const App: React.FC = () => {
     return <Login onLogin={handleLogin} />;
   }
 
+  const handleUpdateAnnouncements = useCallback((val: string) => {
+    setAnnouncements(val);
+    // Força uma sincronização mais rápida para avisos
+    if (userRole === 'admin') {
+      setTimeout(() => syncToSheets(), 1000);
+    }
+  }, [userRole, syncToSheets]);
+
   const renderContent = () => {
     const isAdmin = userRole === 'admin';
     const syncProps = { onSync: () => syncFromSheets(false), isSyncing, isAdmin };
     
     switch (view) {
-      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} announcements={announcements} setAnnouncements={setAnnouncements} {...syncProps} />;
+      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} announcements={announcements} setAnnouncements={handleUpdateAnnouncements} {...syncProps} />;
       case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
       case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
       case 'new-songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
