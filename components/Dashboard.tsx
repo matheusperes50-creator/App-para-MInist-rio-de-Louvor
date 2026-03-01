@@ -117,27 +117,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             
             {nextSchedule ? (
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                  <h4 className="text-4xl font-black tracking-tighter mb-2">
-                    {new Date(nextSchedule.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
-                  </h4>
-                  <p className="text-emerald-100 font-bold text-lg uppercase tracking-widest">
-                    {nextSchedule.serviceType}
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap gap-3">
-                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                    <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Ministro</p>
-                    <p className="text-sm font-bold">
-                      {nextSchedule.leaderIds.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(', ') || 'A definir'}
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  <div>
+                    <h4 className="text-4xl font-black tracking-tighter mb-2">
+                      {new Date(nextSchedule.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
+                    </h4>
+                    <p className="text-emerald-100 font-bold text-lg uppercase tracking-widest">
+                      {nextSchedule.serviceType}
                     </p>
                   </div>
-                  <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                    <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Músicas</p>
-                    <p className="text-sm font-bold">{nextSchedule.songs?.length || 0} canções</p>
+                  
+                  <div className="flex flex-wrap gap-3">
+                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                      <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Ministro</p>
+                      <p className="text-sm font-bold">
+                        {nextSchedule.leaderIds.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(', ') || 'A definir'}
+                      </p>
+                    </div>
+                    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                      <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Músicas</p>
+                      <p className="text-sm font-bold">{nextSchedule.songs?.length || 0} canções</p>
+                    </div>
                   </div>
+                </div>
+
+                <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+                  <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300 mb-2 flex items-center gap-2">
+                    <Users size={12} /> Equipe Completa
+                  </p>
+                  <p className="text-xs font-medium text-emerald-50 leading-relaxed">
+                    {nextSchedule.members.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' • ') || 'Nenhum integrante escalado'}
+                  </p>
                 </div>
               </div>
             ) : (
