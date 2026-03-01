@@ -20,6 +20,7 @@ export interface Member {
   name: string;
   roles: Role[];
   isActive: boolean;
+  photoUrl?: string;
 }
 
 export interface Song {

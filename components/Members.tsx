@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Member, Role } from '../types';
 // Added missing 'Users' icon to the import list from lucide-react
-import { UserPlus, Search, Trash2, Edit2, Check, X, Power, RefreshCw, UserCheck, Shield, Users } from 'lucide-react';
+import { UserPlus, Search, Trash2, Edit2, Check, X, Power, RefreshCw, UserCheck, Shield, Users, Camera, Image as ImageIcon } from 'lucide-react';
 
 interface MembersProps {
   members: Member[];
@@ -20,6 +20,47 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
   
   const [newName, setNewName] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 150;
+          const MAX_HEIGHT = 150;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Use low quality to keep it under Sheets character limit
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          setPhotoUrl(dataUrl);
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const toggleRoleSelection = (role: Role) => {
     setSelectedRoles(prev => 
@@ -31,6 +72,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setEditingMemberId(null);
     setNewName('');
     setSelectedRoles([]);
+    setPhotoUrl(undefined);
     setShowModal(true);
   };
 
@@ -38,6 +80,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setEditingMemberId(member.id);
     setNewName(member.name || '');
     setSelectedRoles(Array.isArray(member.roles) ? member.roles : []);
+    setPhotoUrl(member.photoUrl);
     setShowModal(true);
   };
 
@@ -46,6 +89,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setEditingMemberId(null);
     setNewName('');
     setSelectedRoles([]);
+    setPhotoUrl(undefined);
   };
 
   const saveMember = (e: React.FormEvent) => {
@@ -57,7 +101,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
     if (editingMemberId) {
       setMembers(prev => prev.map(m => 
-        m.id === editingMemberId ? { ...m, name: newName.trim(), roles: selectedRoles } : m
+        m.id === editingMemberId ? { ...m, name: newName.trim(), roles: selectedRoles, photoUrl } : m
       ));
     } else {
       const newMember: Member = {
@@ -65,6 +109,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         name: newName.trim(),
         roles: selectedRoles,
         isActive: true,
+        photoUrl
       };
       setMembers(prev => [...prev, newMember]);
     }
@@ -128,6 +173,24 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
             
             <form onSubmit={saveMember} className="space-y-8">
               <div className="space-y-6">
+                {/* Photo Upload Section */}
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-24 h-24 rounded-[2rem] bg-slate-50 border-2 border-slate-100 overflow-hidden flex items-center justify-center transition-all group-hover:border-emerald-500">
+                      {photoUrl ? (
+                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <Camera className="text-slate-300" size={32} />
+                      )}
+                    </div>
+                    <label className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2 rounded-xl shadow-lg cursor-pointer hover:bg-emerald-700 transition-all">
+                      <ImageIcon size={16} />
+                      <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                    </label>
+                  </div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Foto do Integrante</p>
+                </div>
+
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
                   <input 
@@ -203,8 +266,12 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
                   <td className="px-10 py-6">
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-colors ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
-                        {m.name.charAt(0).toUpperCase()}
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                        {m.photoUrl ? (
+                          <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          m.name.charAt(0).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <p className={`font-black text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>

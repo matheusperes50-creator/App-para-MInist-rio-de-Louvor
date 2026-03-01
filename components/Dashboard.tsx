@@ -213,21 +213,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex-1 overflow-y-auto max-h-[180px] space-y-3 pr-2 custom-scrollbar">
             {confirmedSearchName.trim() ? (
               searchResults.schedules.length > 0 ? (
-                searchResults.schedules.map(s => (
-                  <div key={s.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
-                        {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                      </p>
-                      <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
-                        {s.serviceType.split(' ')[0]}
-                      </span>
+                searchResults.schedules.map(s => {
+                  const memberAssignment = s.assignments.find(a => searchResults.matchingMemberIds.has(a.memberId));
+                  const member = members.find(m => m.id === memberAssignment?.memberId);
+                  
+                  return (
+                    <div key={s.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 overflow-hidden flex items-center justify-center shrink-0">
+                        {member?.photoUrl ? (
+                          <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <Users size={16} className="text-emerald-300" />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                            {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                          </p>
+                          <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+                            {s.serviceType.split(' ')[0]}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">
+                          {memberAssignment?.role || 'Integrante'}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">
-                      {s.assignments.find(a => searchResults.matchingMemberIds.has(a.memberId))?.role || 'Integrante'}
-                    </p>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <p className="text-center py-8 text-xs font-bold text-slate-400 uppercase italic">Nenhuma escala futura encontrada para "{confirmedSearchName}".</p>
               )
