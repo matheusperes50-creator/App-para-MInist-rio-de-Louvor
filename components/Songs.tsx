@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Song, Schedule, SongStatus } from '../types';
-import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Youtube, ExternalLink, Sparkles } from 'lucide-react';
+import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Youtube, ExternalLink, Sparkles, LayoutGrid, List } from 'lucide-react';
 
 interface SongsProps {
   songs: Song[];
@@ -25,6 +25,7 @@ export const Songs: React.FC<SongsProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   
   // Status manual override removed since tabs now control high-level status
   // But we still allow filtering within the tab if desired (e.g. READY vs REHEARSING in repertoire)
@@ -282,6 +283,23 @@ export const Songs: React.FC<SongsProps> = ({
           />
         </div>
         
+        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          <button 
+            onClick={() => setViewMode('grid')} 
+            className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            title="Visualização em Grade"
+          >
+            <LayoutGrid size={18} />
+          </button>
+          <button 
+            onClick={() => setViewMode('list')} 
+            className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+            title="Visualização em Lista"
+          >
+            <List size={18} />
+          </button>
+        </div>
+        
         {filterMode === 'repertoire' && (
           <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
             <button onClick={() => setInternalFilter('ALL')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${internalFilter === 'ALL' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>TODAS</button>
@@ -301,10 +319,59 @@ export const Songs: React.FC<SongsProps> = ({
           <h3 className="font-black uppercase tracking-widest text-[10px]">{viewTitle} ({filteredSongs.length})</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
+        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20" : "flex flex-col gap-3 pb-20"}>
           {filteredSongs.map((song) => {
             const stat = songsStats[song.id] || { last30Days: 0, allKeys: new Set() };
             
+            if (viewMode === 'list') {
+              return (
+                <div key={song.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex items-center gap-4">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getStatusStyle(song.status).split(' ')[0]}`}>
+                    {getStatusIcon(song.status)}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-black text-slate-800 text-sm truncate">{song.title}</h4>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{song.artist}</p>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-6 px-4 border-x border-slate-50">
+                    <div className="text-center min-w-[40px]">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tom</p>
+                      <p className="text-xs font-black text-emerald-600">{song.key || '-'}</p>
+                    </div>
+                    <div className="text-center min-w-[40px]">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">BPM</p>
+                      <p className="text-xs font-black text-slate-800">{song.bpm || '-'}</p>
+                    </div>
+                    <div className="text-center min-w-[40px]">
+                      <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">30d</p>
+                      <p className="text-xs font-black text-emerald-600">{stat.last30Days}x</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {song.youtubeUrl && (
+                      <a 
+                        href={song.youtubeUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Youtube size={18} />
+                      </a>
+                    )}
+                    {isAdmin && (
+                      <div className="flex gap-1">
+                        <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 size={16} /></button>
+                        <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={song.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full relative overflow-hidden">
                 <div className="flex justify-between items-start mb-4">

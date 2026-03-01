@@ -36,6 +36,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'songs' as ViewType, label: 'Repertório', icon: Library, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
     { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
+    { id: 'logs' as ViewType, label: 'Logs de Acesso', icon: ShieldCheck, adminOnly: true },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {

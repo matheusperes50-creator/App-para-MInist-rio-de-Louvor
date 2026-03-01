@@ -10,12 +10,14 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2 } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
   songs: Song[];
   schedules: Schedule[];
+  announcements: string;
+  setAnnouncements: (val: string) => void;
   onSync: () => void;
   isSyncing: boolean;
   isAdmin: boolean;
@@ -25,12 +27,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   members = [], 
   songs = [], 
   schedules = [], 
+  announcements = '',
+  setAnnouncements,
   onSync, 
-  isSyncing 
+  isSyncing,
+  isAdmin
 }) => {
   const [searchInputValue, setSearchInputValue] = useState('');
   const [confirmedSearchName, setConfirmedSearchName] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isEditingAnnouncements, setIsEditingAnnouncements] = useState(false);
+  const [tempAnnouncements, setTempAnnouncements] = useState(announcements);
   
   const today = new Date().toISOString().split('T')[0];
   
@@ -328,21 +335,74 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="bg-emerald-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-emerald-900/20">
-          <div className="relative z-10">
-            <h3 className="text-2xl font-black uppercase tracking-tighter mb-4">Gestão Ministerial</h3>
-            <p className="text-emerald-200 text-sm font-medium mb-8 leading-relaxed">
-              Mantenha os dados da sua equipe sempre atualizados para garantir uma escala equilibrada e um repertório diversificado.
-            </p>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 bg-white/10 p-4 rounded-2xl border border-white/5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black"><Heart size={18} /></div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Dica Ministerial</p>
-                  <p className="text-sm font-bold">Revise as escalas semanalmente</p>
+        <div className="bg-emerald-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-emerald-900/20 flex flex-col">
+          <div className="relative z-10 flex-1 flex flex-col">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="bg-emerald-500/20 p-2 rounded-lg">
+                  <Megaphone size={20} className="text-emerald-400" />
+                </div>
+                <h3 className="text-xl font-black uppercase tracking-tighter">Mural de Avisos</h3>
+              </div>
+              {isAdmin && !isEditingAnnouncements && (
+                <button 
+                  onClick={() => {
+                    setTempAnnouncements(announcements);
+                    setIsEditingAnnouncements(true);
+                  }}
+                  className="p-2 hover:bg-white/10 rounded-xl transition-colors text-emerald-400"
+                  title="Editar Avisos"
+                >
+                  <Edit3 size={18} />
+                </button>
+              )}
+            </div>
+
+            {isEditingAnnouncements ? (
+              <div className="flex-1 flex flex-col gap-4">
+                <textarea
+                  value={tempAnnouncements}
+                  onChange={(e) => setTempAnnouncements(e.target.value)}
+                  className="flex-1 w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm font-medium outline-none focus:border-emerald-500 transition-all resize-none custom-scrollbar"
+                  placeholder="Digite os avisos, links de músicas, temas do mês..."
+                />
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => {
+                      setAnnouncements(tempAnnouncements);
+                      setIsEditingAnnouncements(false);
+                    }}
+                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Save size={14} /> Salvar
+                  </button>
+                  <button 
+                    onClick={() => setIsEditingAnnouncements(false)}
+                    className="px-4 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex-1 flex flex-col">
+                <div className="flex-1 text-emerald-100 text-sm font-medium leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[180px] custom-scrollbar pr-2">
+                  {announcements || "Nenhum aviso no momento. Administradores podem adicionar avisos, links e temas aqui."}
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-white/10">
+                  <div className="flex items-center gap-3 bg-white/5 p-4 rounded-2xl border border-white/5">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-black">
+                      <Heart size={18} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Dica Ministerial</p>
+                      <p className="text-sm font-bold">Revise as escalas semanalmente</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl"></div>
         </div>

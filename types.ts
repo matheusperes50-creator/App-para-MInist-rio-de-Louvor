@@ -54,4 +54,12 @@ export interface Schedule {
   vocalIds?: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs';
+export interface AccessLog {
+  id: string;
+  userEmail: string;
+  role: UserRoleType;
+  device: string;
+  timestamp: string;
+}
+
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'logs';

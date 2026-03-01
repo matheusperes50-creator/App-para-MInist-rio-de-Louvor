@@ -4,9 +4,10 @@ import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
+import { AccessLogs } from './components/AccessLogs';
 import { Login } from './components/Login';
-import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus } from './types';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
+import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, AccessLog } from './types';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
@@ -47,6 +48,15 @@ const App: React.FC = () => {
     } catch { return []; }
   });
 
+  const [announcements, setAnnouncements] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('louvor_announcements');
+      return saved || '';
+    } catch { return ''; }
+  });
+
+  const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
+
   const isInitialMount = useRef(true);
 
   const handleLogin = (role: UserRoleType) => {
@@ -83,6 +93,8 @@ const App: React.FC = () => {
         })));
         
         setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
+        setAnnouncements(data.announcements || '');
+        setAccessLogs(Array.isArray(data.accessLogs) ? data.accessLogs : []);
         
         setHasFetchedFromCloud(true);
         if (!isAuto) setSyncStatus('success');
@@ -108,8 +120,9 @@ const App: React.FC = () => {
       localStorage.setItem('louvor_members', JSON.stringify(members));
       localStorage.setItem('louvor_songs', JSON.stringify(songs));
       localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
+      localStorage.setItem('louvor_announcements', announcements);
     }
-  }, [members, songs, schedules, userRole]);
+  }, [members, songs, schedules, announcements, userRole]);
 
   const syncToSheets = useCallback(async () => {
     if (!hasFetchedFromCloud || initialLoading || userRole !== 'admin') return;
@@ -121,7 +134,9 @@ const App: React.FC = () => {
       const payload = { 
         members: members || [], 
         songs: songs || [], 
-        schedules: schedules || [] 
+        schedules: schedules || [],
+        announcements: announcements || '',
+        accessLogs: accessLogs || []
       };
 
       await fetch(SCRIPT_URL, {
@@ -150,7 +165,29 @@ const App: React.FC = () => {
       const timer = setTimeout(() => syncToSheets(), 5000);
       return () => clearTimeout(timer);
     }
-  }, [members, songs, schedules, syncToSheets, userRole]);
+  }, [members, songs, schedules, announcements, accessLogs, syncToSheets, userRole]);
+
+  const logAccess = useCallback(async (role: UserRoleType) => {
+    const userAgent = navigator.userAgent;
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+    const device = isMobile ? 'Mobile' : 'Desktop';
+    
+    const newLog: AccessLog = {
+      id: Math.random().toString(36).substring(2, 10).toUpperCase(),
+      userEmail: 'matheusperes50@gmail.com', // Using the provided context email
+      role,
+      device,
+      timestamp: new Date().toISOString()
+    };
+
+    setAccessLogs(prev => [newLog, ...prev].slice(0, 100)); // Keep last 100 logs
+  }, []);
+
+  useEffect(() => {
+    if (userRole !== 'guest' && hasFetchedFromCloud) {
+      logAccess(userRole);
+    }
+  }, [userRole, hasFetchedFromCloud, logAccess]);
 
   if (userRole === 'guest') {
     return <Login onLogin={handleLogin} />;
@@ -161,11 +198,12 @@ const App: React.FC = () => {
     const syncProps = { onSync: () => syncFromSheets(false), isSyncing, isAdmin };
     
     switch (view) {
-      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} {...syncProps} />;
+      case 'dashboard': return <Dashboard members={members} songs={songs} schedules={schedules} announcements={announcements} setAnnouncements={setAnnouncements} {...syncProps} />;
       case 'members': return <Members members={members} setMembers={setMembers} {...syncProps} />;
       case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
       case 'new-songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
+      case 'logs': return <AccessLogs logs={accessLogs} {...syncProps} />;
       default: return null;
     }
   };
