@@ -25,7 +25,10 @@ import {
   FileSpreadsheet,
   MessageCircle,
   Square,
-  CheckSquare
+  CheckSquare,
+  CheckCircle2,
+  Circle,
+  UserCheck
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -111,8 +114,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    schedules.forEach(s => {
-      if (s.date) {
+    (schedules || []).forEach(s => {
+      if (s && s.date) {
         const [year, month] = s.date.split('-');
         months.add(`${year}-${month}`);
       }
@@ -122,9 +125,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
   const filteredSchedules = useMemo(() => {
     const list = selectedMonthFilter === 'all' 
-      ? schedules 
-      : schedules.filter(s => s.date.startsWith(selectedMonthFilter));
-    return [...list].sort((a, b) => a.date.localeCompare(b.date));
+      ? (schedules || []) 
+      : (schedules || []).filter(s => s && s.date && s.date.startsWith(selectedMonthFilter));
+    return [...list].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   }, [schedules, selectedMonthFilter]);
 
   const formatMonthLabel = (yearMonth: string) => {
@@ -160,11 +163,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
     
     instrumentRoles.forEach(role => {
       const a = assignments.find(x => x.role === role);
-      const name = members.find(m => m.id === a?.memberId)?.name || 'A definir';
-      let emoji = '🎸';
-      if (role === 'Teclado') emoji = '🎹';
-      if (role === 'Bateria') emoji = '🥁';
-      text += `${emoji} ${role}: ${name}\n`;
+      const member = members.find(m => m.id === a?.memberId);
+      if (member) {
+        let emoji = '🎸';
+        if (role === 'Teclado') emoji = '🎹';
+        if (role === 'Bateria') emoji = '🥁';
+        text += `${emoji} ${role}: ${member.name}\n`;
+      }
     });
 
     text += `🎶 *MÚSICAS:*\n`;
@@ -327,7 +332,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     });
     setInstruments(newInstruments);
 
-    const currentSongs = sch.songs.map(songData => {
+    const currentSongs = (sch.songs || []).map(songData => {
       const sId = typeof songData === 'string' ? songData : songData.id;
       const sKey = typeof songData === 'string' ? '' : songData.key;
       const song = songs.find(s => s.id === sId);
@@ -386,6 +391,58 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
   };
 
+  const toggleSongConfirm = (scheduleId: string, songId: string) => {
+    if (!isAdmin) return;
+    setSchedules(prev => prev.map(s => {
+      if (s.id !== scheduleId) return s;
+      const updatedSongs = (s.songs || []).map(song => 
+        song.id === songId ? { ...song, confirmed: !song.confirmed } : song
+      );
+      return { ...s, songs: updatedSongs };
+    }));
+  };
+
+  const toggleAssignmentConfirm = (scheduleId: string, memberId: string, role: string) => {
+    if (!isAdmin) return;
+    setSchedules(prev => prev.map(s => {
+      if (s.id !== scheduleId) return s;
+      const updatedAssignments = (s.assignments || []).map(a => 
+        (a.memberId === memberId && a.role === role) ? { ...a, confirmed: !a.confirmed } : a
+      );
+      return { ...s, assignments: updatedAssignments };
+    }));
+  };
+
+  const toggleAttendance = (scheduleId: string, memberId: string, role: string) => {
+    if (!isAdmin) return;
+    setSchedules(prev => prev.map(s => {
+      if (s.id !== scheduleId) return s;
+      const updatedAssignments = (s.assignments || []).map(a => 
+        (a.memberId === memberId && a.role === role) ? { ...a, present: !a.present } : a
+      );
+      return { ...s, assignments: updatedAssignments, attendanceMarked: true };
+    }));
+  };
+
+  const calculateProgress = (sch: Schedule) => {
+    const totalItems = (sch.songs?.length || 0) + (sch.assignments?.length || 0);
+    if (totalItems === 0) return 0;
+    
+    const confirmedSongs = (sch.songs || []).filter(s => s.confirmed).length;
+    const confirmedAssignments = (sch.assignments || []).filter(a => a.confirmed || a.present).length;
+    
+    return Math.round(((confirmedSongs + confirmedAssignments) / totalItems) * 100);
+  };
+
+  const isDatePassed = (dateStr: string) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const scheduleDate = new Date(year, month - 1, day);
+    return scheduleDate <= today;
+  };
+
   const saveSchedule = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) return;
@@ -404,7 +461,12 @@ export const Schedules: React.FC<SchedulesProps> = ({
       const existingSong = songs.find(s => s.title && s.title.toLowerCase() === searchTitle);
       
       if (existingSong) {
-        finalSongs.push({ id: existingSong.id, key: (item.key || existingSong.key || '').toUpperCase() });
+        const existingSchedule = schedules.find(s => s.id === editingId);
+        finalSongs.push({ 
+          id: existingSong.id, 
+          key: (item.key || existingSong.key || '').toUpperCase(),
+          confirmed: editingId ? ((existingSchedule?.songs || []).find(sg => sg.id === existingSong.id)?.confirmed || false) : false
+        });
       } else {
         const newId = generateShortId();
         const newSong: Song = { 
@@ -416,7 +478,11 @@ export const Schedules: React.FC<SchedulesProps> = ({
           youtubeUrl: ''
         };
         newSongsToRegister.push(newSong);
-        finalSongs.push({ id: newId, key: (item.key || '').toUpperCase() });
+        finalSongs.push({ 
+          id: newId, 
+          key: (item.key || '').toUpperCase(),
+          confirmed: false
+        });
       }
     });
 
@@ -426,10 +492,23 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
     const filteredVocals = vocalIds.filter(vId => !leaderIds.includes(vId));
 
+    const existingSchedule = editingId ? schedules.find(s => s.id === editingId) : null;
     const finalAssignments: ScheduleAssignment[] = [
-      ...leaderIds.map(id => ({ role: 'Vocal Líder', memberId: id })),
-      ...filteredVocals.map(id => ({ role: 'Vocal', memberId: id })),
-      ...Object.entries(instruments).filter(([_, id]) => id !== '').map(([role, id]) => ({ role, memberId: id }))
+      ...leaderIds.map(id => ({ 
+        role: 'Vocal Líder', 
+        memberId: id,
+        confirmed: editingId ? ((existingSchedule?.assignments || []).find(a => a.memberId === id && a.role === 'Vocal Líder')?.confirmed || false) : false
+      })),
+      ...filteredVocals.map(id => ({ 
+        role: 'Vocal', 
+        memberId: id,
+        confirmed: editingId ? ((existingSchedule?.assignments || []).find(a => a.memberId === id && a.role === 'Vocal')?.confirmed || false) : false
+      })),
+      ...Object.entries(instruments).filter(([_, id]) => id !== '').map(([role, id]) => ({ 
+        role, 
+        memberId: id,
+        confirmed: editingId ? ((existingSchedule?.assignments || []).find(a => a.memberId === id && a.role === role)?.confirmed || false) : false
+      }))
     ];
 
     const allUniqueMemberIds = Array.from(new Set([
@@ -446,7 +525,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
       assignments: finalAssignments,
       songs: finalSongs,
       leaderIds,
-      vocalIds: filteredVocals
+      vocalIds: filteredVocals,
+      confirmed: editingId ? schedules.find(s => s.id === editingId)?.confirmed : false
     };
 
     if (editingId) {
@@ -717,6 +797,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
           const vocalNames = (sch.vocalIds || []).map(id => members.find(m => m.id === id)?.name).filter(Boolean);
           const isCopied = copyFeedback === sch.id;
           const isSelected = selectedIds.has(sch.id);
+          const progress = calculateProgress(sch);
+          const isPassed = isDatePassed(sch.date);
 
           return (
             <div 
@@ -726,8 +808,23 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 bg-[#0b3d2e] text-white rounded-[2rem] p-6 shadow-xl relative overflow-hidden flex flex-col group border-4 transition-all
                 ${isSelectionMode ? 'cursor-pointer hover:border-emerald-400' : 'border-white/10 hover:border-emerald-500/30'}
                 ${isSelected ? 'border-emerald-500 scale-[0.98]' : ''}
+                ${progress === 100 ? 'ring-4 ring-emerald-500/20' : ''}
               `}
             >
+              {progress === 100 && (
+                <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-4 rounded-bl-[2rem] z-20 shadow-lg animate-in fade-in zoom-in duration-300">
+                  <CheckCircle2 size={24} />
+                </div>
+              )}
+
+              {/* Progress Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5">
+                <div 
+                  className="h-full bg-emerald-500 transition-all duration-1000" 
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+
               {isSelectionMode && (
                 <div className={`absolute top-4 left-4 z-10 p-1.5 rounded-lg border-2 transition-all ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white/10 border-white/20 text-white/40'}`}>
                   {isSelected ? <Check size={20} /> : <Square size={20} />}
@@ -756,14 +853,110 @@ export const Schedules: React.FC<SchedulesProps> = ({
               </div>
               
               <div className="space-y-3 mt-4 flex-1">
-                <div className="flex items-center gap-3"><Mic2 size={18} className="text-emerald-400 shrink-0" /><span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Líder(es):</strong> {leaderNames.join(', ') || 'A definir'}</span></div>
-                <div className="flex items-start gap-3"><MessageSquare size={18} className="text-emerald-400 shrink-0 mt-1" /><span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Vocals:</strong> {vocalNames.join(', ') || 'A definir'}</span></div>
+                {/* Progress Percentage */}
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/70">Conclusão</span>
+                  <span className="text-sm font-black text-emerald-400">{progress}%</span>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Mic2 size={18} className="text-emerald-400 shrink-0" />
+                    <span className="text-sm font-medium">
+                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Líder(es):</strong> 
+                      {leaderNames.join(', ') || 'A definir'}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-1">
+                      {(sch.leaderIds || []).map(id => {
+                        const assignment = (sch.assignments || []).find(a => a.memberId === id && a.role === 'Vocal Líder');
+                        const isConfirmed = assignment?.confirmed || assignment?.present;
+                        return (
+                          <button 
+                            key={id}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (isPassed) {
+                                toggleAttendance(sch.id, id, 'Vocal Líder');
+                              } else {
+                                toggleAssignmentConfirm(sch.id, id, 'Vocal Líder');
+                              }
+                            }}
+                            className={`p-1 transition-all ${isConfirmed ? 'text-emerald-400' : 'text-white/20 hover:text-white/40'}`}
+                            title={`Confirmar/Marcar presença de ${members.find(m => m.id === id)?.name}`}
+                          >
+                            <UserCheck size={14} strokeWidth={3} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <MessageSquare size={18} className="text-emerald-400 shrink-0 mt-1" />
+                    <span className="text-sm font-medium">
+                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Vocals:</strong> 
+                      {vocalNames.join(', ') || 'A definir'}
+                    </span>
+                  </div>
+                  {isAdmin && (
+                    <div className="flex gap-1 flex-wrap justify-end max-w-[100px]">
+                      {sch.vocalIds?.map(id => {
+                        const assignment = (sch.assignments || []).find(a => a.memberId === id && a.role === 'Vocal');
+                        const isConfirmed = assignment?.confirmed || assignment?.present;
+                        return (
+                          <button 
+                            key={id}
+                            onClick={(e) => { 
+                              e.stopPropagation(); 
+                              if (isPassed) {
+                                toggleAttendance(sch.id, id, 'Vocal');
+                              } else {
+                                toggleAssignmentConfirm(sch.id, id, 'Vocal');
+                              }
+                            }}
+                            className={`p-1 transition-all ${isConfirmed ? 'text-emerald-400' : 'text-white/20 hover:text-white/40'}`}
+                            title={`Confirmar/Marcar presença de ${members.find(m => m.id === id)?.name}`}
+                          >
+                            <UserCheck size={14} strokeWidth={3} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {(sch.assignments || []).filter(a => !['Vocal Líder', 'Vocal'].includes(a.role)).map((a, i) => {
                   const m = members.find(x => x.id === a.memberId);
                   const Icon = instrumentIcons[a.role] || Music;
                   return (
-                    <div key={i} className="flex items-center gap-3">
-                      <Icon size={18} className="text-emerald-400 shrink-0" /><span className="text-sm font-medium"><strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">{a.role}:</strong> {m?.name || 'A definir'}</span>
+                    <div key={i} className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <Icon size={18} className="text-emerald-400 shrink-0" />
+                        <span className="text-sm font-medium">
+                          <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">{a.role}:</strong> 
+                          {m?.name || 'A definir'}
+                        </span>
+                      </div>
+                      {isAdmin && a.memberId && (
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            if (isPassed) {
+                              toggleAttendance(sch.id, a.memberId, a.role);
+                            } else {
+                              toggleAssignmentConfirm(sch.id, a.memberId, a.role);
+                            }
+                          }}
+                          className={`p-1 transition-all ${a.confirmed || a.present ? 'text-emerald-400' : 'text-white/20 hover:text-white/40'}`}
+                          title={`Confirmar/Marcar presença de ${m?.name}`}
+                        >
+                          <UserCheck size={14} strokeWidth={3} />
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -772,20 +965,54 @@ export const Schedules: React.FC<SchedulesProps> = ({
               <div className="mt-6 pt-4 border-t border-white/5">
                 <h4 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3"><Music size={14} /> Músicas do Dia</h4>
                 <div className="space-y-1.5">
-                  {(sch.songs || []).length > 0 ? sch.songs.map((songData, i) => {
+                  {(sch.songs || []).length > 0 ? (sch.songs || []).map((songData, i) => {
                     const sId = typeof songData === 'string' ? songData : songData.id;
                     const sKey = typeof songData === 'string' ? '' : songData.key;
                     const s = songs.find(x => x.id === sId);
                     const displayKey = sKey || s?.key;
+                    const isConfirmed = typeof songData !== 'string' && songData.confirmed;
+
                     return (
-                      <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-xl text-xs">
-                        <span className="font-bold opacity-90">{i+1}. {s?.title || 'Música Desconhecida'}</span>
-                        {displayKey && <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-black uppercase">{displayKey}</span>}
+                      <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-xl text-xs group/song">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold opacity-90">{i+1}. {s?.title || 'Música Desconhecida'}</span>
+                          {displayKey && <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-black uppercase">{displayKey}</span>}
+                        </div>
+                        {isAdmin && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); toggleSongConfirm(sch.id, sId); }}
+                            className={`p-1 transition-all ${isConfirmed ? 'text-emerald-400' : 'text-white/20 hover:text-white/40'}`}
+                            title="Confirmar execução da música"
+                          >
+                            <Check size={14} strokeWidth={3} />
+                          </button>
+                        )}
                       </div>
                     );
                   }) : (<p className="text-xs text-white/30 italic">A definir</p>)}
                 </div>
               </div>
+
+                  {isAdmin && isPassed && (
+                <button 
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    const allPresent = (sch.assignments || []).every(a => a.present);
+                    setSchedules(prev => prev.map(s => {
+                      if (s.id !== sch.id) return s;
+                      return {
+                        ...s,
+                        attendanceMarked: !allPresent,
+                        assignments: (s.assignments || []).map(a => ({ ...a, present: !allPresent }))
+                      };
+                    }));
+                  }}
+                  className={`mt-6 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${sch.attendanceMarked ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white/60 hover:bg-white/20 border border-white/10'}`}
+                >
+                  {sch.attendanceMarked ? <CheckCircle2 size={18} /> : <UserCheck size={18} />}
+                  {sch.attendanceMarked ? 'Presença Confirmada' : 'Marcar Todos como Presentes'}
+                </button>
+              )}
             </div>
           );
         })}

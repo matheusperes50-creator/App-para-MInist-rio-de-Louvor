@@ -21,6 +21,7 @@ export interface Member {
   roles: Role[];
   isActive: boolean;
   photoUrl?: string;
+  birthDate?: string;
 }
 
 export interface Song {
@@ -36,11 +37,14 @@ export interface Song {
 export interface ScheduleSong {
   id: string;
   key: string;
+  confirmed?: boolean;
 }
 
 export interface ScheduleAssignment {
   role: string;
   memberId: string;
+  confirmed?: boolean;
+  present?: boolean; // Added for attendance tracking
 }
 
 export interface Schedule {
@@ -49,17 +53,21 @@ export interface Schedule {
   serviceType: string;
   members: string[]; 
   assignments: ScheduleAssignment[];
-  songs: (string | ScheduleSong)[];
+  songs: ScheduleSong[];
   leaderIds: string[]; 
   vocalIds?: string[];
+  confirmed?: boolean;
+  attendanceMarked?: boolean; // New field
 }
 
-export interface AccessLog {
+export interface ExternalEvent {
   id: string;
-  userEmail: string;
-  role: UserRoleType;
-  device: string;
-  timestamp: string;
+  title: string;
+  date: string;
+  location: string;
+  description?: string;
+  status: 'pending' | 'confirmed' | 'declined';
+  repertoire: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'logs';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events';

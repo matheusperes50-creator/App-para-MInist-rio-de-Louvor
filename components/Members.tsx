@@ -2,7 +2,25 @@
 import React, { useState } from 'react';
 import { Member, Role } from '../types';
 // Added missing 'Users' icon to the import list from lucide-react
-import { UserPlus, Search, Trash2, Edit2, Check, X, Power, RefreshCw, UserCheck, Shield, Users, Camera, Image as ImageIcon } from 'lucide-react';
+import { 
+  UserPlus, 
+  Search, 
+  Trash2, 
+  Edit2, 
+  Check, 
+  X, 
+  Power, 
+  RefreshCw, 
+  UserCheck, 
+  Shield, 
+  Users, 
+  Camera, 
+  Image as ImageIcon,
+  Cake,
+  LayoutGrid,
+  List,
+  Calendar
+} from 'lucide-react';
 
 interface MembersProps {
   members: Member[];
@@ -17,10 +35,12 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
   const [showModal, setShowModal] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'birthdays'>('list');
   
   const [newName, setNewName] = useState('');
   const [selectedRoles, setSelectedRoles] = useState<Role[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
+  const [birthDate, setBirthDate] = useState<string>('');
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,6 +93,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setNewName('');
     setSelectedRoles([]);
     setPhotoUrl(undefined);
+    setBirthDate('');
     setShowModal(true);
   };
 
@@ -81,6 +102,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setNewName(member.name || '');
     setSelectedRoles(Array.isArray(member.roles) ? member.roles : []);
     setPhotoUrl(member.photoUrl);
+    setBirthDate(member.birthDate || '');
     setShowModal(true);
   };
 
@@ -90,6 +112,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     setNewName('');
     setSelectedRoles([]);
     setPhotoUrl(undefined);
+    setBirthDate('');
   };
 
   const saveMember = (e: React.FormEvent) => {
@@ -101,7 +124,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
     if (editingMemberId) {
       setMembers(prev => prev.map(m => 
-        m.id === editingMemberId ? { ...m, name: newName.trim(), roles: selectedRoles, photoUrl } : m
+        m.id === editingMemberId ? { ...m, name: newName.trim(), roles: selectedRoles, photoUrl, birthDate } : m
       ));
     } else {
       const newMember: Member = {
@@ -109,7 +132,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         name: newName.trim(),
         roles: selectedRoles,
         isActive: true,
-        photoUrl
+        photoUrl,
+        birthDate
       };
       setMembers(prev => [...prev, newMember]);
     }
@@ -203,6 +227,15 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     required 
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Data de Nascimento</label>
+                  <input 
+                    type="date" 
+                    value={birthDate} 
+                    onChange={(e) => setBirthDate(e.target.value)} 
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
+                  />
+                </div>
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Habilidades e Funções</label>
                   <div className="flex flex-wrap gap-2">
@@ -240,95 +273,257 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         </div>
       )}
 
-      <div className="relative group">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
-        <input 
-          type="text" 
-          placeholder="Buscar integrante por nome..." 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
-          className="w-full pl-16 pr-8 py-5 rounded-[2rem] bg-white border border-slate-100 focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg" 
-        />
-      </div>
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-full md:w-auto">
+          <button 
+            onClick={() => setViewMode('list')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <List size={14} /> Lista
+          </button>
+          <button 
+            onClick={() => setViewMode('grid')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <LayoutGrid size={14} /> Grid
+          </button>
+          <button 
+            onClick={() => setViewMode('birthdays')}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'birthdays' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+          >
+            <Cake size={14} /> Aniversariantes
+          </button>
+        </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
-              <tr>
-                <th className="px-10 py-6">Membro</th>
-                <th className="px-10 py-6">Habilidades</th>
-                <th className="px-10 py-6 text-center">Gestão</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredMembers.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
-                  <td className="px-10 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
-                        {m.photoUrl ? (
-                          <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          m.name.charAt(0).toUpperCase()
-                        )}
-                      </div>
-                      <div>
-                        <p className={`font-black text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>
-                        <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-10 py-6">
-                    <div className="flex flex-wrap gap-1.5">
-                      {(m.roles || []).map((r, i) => (
-                        <span key={i} className="px-2 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black uppercase text-slate-500 rounded-lg">
-                          {r}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-10 py-6">
-                    <div className="flex justify-center gap-3">
-                      <button 
-                        onClick={() => openEditModal(m)} 
-                        className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
-                        title="Editar Cadastro"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button 
-                        onClick={() => toggleStatus(m.id)} 
-                        className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 hover:text-orange-500 hover:bg-orange-50' : 'text-emerald-500 bg-emerald-50'}`}
-                        title={m.isActive ? "Desativar Membro" : "Ativar Membro"}
-                      >
-                        <Power size={18} />
-                      </button>
-                      <button 
-                        onClick={() => removeMember(m.id)} 
-                        className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        title="Excluir Permanentemente"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filteredMembers.length === 0 && !isSyncing && (
-                <tr>
-                  <td colSpan={3} className="py-24 text-center">
-                    <div className="flex flex-col items-center gap-3 text-slate-200">
-                      <Users size={48} />
-                      <p className="font-bold uppercase tracking-widest text-xs">Nenhum membro encontrado</p>
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        <div className="relative group flex-1 w-full max-w-md">
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
+          <input 
+            type="text" 
+            placeholder="Buscar integrante por nome..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="w-full pl-16 pr-8 py-4 rounded-2xl bg-white border border-slate-100 focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg" 
+          />
         </div>
       </div>
+
+      {viewMode === 'list' && (
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+                <tr>
+                  <th className="px-10 py-6">Membro</th>
+                  <th className="px-10 py-6">Habilidades</th>
+                  <th className="px-10 py-6 text-center">Gestão</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {filteredMembers.map((m) => (
+                  <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
+                    <td className="px-10 py-6">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                          {m.photoUrl ? (
+                            <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                          ) : (
+                            m.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <div>
+                          <p className={`font-black text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>
+                          <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-10 py-6">
+                      <div className="flex flex-wrap gap-1.5">
+                        {(m.roles || []).map((r, i) => (
+                          <span key={i} className="px-2 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black uppercase text-slate-500 rounded-lg">
+                            {r}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-10 py-6">
+                      <div className="flex justify-center gap-3">
+                        <button 
+                          onClick={() => openEditModal(m)} 
+                          className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                          title="Editar Cadastro"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button 
+                          onClick={() => toggleStatus(m.id)} 
+                          className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 hover:text-orange-500 hover:bg-orange-50' : 'text-emerald-500 bg-emerald-50'}`}
+                          title={m.isActive ? "Desativar Membro" : "Ativar Membro"}
+                        >
+                          <Power size={18} />
+                        </button>
+                        <button 
+                          onClick={() => removeMember(m.id)} 
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          title="Excluir Permanentemente"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredMembers.length === 0 && !isSyncing && (
+                  <tr>
+                    <td colSpan={3} className="py-24 text-center">
+                      <div className="flex flex-col items-center gap-3 text-slate-200">
+                        <Users size={48} />
+                        <p className="font-bold uppercase tracking-widest text-xs">Nenhum membro encontrado</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {viewMode === 'grid' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMembers.map((m) => (
+            <div key={m.id} className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+              <div className="flex items-start justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                    {m.photoUrl ? (
+                      <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      m.name.charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div>
+                    <h4 className={`font-black text-xl leading-tight ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</h4>
+                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 hover:text-emerald-600 transition-colors"><Edit2 size={16} /></button>
+                  <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                </div>
+              </div>
+              
+              <div className="flex flex-wrap gap-1.5 mb-6">
+                {(m.roles || []).map((r, i) => (
+                  <span key={i} className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black uppercase text-slate-500 rounded-lg">
+                    {r}
+                  </span>
+                ))}
+              </div>
+
+              <button 
+                onClick={() => toggleStatus(m.id)}
+                className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${m.isActive ? 'bg-slate-50 text-slate-400 hover:bg-orange-50 hover:text-orange-500' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+              >
+                <Power size={14} /> {m.isActive ? 'Desativar' : 'Ativar'}
+              </button>
+            </div>
+          ))}
+          {filteredMembers.length === 0 && !isSyncing && (
+            <div className="col-span-full py-24 text-center bg-white rounded-[2.5rem] border border-slate-100">
+              <div className="flex flex-col items-center gap-3 text-slate-200">
+                <Users size={48} />
+                <p className="font-bold uppercase tracking-widest text-xs">Nenhum membro encontrado</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {viewMode === 'birthdays' && (
+        <div className="space-y-4">
+          {(() => {
+            const getDaysUntilBirthday = (dateStr?: string) => {
+              if (!dateStr) return Infinity;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const [y, m, d] = dateStr.split('-').map(Number);
+              const bday = new Date(today.getFullYear(), m - 1, d);
+              if (bday < today) bday.setFullYear(today.getFullYear() + 1);
+              return Math.ceil((bday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            };
+
+            const sorted = [...members]
+              .filter(m => m.birthDate)
+              .sort((a, b) => getDaysUntilBirthday(a.birthDate) - getDaysUntilBirthday(b.birthDate));
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {sorted.map(m => {
+                  const days = getDaysUntilBirthday(m.birthDate);
+                  const [y, month, day] = (m.birthDate || '').split('-');
+                  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                  
+                  // Calculate age
+                  const calculateAge = (dateStr?: string) => {
+                    if (!dateStr) return null;
+                    const birthDate = new Date(dateStr);
+                    const today = new Date();
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const m = today.getMonth() - birthDate.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    return age;
+                  };
+                  const age = calculateAge(m.birthDate);
+                  
+                  return (
+                    <div key={m.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-black text-xl overflow-hidden">
+                          {m.photoUrl ? <img src={m.photoUrl} alt="" className="w-full h-full object-cover" /> : m.name.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-black text-slate-800">{m.name}</h4>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                              <Calendar size={10} /> {day}/{months[Number(month)-1]}
+                            </p>
+                            {age !== null && (
+                              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                                {age} anos
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        {days === 0 ? (
+                          <span className="bg-emerald-500 text-white px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest animate-bounce flex items-center gap-1">
+                            <Cake size={12} /> É HOJE!
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                            Em {days} {days === 1 ? 'dia' : 'dias'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {sorted.length === 0 && (
+                  <div className="col-span-full py-24 text-center bg-white rounded-[2.5rem] border border-slate-100">
+                    <div className="flex flex-col items-center gap-3 text-slate-200">
+                      <Cake size={48} />
+                      <p className="font-bold uppercase tracking-widest text-xs">Nenhuma data de nascimento cadastrada</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 };

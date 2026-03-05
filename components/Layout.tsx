@@ -12,7 +12,9 @@ import {
   Key,
   Check,
   Sparkles,
-  Library
+  Library,
+  BarChart3,
+  Calendar
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -36,7 +38,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'songs' as ViewType, label: 'Repertório', icon: Library, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
     { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
-    { id: 'logs' as ViewType, label: 'Logs de Acesso', icon: ShieldCheck, adminOnly: true },
+    { id: 'reports' as ViewType, label: 'Relatórios', icon: BarChart3, adminOnly: true },
+    { id: 'events' as ViewType, label: 'Eventos', icon: Calendar, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {

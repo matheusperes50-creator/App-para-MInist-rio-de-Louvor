@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Member, Song, Schedule } from '../types';
 import { 
   BarChart, 
@@ -10,7 +12,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2 } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -45,6 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const activeMembers = members.filter(m => m.isActive).length;
   const totalSongs = songs.length;
   const totalSchedules = schedules.length;
+  const confirmedSchedules = schedules.filter(s => s.confirmed).length;
 
   const nextSchedule = useMemo(() => {
     return [...schedules]
@@ -126,7 +129,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {nextSchedule ? (
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                  <div>
+                  <div className="relative">
+                    {nextSchedule.confirmed && (
+                      <div className="absolute -top-6 left-0 bg-white text-emerald-600 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg">
+                        <CheckCircle2 size={10} /> Realizada
+                      </div>
+                    )}
                     <h4 className="text-4xl font-black tracking-tighter mb-2">
                       {new Date(nextSchedule.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                     </h4>
@@ -289,6 +297,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Escalas</p>
           <h4 className="text-3xl font-black text-slate-800">{totalSchedules}</h4>
+          <p className="text-[10px] text-emerald-600 font-bold mt-1">{confirmedSchedules} realizadas</p>
         </div>
 
         <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
@@ -388,8 +397,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex-1 flex flex-col">
                 <div className="flex-1 text-emerald-100 text-sm font-medium leading-relaxed overflow-y-auto max-h-[180px] custom-scrollbar pr-2 markdown-announcements">
                   {announcements ? (
-                    <div className="whitespace-pre-wrap">
-                      {announcements}
+                    <div className="markdown-body">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {announcements}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     "Nenhum aviso no momento. Administradores podem adicionar avisos, links e temas aqui."

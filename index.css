@@ -1,3 +1,27 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .markdown-announcements a {
+    @apply text-emerald-400 underline font-bold hover:text-emerald-300 transition-colors;
+  }
+  
+  .markdown-announcements p {
+    @apply mb-2 last:mb-0;
+  }
+  
+  .markdown-announcements ul {
+    @apply list-disc ml-5 mb-2;
+  }
+  
+  .markdown-announcements ol {
+    @apply list-decimal ml-5 mb-2;
+  }
+  
+  .markdown-announcements h1, 
+  .markdown-announcements h2, 
+  .markdown-announcements h3 {
+    @apply font-black uppercase tracking-tight mb-2 mt-4 first:mt-0;
+  }
+}

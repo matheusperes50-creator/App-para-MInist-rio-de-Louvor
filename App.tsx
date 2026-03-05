@@ -4,9 +4,10 @@ import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
 import { Songs } from './components/Songs';
 import { Schedules } from './components/Schedules';
-import { AccessLogs } from './components/AccessLogs';
 import { Login } from './components/Login';
-import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, AccessLog } from './types';
+import { Reports } from './components/Reports';
+import { Events } from './components/Events';
+import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
@@ -49,14 +50,20 @@ const App: React.FC = () => {
     } catch { return []; }
   });
 
+  const [events, setEvents] = useState<ExternalEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem('louvor_events');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  });
+
   const [announcements, setAnnouncements] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('louvor_announcements');
       return saved || '';
     } catch { return ''; }
   });
-
-  const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
 
   const isInitialMount = useRef(true);
 
@@ -94,18 +101,13 @@ const App: React.FC = () => {
         })));
         
         setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
+        setEvents(Array.isArray(data.events) ? data.events : []);
         
         setAnnouncements(prev => {
-          // Se a nuvem tem dados, usa os dados da nuvem
           if (data.announcements) return data.announcements;
-          // Se não tem dados na nuvem mas já tínhamos sincronizado antes, 
-          // significa que os avisos foram apagados na nuvem
           if (hasFetchedRef.current) return '';
-          // Se é a primeira sincronização e a nuvem está vazia, mantém o que está no localStorage
           return prev || '';
         });
-
-        setAccessLogs(Array.isArray(data.accessLogs) ? data.accessLogs : []);
         
         hasFetchedRef.current = true;
         setHasFetchedFromCloud(true);
@@ -131,8 +133,9 @@ const App: React.FC = () => {
     localStorage.setItem('louvor_members', JSON.stringify(members));
     localStorage.setItem('louvor_songs', JSON.stringify(songs));
     localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
+    localStorage.setItem('louvor_events', JSON.stringify(events));
     localStorage.setItem('louvor_announcements', announcements);
-  }, [members, songs, schedules, announcements]);
+  }, [members, songs, schedules, events, announcements]);
 
   const syncToSheets = useCallback(async () => {
     if (!hasFetchedFromCloud || initialLoading || userRole !== 'admin') return;
@@ -145,8 +148,8 @@ const App: React.FC = () => {
         members: members || [], 
         songs: songs || [], 
         schedules: schedules || [],
-        announcements: announcements || '',
-        accessLogs: accessLogs || []
+        events: events || [],
+        announcements: announcements || ''
       };
 
       await fetch(SCRIPT_URL, {
@@ -175,29 +178,7 @@ const App: React.FC = () => {
       const timer = setTimeout(() => syncToSheets(), 2000);
       return () => clearTimeout(timer);
     }
-  }, [members, songs, schedules, announcements, accessLogs, syncToSheets, userRole]);
-
-  const logAccess = useCallback(async (role: UserRoleType) => {
-    const userAgent = navigator.userAgent;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
-    const device = isMobile ? 'Mobile' : 'Desktop';
-    
-    const newLog: AccessLog = {
-      id: Math.random().toString(36).substring(2, 10).toUpperCase(),
-      userEmail: 'matheusperes50@gmail.com', // Using the provided context email
-      role,
-      device,
-      timestamp: new Date().toISOString()
-    };
-
-    setAccessLogs(prev => [newLog, ...prev].slice(0, 100)); // Keep last 100 logs
-  }, []);
-
-  useEffect(() => {
-    if (userRole !== 'guest' && hasFetchedFromCloud) {
-      logAccess(userRole);
-    }
-  }, [userRole, hasFetchedFromCloud, logAccess]);
+  }, [members, songs, schedules, events, announcements, syncToSheets, userRole]);
 
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
@@ -221,7 +202,8 @@ const App: React.FC = () => {
       case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
       case 'new-songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
-      case 'logs': return <AccessLogs logs={accessLogs} {...syncProps} />;
+      case 'reports': return <Reports schedules={schedules} members={members} songs={songs} />;
+      case 'events': return <Events events={events} setEvents={setEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       default: return null;
     }
   };
