@@ -203,9 +203,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
       reportSchedules = filteredSchedules;
     }
 
-    let title = "*ESCALAS DE LOUVOR* 🕊️\n";
+    let title = "*ESCALAS DE LOUVOR* ⛪\n";
     if (selectedMonthFilter !== 'all' && !isSelectionMode) {
-      title = `*ESCALAS DE ${formatMonthLabel(selectedMonthFilter).toUpperCase()}* 🕊️\n`;
+      title = `*ESCALAS DE ${formatMonthLabel(selectedMonthFilter).toUpperCase()}* ⛪\n`;
     }
     
     let fullReport = `${title}--------------------------\n\n`;
@@ -252,7 +252,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     const data: any[][] = [];
-    const headerRow = schedulesToExport.map(() => "ESCALA DE LOUVOR 🕊️");
+    const headerRow = schedulesToExport.map(() => "ESCALA DE LOUVOR ⛪");
     data.push(headerRow);
 
     const dateRow = schedulesToExport.map(s => `🗓️ ${formatDateSafely(s.date)} - ${s.serviceType}`);
@@ -835,7 +835,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 <div className={`flex items-center gap-3 transition-transform ${isSelectionMode ? 'translate-x-10' : ''}`}>
                   <div className="bg-white/10 p-2.5 rounded-xl"><CalendarIcon size={20} className="text-emerald-400" /></div>
                   <div>
-                    <h3 className="font-black text-lg leading-tight uppercase tracking-tight">Escala de Louvor 🕊️</h3>
+                    <h3 className="font-black text-lg leading-tight uppercase tracking-tight">Escala de Louvor ⛪</h3>
                     <p className="text-emerald-300 text-[11px] font-bold uppercase tracking-widest">{dateFormatted} - {dayName} ({sch.serviceType})</p>
                   </div>
                 </div>

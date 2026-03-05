@@ -16,7 +16,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Circle,
-  Music
+  Music,
+  MessageCircle,
+  Copy
 } from 'lucide-react';
 
 interface EventsProps {
@@ -36,6 +38,41 @@ export const Events: React.FC<EventsProps> = ({ events = [], setEvents, members 
   const [newLocation, setNewLocation] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedSongs, setSelectedSongs] = useState<string[]>([]);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
+  const getEventText = (event: ExternalEvent) => {
+    const dateFormatted = new Date(event.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+    let text = `📅 *CONVITE / EVENTO: ${event.title.toUpperCase()}* ⛪\n\n`;
+    text += `🗓️ Data: ${dateFormatted}\n`;
+    text += `📍 Local: ${event.location}\n`;
+    if (event.description) {
+      text += `📝 Descrição: ${event.description}\n`;
+    }
+    
+    if (event.repertoire && event.repertoire.length > 0) {
+      text += `\n🎶 *REPERTÓRIO:*\n`;
+      event.repertoire.forEach((sId, i) => {
+        const song = songs.find(s => s.id === sId);
+        if (song) {
+          text += `${i + 1}. ${song.title}\n`;
+        }
+      });
+    }
+    
+    text += `\n_Gerado pelo App Minist. Louvor Pibje_`;
+    return text;
+  };
+
+  const handleCopyEventText = async (event: ExternalEvent) => {
+    const text = getEventText(event);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopyFeedback(event.id);
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } catch (err) {
+      console.error('Falha ao copiar:', err);
+    }
+  };
 
   const handleSaveEvent = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,11 +200,20 @@ export const Events: React.FC<EventsProps> = ({ events = [], setEvents, members 
                   {event.status === 'pending' ? <Clock size={12} /> : event.status === 'confirmed' ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
                   {event.status === 'pending' ? 'Pendente' : event.status === 'confirmed' ? 'Confirmado' : 'Recusado'}
                 </div>
-                {isAdmin && (
-                  <button onClick={() => removeEvent(event.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
-                    <Trash2 size={18} />
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => handleCopyEventText(event)}
+                    className={`p-2 rounded-xl transition-all ${copyFeedback === event.id ? 'bg-emerald-500 text-white' : 'text-slate-300 hover:text-emerald-500 hover:bg-emerald-50'}`}
+                    title="Copiar para WhatsApp"
+                  >
+                    {copyFeedback === event.id ? <Check size={18} /> : <MessageCircle size={18} />}
                   </button>
-                )}
+                  {isAdmin && (
+                    <button onClick={() => removeEvent(event.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex-1">
