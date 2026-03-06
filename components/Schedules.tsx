@@ -127,7 +127,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const list = selectedMonthFilter === 'all' 
       ? (schedules || []) 
       : (schedules || []).filter(s => s && s.date && s.date.startsWith(selectedMonthFilter));
-    return [...list].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return [...list].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
   }, [schedules, selectedMonthFilter]);
 
   const formatMonthLabel = (yearMonth: string) => {
@@ -532,7 +532,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (editingId) {
       setSchedules(prev => prev.map(s => s.id === editingId ? scheduleData : s));
     } else {
-      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => a.date.localeCompare(b.date)));
     }
 
     setIsAdding(false);
