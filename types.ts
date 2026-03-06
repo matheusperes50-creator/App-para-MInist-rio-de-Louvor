@@ -64,10 +64,12 @@ export interface ExternalEvent {
   id: string;
   title: string;
   date: string;
+  time?: string;
   location: string;
   description?: string;
   status: 'pending' | 'confirmed' | 'declined';
   repertoire: string[];
+  memberIds?: string[];
 }
 
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events';

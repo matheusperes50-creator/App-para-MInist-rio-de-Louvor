@@ -202,7 +202,7 @@ const App: React.FC = () => {
       case 'songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
       case 'new-songs': return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
-      case 'reports': return <Reports schedules={schedules} members={members} songs={songs} />;
+      case 'reports': return <Reports schedules={schedules} members={members} songs={songs} events={events} />;
       case 'events': return <Events events={events} setEvents={setEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       default: return null;
     }

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Schedule, Member, Song } from '../types';
+import { Schedule, Member, Song, ExternalEvent } from '../types';
 import { 
   BarChart, 
   Bar, 
@@ -29,9 +29,10 @@ interface ReportsProps {
   schedules: Schedule[];
   members: Member[];
   songs: Song[];
+  events?: ExternalEvent[];
 }
 
-export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], songs = [] }) => {
+export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], songs = [], events = [] }) => {
   const attendanceData = useMemo(() => {
     const stats: Record<string, { present: number, total: number }> = {};
     
@@ -40,6 +41,7 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
       stats[m.id] = { present: 0, total: 0 };
     });
 
+    // Count regular schedules
     schedules.forEach(s => {
       // Only count schedules that are confirmed or passed
       const isPassed = new Date(s.date + 'T00:00:00') <= new Date();
@@ -53,13 +55,26 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
           const assignment = s.assignments.find(a => a.memberId === mId);
           if (assignment?.present) {
             stats[mId].present += 1;
-          } else if (s.confirmed && !assignment) {
-             // If schedule is confirmed and member is in members list but no assignment, 
-             // we might count them as present if we don't have granular attendance yet
-             // stats[mId].present += 1; 
           }
         }
       });
+    });
+
+    // Count external events
+    events.forEach(e => {
+      if (e.status !== 'confirmed') return;
+      
+      const isPassed = new Date(e.date + 'T00:00:00') <= new Date();
+      if (!isPassed) return;
+
+      if (e.memberIds) {
+        e.memberIds.forEach((mId: string) => {
+          if (stats[mId]) {
+            stats[mId].total += 1;
+            stats[mId].present += 1; // For external events, if they are in the list, we assume they were there
+          }
+        });
+      }
     });
 
     return Object.entries(stats)
