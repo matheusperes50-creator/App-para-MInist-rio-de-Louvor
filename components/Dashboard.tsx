@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2 } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2, Cake } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -73,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const filteredSchedules = schedules
       .filter(s => s.date >= today) // Only upcoming
       .filter(s => s.members.some(mId => matchingMemberIds.has(mId)))
-      .sort((a, b) => a.date.localeCompare(b.date));
+      .sort((a, b) => b.date.localeCompare(a.date));
 
     return { schedules: filteredSchedules, matchingMemberIds };
   }, [confirmedSearchName, members, schedules, today]);
@@ -96,6 +96,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [schedules, songs]);
+
+  const upcomingBirthdays = useMemo(() => {
+    const now = new Date();
+    return members
+      .filter(m => m.birthDate && m.isActive)
+      .map(m => {
+        const [y, month, day] = m.birthDate!.split('-').map(Number);
+        let nextBirthday = new Date(now.getFullYear(), month - 1, day);
+        if (nextBirthday < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+          nextBirthday.setFullYear(now.getFullYear() + 1);
+        }
+        return { ...m, nextBirthday, month, day };
+      })
+      .sort((a, b) => a.nextBirthday.getTime() - b.nextBirthday.getTime())
+      .slice(0, 5);
+  }, [members]);
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -404,6 +420,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                   ) : (
                     "Nenhum aviso no momento. Administradores podem adicionar avisos, links e temas aqui."
+                  )}
+                  
+                  {upcomingBirthdays.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-white/10">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-3 flex items-center gap-2">
+                        <Cake size={12} /> Próximos Aniversariantes
+                      </p>
+                      <div className="space-y-2">
+                        {upcomingBirthdays.map(m => (
+                          <div key={m.id} className="flex justify-between items-center text-xs">
+                            <span className="font-bold">{m.name}</span>
+                            <span className="text-emerald-400 font-black">
+                              {m.day.toString().padStart(2, '0')}/{m.month.toString().padStart(2, '0')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
                 

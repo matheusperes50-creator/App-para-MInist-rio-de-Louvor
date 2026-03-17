@@ -127,7 +127,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const list = selectedMonthFilter === 'all' 
       ? (schedules || []) 
       : (schedules || []).filter(s => s && s.date && s.date.startsWith(selectedMonthFilter));
-    return [...list].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    return [...list].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [schedules, selectedMonthFilter]);
 
   const formatMonthLabel = (yearMonth: string) => {
@@ -241,10 +241,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     const schedulesToExport = exportMonth === 'all' 
-      ? [...schedules].sort((a, b) => a.date.localeCompare(b.date))
+      ? [...schedules].sort((a, b) => b.date.localeCompare(a.date))
       : schedules
           .filter(s => s.date.startsWith(exportMonth))
-          .sort((a, b) => a.date.localeCompare(b.date));
+          .sort((a, b) => b.date.localeCompare(a.date));
 
     if (schedulesToExport.length === 0) {
       alert("Nenhuma escala encontrada.");
@@ -532,7 +532,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (editingId) {
       setSchedules(prev => prev.map(s => s.id === editingId ? scheduleData : s));
     } else {
-      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => a.date.localeCompare(b.date)));
+      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
     }
 
     setIsAdding(false);

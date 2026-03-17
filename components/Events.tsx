@@ -99,7 +99,7 @@ export const Events: React.FC<EventsProps> = ({ events = [], setEvents, members 
         description: newDescription,
         repertoire: selectedSongs,
         memberIds: selectedMembers
-      } : e).sort((a, b) => a.date.localeCompare(b.date)));
+      } : e).sort((a, b) => b.date.localeCompare(a.date)));
     } else {
       const newEvent: ExternalEvent = {
         id: generateShortId(),
@@ -112,7 +112,7 @@ export const Events: React.FC<EventsProps> = ({ events = [], setEvents, members 
         repertoire: selectedSongs,
         memberIds: selectedMembers
       };
-      setEvents(prev => [newEvent, ...prev].sort((a, b) => a.date.localeCompare(b.date)));
+      setEvents(prev => [newEvent, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
     }
     
     setIsAdding(false);
