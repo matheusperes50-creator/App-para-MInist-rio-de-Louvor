@@ -27,11 +27,12 @@ interface MembersProps {
   setMembers: React.Dispatch<React.SetStateAction<Member[]>>;
   onSync: () => void;
   isSyncing: boolean;
+  isAdmin: boolean;
 }
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSync, isSyncing }) => {
+export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSync, isSyncing, isAdmin }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,10 +124,17 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
     }
 
     if (editingMemberId) {
-      setMembers(prev => prev.map(m => 
-        m.id === editingMemberId ? { ...m, name: newName.trim(), roles: selectedRoles, photoUrl, birthDate } : m
-      ));
-    } else {
+      setMembers(prev => prev.map(m => {
+        if (m.id !== editingMemberId) return m;
+        
+        if (isAdmin) {
+          return { ...m, name: newName.trim(), roles: selectedRoles, photoUrl, birthDate };
+        } else {
+          // Non-admins can only update photo and birth date
+          return { ...m, photoUrl, birthDate };
+        }
+      }));
+    } else if (isAdmin) {
       const newMember: Member = {
         id: generateShortId(),
         name: newName.trim(),
@@ -171,13 +179,15 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
           >
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
           </button>
-          <button 
-            onClick={openAddModal}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs uppercase tracking-widest"
-          >
-            <UserPlus size={18} />
-            Novo Membro
-          </button>
+          {isAdmin && (
+            <button 
+              onClick={openAddModal}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs uppercase tracking-widest"
+            >
+              <UserPlus size={18} />
+              Novo Membro
+            </button>
+          )}
         </div>
       </header>
 
@@ -222,7 +232,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     type="text" 
                     value={newName} 
                     onChange={(e) => setNewName(e.target.value)} 
-                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
+                    disabled={!isAdmin}
+                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`} 
                     placeholder="Ex: João da Silva" 
                     required 
                   />
@@ -243,8 +254,9 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                       <button
                         key={role}
                         type="button"
-                        onClick={() => toggleRoleSelection(role)}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}
+                        onClick={() => isAdmin && toggleRoleSelection(role)}
+                        disabled={!isAdmin}
+                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
                         {role}
                       </button>
@@ -354,20 +366,24 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         >
                           <Edit2 size={18} />
                         </button>
-                        <button 
-                          onClick={() => toggleStatus(m.id)} 
-                          className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 hover:text-orange-500 hover:bg-orange-50' : 'text-emerald-500 bg-emerald-50'}`}
-                          title={m.isActive ? "Desativar Membro" : "Ativar Membro"}
-                        >
-                          <Power size={18} />
-                        </button>
-                        <button 
-                          onClick={() => removeMember(m.id)} 
-                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                          title="Excluir Permanentemente"
-                        >
-                          <Trash2 size={18} />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button 
+                              onClick={() => toggleStatus(m.id)} 
+                              className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 hover:text-orange-500 hover:bg-orange-50' : 'text-emerald-500 bg-emerald-50'}`}
+                              title={m.isActive ? "Desativar Membro" : "Ativar Membro"}
+                            >
+                              <Power size={18} />
+                            </button>
+                            <button 
+                              onClick={() => removeMember(m.id)} 
+                              className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                              title="Excluir Permanentemente"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -408,7 +424,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 </div>
                 <div className="flex flex-col gap-1">
                   <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 hover:text-emerald-600 transition-colors"><Edit2 size={16} /></button>
-                  <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                  {isAdmin && <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>}
                 </div>
               </div>
               
@@ -420,12 +436,14 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 ))}
               </div>
 
-              <button 
-                onClick={() => toggleStatus(m.id)}
-                className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${m.isActive ? 'bg-slate-50 text-slate-400 hover:bg-orange-50 hover:text-orange-500' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
-              >
-                <Power size={14} /> {m.isActive ? 'Desativar' : 'Ativar'}
-              </button>
+              {isAdmin && (
+                <button 
+                  onClick={() => toggleStatus(m.id)}
+                  className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${m.isActive ? 'bg-slate-50 text-slate-400 hover:bg-orange-50 hover:text-orange-500' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                >
+                  <Power size={14} /> {m.isActive ? 'Desativar' : 'Ativar'}
+                </button>
+              )}
             </div>
           ))}
           {filteredMembers.length === 0 && !isSyncing && (
