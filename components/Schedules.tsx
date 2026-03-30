@@ -159,10 +159,6 @@ export const Schedules: React.FC<SchedulesProps> = ({
     text += `🎤 Líder(es): ${leaders}\n`;
     text += `🗣️ Vocals: ${vocals}\n`;
     
-    if (sch.observations) {
-      text += `📝 Obs: ${sch.observations}\n`;
-    }
-    
     const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
     const assignments = (sch.assignments || []).filter(a => instrumentRoles.includes(a.role));
     
@@ -191,6 +187,11 @@ export const Schedules: React.FC<SchedulesProps> = ({
     } else {
       text += `A definir\n`;
     }
+
+    if (sch.observations) {
+      text += `\n📝 _Obs: ${sch.observations}_`;
+    }
+
     return text;
   };
 
