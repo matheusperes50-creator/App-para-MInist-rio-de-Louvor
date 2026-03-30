@@ -58,6 +58,7 @@ export interface Schedule {
   vocalIds?: string[];
   confirmed?: boolean;
   attendanceMarked?: boolean; // New field
+  observations?: string;
 }
 
 export interface ExternalEvent {

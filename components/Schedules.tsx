@@ -72,6 +72,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Domingo/semana');
+  const [observations, setObservations] = useState('');
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [monthCopyFeedback, setMonthCopyFeedback] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
@@ -157,6 +158,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
     let text = `🗓️ *${dateStr}* - ${dayName} (${sch.serviceType})\n`;
     text += `🎤 Líder(es): ${leaders}\n`;
     text += `🗣️ Vocals: ${vocals}\n`;
+    
+    if (sch.observations) {
+      text += `📝 Obs: ${sch.observations}\n`;
+    }
     
     const instrumentRoles = ['Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'];
     const assignments = (sch.assignments || []).filter(a => instrumentRoles.includes(a.role));
@@ -302,6 +307,11 @@ export const Schedules: React.FC<SchedulesProps> = ({
       data.push(row);
     }
 
+    // Add Observations to Excel
+    data.push(schedulesToExport.map(() => ""));
+    data.push(schedulesToExport.map(() => "📝 OBSERVAÇÕES:"));
+    data.push(schedulesToExport.map(s => s.observations || "-"));
+
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wscols = schedulesToExport.map(() => ({ wch: 45 }));
     ws['!cols'] = wscols;
@@ -319,6 +329,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setEditingId(sch.id);
     setDate(sch.date);
     setServiceType(sch.serviceType);
+    setObservations(sch.observations || '');
     setLeaderIds(sch.leaderIds || []);
     setVocalIds(sch.vocalIds || []);
     
@@ -526,7 +537,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
       songs: finalSongs,
       leaderIds,
       vocalIds: filteredVocals,
-      confirmed: editingId ? schedules.find(s => s.id === editingId)?.confirmed : false
+      confirmed: editingId ? schedules.find(s => s.id === editingId)?.confirmed : false,
+      observations
     };
 
     if (editingId) {
@@ -546,6 +558,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setInstruments({ 'Teclado': '', 'Violão': '', 'Guitarra': '', 'Baixo': '', 'Bateria': '' });
     setTempSetlist([{title: '', key: ''}]);
     setDate('');
+    setObservations('');
     setActiveSuggestionIdx(null);
   };
 
@@ -781,6 +794,16 @@ export const Schedules: React.FC<SchedulesProps> = ({
               </div>
             </div>
           </div>
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">OBSERVAÇÕES ADICIONAIS</label>
+            <textarea 
+              value={observations} 
+              onChange={(e) => setObservations(e.target.value)} 
+              placeholder="Ex: Trazer instrumentos extras, ensaio antes do culto, etc."
+              className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold min-h-[100px] resize-none"
+            />
+          </div>
+
           <div className="pt-6 border-t flex justify-end gap-4">
             <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400">CANCELAR</button>
             <button type="submit" className="px-10 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">{editingId ? 'ATUALIZAR ESCALA' : 'SALVAR ESCALA'}</button>
@@ -961,6 +984,20 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   );
                 })}
               </div>
+              
+              {sch.observations && (
+                <div className="mt-6 pt-4 border-t border-white/5">
+                  <div className="flex items-start gap-3">
+                    <MessageSquare size={18} className="text-emerald-400 shrink-0 mt-1" />
+                    <div className="space-y-1">
+                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Observações:</strong>
+                      <p className="text-sm text-emerald-50/80 leading-relaxed italic">
+                        "{sch.observations}"
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="mt-6 pt-4 border-t border-white/5">
                 <h4 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-3"><Music size={14} /> Músicas do Dia</h4>

@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2, Cake } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2, Cake, MessageSquare } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -181,6 +181,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     {nextSchedule.members.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(' • ') || 'Nenhum integrante escalado'}
                   </p>
                 </div>
+
+                {nextSchedule.observations && (
+                  <div className="bg-white/5 backdrop-blur-sm p-4 rounded-2xl border border-white/10">
+                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300 mb-2 flex items-center gap-2">
+                      <MessageSquare size={12} /> Observações
+                    </p>
+                    <p className="text-xs font-medium text-emerald-50 leading-relaxed italic">
+                      "{nextSchedule.observations}"
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-emerald-100 font-bold">Nenhuma escala futura agendada.</p>
