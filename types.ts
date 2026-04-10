@@ -73,4 +73,13 @@ export interface ExternalEvent {
   memberIds?: string[];
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events';
+export interface LookStyle {
+  id: string;
+  title: string;
+  colors: string[];
+  description?: string;
+  imageUrl?: string;
+  date?: string;
+}
+
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style';

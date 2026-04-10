@@ -14,7 +14,8 @@ import {
   Sparkles,
   Library,
   BarChart3,
-  Calendar
+  Calendar,
+  Shirt
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -40,6 +41,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
     { id: 'reports' as ViewType, label: 'Relatórios', icon: BarChart3, adminOnly: true },
     { id: 'events' as ViewType, label: 'Eventos', icon: Calendar, adminOnly: false },
+    { id: 'style' as ViewType, label: 'Look/Style', icon: Shirt, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {
