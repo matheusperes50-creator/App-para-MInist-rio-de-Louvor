@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Schedule, Member, Song, ExternalEvent } from '../types';
 import { 
   BarChart, 
@@ -22,7 +22,10 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   FileText,
-  Music
+  Music,
+  Search,
+  X,
+  ChevronRight
 } from 'lucide-react';
 
 interface ReportsProps {
@@ -33,6 +36,9 @@ interface ReportsProps {
 }
 
 export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], songs = [], events = [] }) => {
+  const [memberSearch, setMemberSearch] = useState('');
+  const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
   const attendanceData = useMemo(() => {
     const stats: Record<string, { present: number, total: number }> = {};
     
@@ -125,12 +131,132 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
+  const memberSchedules = useMemo(() => {
+    if (!selectedMemberId) return [];
+    return schedules
+      .filter(s => s.members.includes(selectedMemberId))
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [schedules, selectedMemberId]);
+
+  const selectedMember = useMemo(() => 
+    members.find(m => m.id === selectedMemberId),
+    [members, selectedMemberId]
+  );
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <header>
         <h2 className="text-3xl font-black text-slate-900">Relatórios</h2>
         <p className="text-slate-500 font-medium">Análise de presença e liderança.</p>
       </header>
+
+      {/* Busca por Integrante */}
+      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="bg-emerald-50 p-2 rounded-lg"><Search size={18} className="text-emerald-600" /></div>
+          <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Busca por Integrante</h3>
+        </div>
+        
+        <div className="relative max-w-md mb-6">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+          <input 
+            type="text"
+            placeholder="Digite o nome do integrante..."
+            value={memberSearch}
+            onChange={(e) => setMemberSearch(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-emerald-500 outline-none font-bold transition-all"
+          />
+          {memberSearch && (
+            <button 
+              onClick={() => setMemberSearch('')}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {memberSearch.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-8">
+            {members
+              .filter(m => m.name.toLowerCase().includes(memberSearch.toLowerCase()))
+              .slice(0, 6)
+              .map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => {
+                    setSelectedMemberId(m.id);
+                    setMemberSearch('');
+                  }}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedMemberId === m.id ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-emerald-200'}`}
+                >
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black text-xs overflow-hidden">
+                    {m.photoUrl ? <img src={m.photoUrl} alt="" className="w-full h-full object-cover" /> : m.name.charAt(0)}
+                  </div>
+                  <span className="font-bold text-sm truncate">{m.name}</span>
+                </button>
+              ))
+            }
+          </div>
+        )}
+
+        {selectedMemberId && (
+          <div className="mt-8 animate-in slide-in-from-top-4 duration-300">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center overflow-hidden">
+                  {selectedMember?.photoUrl ? <img src={selectedMember.photoUrl} alt="" className="w-full h-full object-cover" /> : <Users className="text-emerald-600" />}
+                </div>
+                <div>
+                  <h4 className="font-black text-slate-800 uppercase tracking-tight">{selectedMember?.name}</h4>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Escalas</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedMemberId(null)}
+                className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest"
+              >
+                Limpar
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {memberSchedules.length > 0 ? (
+                memberSchedules.map(s => {
+                  const assignment = s.assignments.find(a => a.memberId === selectedMemberId);
+                  return (
+                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-white p-2 rounded-lg text-emerald-600 border border-slate-100">
+                          <Calendar size={16} />
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-800 text-sm">
+                            {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.serviceType}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg inline-block">
+                          {assignment?.role || 'Integrante'}
+                        </p>
+                        {assignment?.present && (
+                          <span className="ml-2 text-emerald-500" title="Presente">
+                            <UserCheck size={14} className="inline" />
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-center py-8 text-slate-400 font-bold italic text-sm">Nenhuma escala encontrada para este integrante.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Relatório de Ministros */}
