@@ -59,6 +59,7 @@ export interface Schedule {
   confirmed?: boolean;
   attendanceMarked?: boolean; // New field
   observations?: string;
+  postSermonSong?: ScheduleSong;
 }
 
 export interface ExternalEvent {

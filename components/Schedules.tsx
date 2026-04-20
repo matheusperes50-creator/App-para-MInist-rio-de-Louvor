@@ -73,6 +73,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [date, setDate] = useState('');
   const [serviceType, setServiceType] = useState('Domingo/semana');
   const [observations, setObservations] = useState('');
+  const [postSermonItem, setPostSermonItem] = useState({ title: '', key: '' });
+  const [showPostSermonSuggestions, setShowPostSermonSuggestions] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
   const [monthCopyFeedback, setMonthCopyFeedback] = useState(false);
   const [selectedMonthFilter, setSelectedMonthFilter] = useState<string>('all');
@@ -107,6 +109,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const handleClickOutside = (event: MouseEvent) => {
       if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
         setActiveSuggestionIdx(null);
+        setShowPostSermonSuggestions(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -190,6 +193,17 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
     if (sch.observations) {
       text += `\n📝 _Obs: ${sch.observations}_`;
+    }
+
+    if (sch.postSermonSong) {
+      const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
+      const psKey = typeof sch.postSermonSong === 'string' ? '' : sch.postSermonSong.key;
+      const s = songs.find(x => x.id === psId);
+      if (s) {
+        text += `\n📖 *Música Pós-Pregação:* ${s.title}${psKey ? ` (${psKey})` : ''}`;
+      } else if (typeof sch.postSermonSong === 'string') {
+        text += `\n📖 *Música Pós-Pregação:* ${sch.postSermonSong}`;
+      }
     }
 
     return text;
@@ -331,6 +345,20 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setDate(sch.date);
     setServiceType(sch.serviceType);
     setObservations(sch.observations || '');
+    
+    if (sch.postSermonSong) {
+      const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
+      const psKey = typeof sch.postSermonSong === 'string' ? '' : sch.postSermonSong.key;
+      const s = songs.find(x => x.id === psId);
+      if (s) {
+        setPostSermonItem({ title: s.title, key: psKey || s.key || '' });
+      } else if (typeof sch.postSermonSong === 'string') {
+        setPostSermonItem({ title: sch.postSermonSong, key: '' });
+      }
+    } else {
+      setPostSermonItem({ title: '', key: '' });
+    }
+
     setLeaderIds(sch.leaderIds || []);
     setVocalIds(sch.vocalIds || []);
     
@@ -502,6 +530,34 @@ export const Schedules: React.FC<SchedulesProps> = ({
       setSongs(prev => [...prev, ...newSongsToRegister]);
     }
 
+    let finalPostSermonSong: ScheduleSong | undefined = undefined;
+    if (postSermonItem.title && postSermonItem.title.trim()) {
+      const searchTitle = postSermonItem.title.toLowerCase().trim();
+      const existingSong = songs.find(s => s.title && s.title.toLowerCase() === searchTitle);
+      
+      if (existingSong) {
+        finalPostSermonSong = {
+          id: existingSong.id,
+          key: (postSermonItem.key || existingSong.key || '').toUpperCase()
+        };
+      } else {
+        const newId = generateShortId();
+        const newSong: Song = {
+          id: newId,
+          title: postSermonItem.title.trim(),
+          artist: 'Manual',
+          key: (postSermonItem.key || '').toUpperCase(),
+          status: SongStatus.PENDING,
+          youtubeUrl: ''
+        };
+        setSongs(prev => [...prev, newSong]);
+        finalPostSermonSong = {
+          id: newId,
+          key: (postSermonItem.key || '').toUpperCase()
+        };
+      }
+    }
+
     const filteredVocals = vocalIds.filter(vId => !leaderIds.includes(vId));
 
     const existingSchedule = editingId ? schedules.find(s => s.id === editingId) : null;
@@ -539,7 +595,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
       leaderIds,
       vocalIds: filteredVocals,
       confirmed: editingId ? schedules.find(s => s.id === editingId)?.confirmed : false,
-      observations
+      observations,
+      postSermonSong: finalPostSermonSong
     };
 
     if (editingId) {
@@ -560,6 +617,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setTempSetlist([{title: '', key: ''}]);
     setDate('');
     setObservations('');
+    setPostSermonItem({ title: '', key: '' });
+    setShowPostSermonSuggestions(false);
     setActiveSuggestionIdx(null);
   };
 
@@ -805,6 +864,58 @@ export const Schedules: React.FC<SchedulesProps> = ({
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Música Pós-Pregação (Pedida durante o culto)</label>
+            <div className="flex gap-2 items-start relative">
+              <div className="flex-1 relative">
+                <input 
+                  type="text" 
+                  placeholder="Nome da Música" 
+                  value={postSermonItem.title} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPostSermonItem(prev => ({ ...prev, title: val }));
+                    setShowPostSermonSuggestions(val.length > 0);
+                  }}
+                  onFocus={() => postSermonItem.title && setShowPostSermonSuggestions(true)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500" 
+                />
+                {showPostSermonSuggestions && (
+                  <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    {songs
+                      .filter(s => s.title && s.title.toLowerCase().includes(postSermonItem.title.toLowerCase()))
+                      .slice(0, 5)
+                      .map((s) => (
+                        <button 
+                          key={s.id} 
+                          type="button" 
+                          onClick={() => {
+                            setPostSermonItem({ title: s.title, key: s.key || '' });
+                            setShowPostSermonSuggestions(false);
+                          }} 
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-colors border-b last:border-0 border-slate-50 group"
+                        >
+                          <div className="text-left">
+                            <p className="text-sm font-black text-slate-800 group-hover:text-emerald-700">{s.title}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">{s.artist !== 'Manual' ? s.artist : 'Repertório'}</p>
+                          </div>
+                          <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-lg">{s.key}</div>
+                        </button>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
+              <input 
+                type="text" 
+                placeholder="Tom" 
+                value={postSermonItem.key} 
+                onChange={(e) => setPostSermonItem(prev => ({ ...prev, key: e.target.value }))} 
+                className="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-3 font-black text-center text-xs uppercase text-emerald-600 outline-none focus:border-emerald-500" 
+              />
+            </div>
+          </div>
+
           <div className="pt-6 border-t flex justify-end gap-4">
             <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400">CANCELAR</button>
             <button type="submit" className="px-10 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">{editingId ? 'ATUALIZAR ESCALA' : 'SALVAR ESCALA'}</button>
@@ -835,7 +946,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 ${progress === 100 ? 'ring-4 ring-emerald-500/20' : ''}
               `}
             >
-              {progress === 100 && (
+              {(progress === 100 || sch.confirmed) && (
                 <div className="absolute -top-2 -right-2 bg-emerald-500 text-white p-4 rounded-bl-[2rem] z-20 shadow-lg animate-in fade-in zoom-in duration-300">
                   <CheckCircle2 size={24} />
                 </div>
@@ -1031,24 +1142,43 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 </div>
               </div>
 
+              {sch.postSermonSong && (
+                <div className="mt-4 pt-4 border-t border-white/5">
+                  <h4 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-2">
+                    <Music size={14} /> Música Pós-Pregação
+                  </h4>
+                  <div className="bg-emerald-500/10 border border-emerald-500/20 px-3 py-2 rounded-xl text-xs flex justify-between items-center group/ps">
+                    <div className="flex items-center gap-2">
+                       <span className="font-bold text-emerald-100">
+                        {(() => {
+                          const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
+                          const psKey = typeof sch.postSermonSong === 'string' ? '' : sch.postSermonSong.key;
+                          const s = songs.find(x => x.id === psId);
+                          return s ? `${s.title}${psKey ? ` (${psKey})` : ''}` : (typeof sch.postSermonSong === 'string' ? sch.postSermonSong : 'Música Desconhecida');
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
                   {isAdmin && isPassed && (
                 <button 
                   onClick={(e) => { 
                     e.stopPropagation(); 
-                    const allPresent = (sch.assignments || []).every(a => a.present);
+                    const isConcluding = !sch.confirmed;
                     setSchedules(prev => prev.map(s => {
                       if (s.id !== sch.id) return s;
                       return {
                         ...s,
-                        attendanceMarked: !allPresent,
-                        assignments: (s.assignments || []).map(a => ({ ...a, present: !allPresent }))
+                        confirmed: isConcluding
                       };
                     }));
                   }}
-                  className={`mt-6 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${sch.attendanceMarked ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white/60 hover:bg-white/20 border border-white/10'}`}
+                  className={`mt-6 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${sch.confirmed ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white/60 hover:bg-white/20 border border-white/10'}`}
                 >
-                  {sch.attendanceMarked ? <CheckCircle2 size={18} /> : <UserCheck size={18} />}
-                  {sch.attendanceMarked ? 'Presença Confirmada' : 'Marcar Todos como Presentes'}
+                  {sch.confirmed ? <CheckCircle2 size={18} /> : <UserCheck size={18} />}
+                  {sch.confirmed ? 'Concluído' : 'Concluir Escala'}
                 </button>
               )}
             </div>
