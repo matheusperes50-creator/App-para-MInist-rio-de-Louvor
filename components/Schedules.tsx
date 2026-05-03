@@ -134,6 +134,18 @@ export const Schedules: React.FC<SchedulesProps> = ({
     return [...list].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }, [schedules, selectedMonthFilter]);
 
+  const memberCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredSchedules.forEach(s => {
+      if (s.members) {
+        s.members.forEach(mId => {
+          counts[mId] = (counts[mId] || 0) + 1;
+        });
+      }
+    });
+    return counts;
+  }, [filteredSchedules]);
+
   const formatMonthLabel = (yearMonth: string) => {
     const [year, month] = yearMonth.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -261,10 +273,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     const schedulesToExport = exportMonth === 'all' 
-      ? [...schedules].sort((a, b) => b.date.localeCompare(a.date))
+      ? [...schedules].sort((a, b) => a.date.localeCompare(b.date))
       : schedules
           .filter(s => s.date.startsWith(exportMonth))
-          .sort((a, b) => b.date.localeCompare(a.date));
+          .sort((a, b) => a.date.localeCompare(b.date));
 
     if (schedulesToExport.length === 0) {
       alert("Nenhuma escala encontrada.");
@@ -753,6 +765,39 @@ export const Schedules: React.FC<SchedulesProps> = ({
             {availableMonths.map(month => (
               <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Member Appearance Counts */}
+      {isAdmin && schedules.length > 0 && (
+        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
+              <Users size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter">Participações no Mês</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                {selectedMonthFilter === 'all' ? 'Total Geral' : formatMonthLabel(selectedMonthFilter)}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(members || [])
+              .filter(m => m.isActive && (memberCounts[m.id] || 0) > 0)
+              .sort((a, b) => (memberCounts[b.id] || 0) - (memberCounts[a.id] || 0))
+              .map(m => (
+                <div key={m.id} className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-2 group transition-all hover:border-emerald-200">
+                  <span className="text-xs font-bold text-slate-600">{m.name}</span>
+                  <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
+                    {memberCounts[m.id] || 0}
+                  </span>
+                </div>
+              ))}
+            {Object.keys(memberCounts).length === 0 && (
+              <p className="text-xs text-slate-400 italic">Nenhum membro escalado neste período.</p>
+            )}
           </div>
         </div>
       )}
