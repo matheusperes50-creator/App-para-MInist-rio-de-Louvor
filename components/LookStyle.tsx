@@ -25,6 +25,24 @@ interface LookStyleProps {
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
+const PREDEFINED_COLORS = [
+  { name: 'Branco', hex: '#FFFFFF' },
+  { name: 'Preto', hex: '#000000' },
+  { name: 'Cinza', hex: '#94a3b8' },
+  { name: 'Azul', hex: '#3b82f6' },
+  { name: 'Azul Escuro', hex: '#1e3a8a' },
+  { name: 'Verde', hex: '#10b981' },
+  { name: 'Amarelo', hex: '#f59e0b' },
+  { name: 'Laranja', hex: '#f97316' },
+  { name: 'Vermelho', hex: '#ef4444' },
+  { name: 'Vinho', hex: '#7f1d1d' },
+  { name: 'Roxo', hex: '#8b5cf6' },
+  { name: 'Rosa', hex: '#ec4899' },
+  { name: 'Bege', hex: '#f5f5dc' },
+  { name: 'Marrom', hex: '#78350f' },
+  { name: 'Jeans', hex: '#5d7293' },
+];
+
 export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, isAdmin, onSync, isSyncing }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -225,11 +243,21 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
 
               {style.colors && style.colors.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {style.colors.map((color, i) => (
-                    <span key={i} className="px-3 py-1 bg-emerald-50 border border-emerald-100 text-[10px] font-black uppercase text-emerald-700 rounded-lg flex items-center gap-1.5">
-                      <Palette size={10} /> {color}
-                    </span>
-                  ))}
+                  {style.colors.map((color, i) => {
+                    const foundColor = PREDEFINED_COLORS.find(c => c.name.toLowerCase() === color.toLowerCase());
+                    const hexColor = foundColor ? foundColor.hex : (color.startsWith('#') ? color : undefined);
+                    
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 pl-1.5 pr-3 py-1 rounded-full shadow-sm">
+                        {hexColor ? (
+                          <div className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: hexColor }} />
+                        ) : (
+                          <Palette size={12} className="text-emerald-500" />
+                        )}
+                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-tight">{color}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
@@ -305,28 +333,87 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Cores</label>
-                <div className="flex gap-2">
-                  <input 
-                    type="text" 
-                    value={colorInput} 
-                    onChange={(e) => setColorInput(e.target.value)} 
-                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
-                    className="flex-1 px-6 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-sm transition-all" 
-                    placeholder="Adicionar cor..." 
-                  />
-                  <button type="button" onClick={addColor} className="bg-emerald-600 text-white p-3 rounded-xl hover:bg-emerald-700 transition-all">
-                    <Plus size={20} />
-                  </button>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center ml-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paleta de Cores</label>
+                  {colors.length > 0 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setColors([])}
+                      className="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors flex items-center gap-1"
+                    >
+                      <Trash2 size={10} /> Limpar Paleta
+                    </button>
+                  )}
                 </div>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {colors.map((color, i) => (
-                    <span key={i} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-black uppercase flex items-center gap-2">
-                      {color}
-                      <button type="button" onClick={() => removeColor(color)} className="hover:text-red-500"><X size={12} /></button>
-                    </span>
+                
+                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3 p-4 bg-slate-50 rounded-3xl border-2 border-slate-100">
+                  {PREDEFINED_COLORS.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      onClick={() => {
+                        if (!colors.includes(c.name)) {
+                          setColors([...colors, c.name]);
+                        } else {
+                          removeColor(c.name);
+                        }
+                      }}
+                      className={`flex flex-col items-center gap-1.5 transition-all hover:scale-110`}
+                    >
+                      <div 
+                        className={`w-10 h-10 rounded-full border-2 shadow-sm relative flex items-center justify-center ${colors.includes(c.name) ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-white'}`}
+                        style={{ backgroundColor: c.hex }}
+                      >
+                        {colors.includes(c.name) && (
+                          <div className="bg-white rounded-full p-0.5 text-emerald-600 shadow-sm animate-in zoom-in duration-200">
+                            <Plus size={12} className="rotate-45" />
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${colors.includes(c.name) ? 'text-emerald-600' : 'text-slate-400'}`}>
+                        {c.name}
+                      </span>
+                    </button>
                   ))}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Outra Cor</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={colorInput} 
+                      onChange={(e) => setColorInput(e.target.value)} 
+                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
+                      className="flex-1 px-6 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-sm transition-all" 
+                      placeholder="Ex: Marsala, Ouro..." 
+                    />
+                    <button type="button" onClick={addColor} className="bg-emerald-600 text-white p-3 rounded-xl hover:bg-emerald-700 transition-all shadow-md">
+                      <Plus size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-2 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 min-h-[50px]">
+                  {colors.length > 0 ? colors.map((color, i) => {
+                    const foundColor = PREDEFINED_COLORS.find(c => c.name.toLowerCase() === color.toLowerCase());
+                    const hexColor = foundColor ? foundColor.hex : (color.startsWith('#') ? color : undefined);
+
+                    return (
+                      <span key={i} className="px-3 py-1.5 bg-white shadow-sm border border-emerald-200 text-emerald-700 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 animate-in zoom-in duration-200">
+                        {hexColor && (
+                          <div className="w-2.5 h-2.5 rounded-full border border-slate-200" style={{ backgroundColor: hexColor }} />
+                        )}
+                        {color}
+                        <button type="button" onClick={() => removeColor(color)} className="hover:text-red-500"><X size={12} /></button>
+                      </span>
+                    );
+                  }) : (
+                    <div className="flex items-center justify-center w-full text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em] italic">
+                      Monte sua paleta acima
+                    </div>
+                  )}
                 </div>
               </div>
 
