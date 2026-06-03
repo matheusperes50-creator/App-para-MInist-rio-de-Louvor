@@ -8,6 +8,7 @@ import { LookStyle } from './components/LookStyle';
 import { Login } from './components/Login';
 import { Reports } from './components/Reports';
 import { Events } from './components/Events';
+import { AutoSchedules } from './components/AutoSchedules';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 
@@ -217,6 +218,7 @@ const App: React.FC = () => {
       case 'reports': return <Reports schedules={schedules} members={members} songs={songs} events={events} />;
       case 'events': return <Events events={events} setEvents={setEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       case 'style': return <LookStyle styles={styles} setStyles={setStyles} {...syncProps} />;
+      case 'auto-schedules': return <AutoSchedules schedules={schedules} setSchedules={setSchedules} members={members} setView={setView} {...syncProps} />;
       default: return null;
     }
   };

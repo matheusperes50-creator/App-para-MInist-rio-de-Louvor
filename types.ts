@@ -83,4 +83,4 @@ export interface LookStyle {
   date?: string;
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules';

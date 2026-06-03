@@ -15,7 +15,8 @@ import {
   Library,
   BarChart3,
   Calendar,
-  Shirt
+  Shirt,
+  Wand2
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -42,6 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'reports' as ViewType, label: 'Relatórios', icon: BarChart3, adminOnly: true },
     { id: 'events' as ViewType, label: 'Eventos', icon: Calendar, adminOnly: false },
     { id: 'style' as ViewType, label: 'Look/Style', icon: Shirt, adminOnly: false },
+    { id: 'auto-schedules' as ViewType, label: 'Escala Automática', icon: Wand2, adminOnly: true },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {
