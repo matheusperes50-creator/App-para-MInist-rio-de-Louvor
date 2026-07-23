@@ -9,7 +9,8 @@ import { Login } from './components/Login';
 import { Reports } from './components/Reports';
 import { Events } from './components/Events';
 import { AutoSchedules } from './components/AutoSchedules';
-import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType } from './types';
+import { Notes } from './components/Notes';
+import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, ShieldCheck } from 'lucide-react';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
@@ -68,6 +69,14 @@ const App: React.FC = () => {
     } catch { return []; }
   });
 
+  const [notes, setNotes] = useState<RehearsalNote[]>(() => {
+    try {
+      const saved = localStorage.getItem('louvor_notes');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  });
+
   const [announcements, setAnnouncements] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('louvor_announcements');
@@ -113,6 +122,7 @@ const App: React.FC = () => {
         setSchedules(Array.isArray(data.schedules) ? data.schedules : []);
         setEvents(Array.isArray(data.events) ? data.events : []);
         setStyles(Array.isArray(data.styles) ? data.styles : []);
+        setNotes(Array.isArray(data.notes) ? data.notes : []);
         
         setAnnouncements(prev => {
           if (data.announcements) return data.announcements;
@@ -146,8 +156,9 @@ const App: React.FC = () => {
     localStorage.setItem('louvor_schedules', JSON.stringify(schedules));
     localStorage.setItem('louvor_events', JSON.stringify(events));
     localStorage.setItem('louvor_styles', JSON.stringify(styles));
+    localStorage.setItem('louvor_notes', JSON.stringify(notes));
     localStorage.setItem('louvor_announcements', announcements);
-  }, [members, songs, schedules, events, styles, announcements]);
+  }, [members, songs, schedules, events, styles, notes, announcements]);
 
   const syncToSheets = useCallback(async () => {
     if (!hasFetchedFromCloud || initialLoading || userRole !== 'admin') return;
@@ -162,6 +173,7 @@ const App: React.FC = () => {
         schedules: schedules || [],
         events: events || [],
         styles: styles || [],
+        notes: notes || [],
         announcements: announcements || ''
       };
 
@@ -180,7 +192,7 @@ const App: React.FC = () => {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [members, songs, schedules, hasFetchedFromCloud, initialLoading, userRole]);
+  }, [members, songs, schedules, events, styles, notes, announcements, hasFetchedFromCloud, initialLoading, userRole]);
 
   useEffect(() => {
     if (isInitialMount.current) {
@@ -191,7 +203,7 @@ const App: React.FC = () => {
       const timer = setTimeout(() => syncToSheets(), 2000);
       return () => clearTimeout(timer);
     }
-  }, [members, songs, schedules, events, styles, announcements, syncToSheets, userRole]);
+  }, [members, songs, schedules, events, styles, notes, announcements, syncToSheets, userRole]);
 
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
@@ -219,6 +231,7 @@ const App: React.FC = () => {
       case 'events': return <Events events={events} setEvents={setEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       case 'style': return <LookStyle styles={styles} setStyles={setStyles} {...syncProps} />;
       case 'auto-schedules': return <AutoSchedules schedules={schedules} setSchedules={setSchedules} members={members} setView={setView} {...syncProps} />;
+      case 'notes': return <Notes notes={notes} setNotes={setNotes} songs={songs} {...syncProps} />;
       default: return null;
     }
   };

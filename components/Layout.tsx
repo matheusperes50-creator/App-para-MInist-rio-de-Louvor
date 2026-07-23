@@ -16,7 +16,8 @@ import {
   BarChart3,
   Calendar,
   Shirt,
-  Wand2
+  Wand2,
+  StickyNote
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -42,6 +43,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
     { id: 'reports' as ViewType, label: 'Relatórios', icon: BarChart3, adminOnly: true },
     { id: 'events' as ViewType, label: 'Eventos', icon: Calendar, adminOnly: false },
+    { id: 'notes' as ViewType, label: 'Anotações', icon: StickyNote, adminOnly: false },
     { id: 'style' as ViewType, label: 'Look/Style', icon: Shirt, adminOnly: false },
     { id: 'auto-schedules' as ViewType, label: 'Escala Automática', icon: Wand2, adminOnly: true },
   ].filter(item => !item.adminOnly || isAdmin);

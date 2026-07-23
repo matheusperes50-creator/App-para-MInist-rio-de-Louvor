@@ -83,4 +83,22 @@ export interface LookStyle {
   date?: string;
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules';
+export interface NoteItem {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface RehearsalNote {
+  id: string;
+  title: string;
+  category: 'rehearsal' | 'general' | 'songs_list' | 'quick_reminder';
+  content?: string;
+  songIds?: string[];
+  items?: NoteItem[];
+  date?: string;
+  pinned?: boolean;
+  createdAt: string;
+}
+
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes';
