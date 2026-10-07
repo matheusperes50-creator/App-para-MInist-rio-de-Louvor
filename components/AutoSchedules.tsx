@@ -28,6 +28,7 @@ interface AutoSchedulesProps {
   members: Member[];
   setView: (view: ViewType) => void;
   onSync: () => void;
+  onSaveToCloud?: (payload?: any) => Promise<void>;
   isSyncing: boolean;
   isAdmin: boolean;
 }
@@ -58,9 +59,11 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   members,
   setView,
   onSync,
+  onSaveToCloud,
   isSyncing,
   isAdmin
 }) => {
+  const [exportSuccessToast, setExportSuccessToast] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const nextMonth = new Date();
     nextMonth.setMonth(nextMonth.getMonth() + 1);
@@ -393,14 +396,28 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
       };
     });
 
+    let updatedList: Schedule[] = [];
     setSchedules(prev => {
       // Avoid raw duplicates targeting same dates or IDs
       const filteredPrev = prev.filter(s => !realSchedules.some(rs => rs.date === s.date && rs.serviceType === s.serviceType));
-      return [...realSchedules, ...filteredPrev].sort((a, b) => b.date.localeCompare(a.date));
+      updatedList = [...realSchedules, ...filteredPrev].sort((a, b) => b.date.localeCompare(a.date));
+      try {
+        localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+      } catch (err) {
+        console.error('Falha ao salvar no localStorage:', err);
+      }
+      return updatedList;
     });
 
-    alert('Escalas criadas com sucesso de forma automática! Redirecionando...');
-    setView('schedules');
+    // Save immediately to cloud if admin
+    if (onSaveToCloud) {
+      onSaveToCloud({ schedules: updatedList });
+    }
+
+    setExportSuccessToast(true);
+    setTimeout(() => {
+      setView('schedules');
+    }, 1200);
   };
 
   const getRoleIcon = (roleName: string) => {
@@ -885,6 +902,16 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
           <CalendarIcon size={48} className="text-slate-200 mx-auto mb-4" />
           <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum rascunho de data configurado</p>
           <p className="text-xs text-slate-300 uppercase tracking-widest mt-2">Escolha uma opção no painel de configuração para começar</p>
+        </div>
+      )}
+
+      {exportSuccessToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-700 text-white px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-4 animate-in fade-in slide-in-from-bottom-5 duration-300 border border-emerald-500/30">
+          <CheckCircle2 size={28} className="text-emerald-300 flex-shrink-0" />
+          <div>
+            <p className="font-black text-sm uppercase tracking-wide">Escalas Salvas com Sucesso!</p>
+            <p className="text-xs text-emerald-100 font-medium">As novas escalas foram salvas no app e sincronizadas. Redirecionando...</p>
+          </div>
         </div>
       )}
     </div>

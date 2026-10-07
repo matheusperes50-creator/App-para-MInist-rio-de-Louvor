@@ -38,6 +38,7 @@ interface SchedulesProps {
   songs: Song[];
   setSongs: React.Dispatch<React.SetStateAction<Song[]>>;
   onSync: () => void;
+  onSaveToCloud?: (payload?: any) => Promise<void>;
   isSyncing: boolean;
   isAdmin: boolean;
 }
@@ -65,6 +66,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   songs = [], 
   setSongs,
   onSync,
+  onSaveToCloud,
   isSyncing,
   isAdmin
 }) => {
@@ -611,10 +613,31 @@ export const Schedules: React.FC<SchedulesProps> = ({
       postSermonSong: finalPostSermonSong
     };
 
+    let updatedList: Schedule[] = [];
     if (editingId) {
-      setSchedules(prev => prev.map(s => s.id === editingId ? scheduleData : s));
+      setSchedules(prev => {
+        updatedList = prev.map(s => s.id === editingId ? scheduleData : s);
+        try {
+          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+        } catch (e) {
+          console.error('Erro ao salvar no localStorage:', e);
+        }
+        return updatedList;
+      });
     } else {
-      setSchedules(prev => [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+      setSchedules(prev => {
+        updatedList = [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date));
+        try {
+          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+        } catch (e) {
+          console.error('Erro ao salvar no localStorage:', e);
+        }
+        return updatedList;
+      });
+    }
+
+    if (onSaveToCloud) {
+      onSaveToCloud({ schedules: updatedList });
     }
 
     setIsAdding(false);
@@ -636,7 +659,21 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
   const removeSchedule = (id: string) => {
     if (!isAdmin) return;
-    if (confirm('Remover esta escala?')) setSchedules(prev => prev.filter(s => s.id !== id));
+    if (window.confirm('Remover esta escala?')) {
+      let updatedList: Schedule[] = [];
+      setSchedules(prev => {
+        updatedList = prev.filter(s => s.id !== id);
+        try {
+          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+        } catch (e) {
+          console.error('Erro ao salvar no localStorage:', e);
+        }
+        return updatedList;
+      });
+      if (onSaveToCloud) {
+        onSaveToCloud({ schedules: updatedList });
+      }
+    }
   };
 
   return (
