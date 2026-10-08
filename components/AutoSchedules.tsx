@@ -396,18 +396,17 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
       };
     });
 
-    let updatedList: Schedule[] = [];
-    setSchedules(prev => {
-      // Avoid raw duplicates targeting same dates or IDs
-      const filteredPrev = prev.filter(s => !realSchedules.some(rs => rs.date === s.date && rs.serviceType === s.serviceType));
-      updatedList = [...realSchedules, ...filteredPrev].sort((a, b) => b.date.localeCompare(a.date));
-      try {
-        localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
-      } catch (err) {
-        console.error('Falha ao salvar no localStorage:', err);
-      }
-      return updatedList;
-    });
+    const currentPrev = schedules || [];
+    // Avoid raw duplicates targeting same dates or IDs
+    const filteredPrev = currentPrev.filter(s => !realSchedules.some(rs => rs.date === s.date && rs.serviceType === s.serviceType));
+    const updatedList = [...realSchedules, ...filteredPrev].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    setSchedules(updatedList);
+    try {
+      localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+    } catch (err) {
+      console.error('Falha ao salvar no localStorage:', err);
+    }
 
     // Save immediately to cloud if admin
     if (onSaveToCloud) {

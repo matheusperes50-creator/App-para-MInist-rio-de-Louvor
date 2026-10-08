@@ -447,35 +447,47 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
   const toggleSongConfirm = (scheduleId: string, songId: string) => {
     if (!isAdmin) return;
-    setSchedules(prev => prev.map(s => {
+    const current = schedules || [];
+    const updated = current.map(s => {
       if (s.id !== scheduleId) return s;
       const updatedSongs = (s.songs || []).map(song => 
         song.id === songId ? { ...song, confirmed: !song.confirmed } : song
       );
       return { ...s, songs: updatedSongs };
-    }));
+    });
+    setSchedules(updated);
+    try { localStorage.setItem('louvor_schedules', JSON.stringify(updated)); } catch (e) {}
+    if (onSaveToCloud) onSaveToCloud({ schedules: updated });
   };
 
   const toggleAssignmentConfirm = (scheduleId: string, memberId: string, role: string) => {
     if (!isAdmin) return;
-    setSchedules(prev => prev.map(s => {
+    const current = schedules || [];
+    const updated = current.map(s => {
       if (s.id !== scheduleId) return s;
       const updatedAssignments = (s.assignments || []).map(a => 
         (a.memberId === memberId && a.role === role) ? { ...a, confirmed: !a.confirmed } : a
       );
       return { ...s, assignments: updatedAssignments };
-    }));
+    });
+    setSchedules(updated);
+    try { localStorage.setItem('louvor_schedules', JSON.stringify(updated)); } catch (e) {}
+    if (onSaveToCloud) onSaveToCloud({ schedules: updated });
   };
 
   const toggleAttendance = (scheduleId: string, memberId: string, role: string) => {
     if (!isAdmin) return;
-    setSchedules(prev => prev.map(s => {
+    const current = schedules || [];
+    const updated = current.map(s => {
       if (s.id !== scheduleId) return s;
       const updatedAssignments = (s.assignments || []).map(a => 
         (a.memberId === memberId && a.role === role) ? { ...a, present: !a.present } : a
       );
       return { ...s, assignments: updatedAssignments, attendanceMarked: true };
-    }));
+    });
+    setSchedules(updated);
+    try { localStorage.setItem('louvor_schedules', JSON.stringify(updated)); } catch (e) {}
+    if (onSaveToCloud) onSaveToCloud({ schedules: updated });
   };
 
   const calculateProgress = (sch: Schedule) => {
@@ -613,27 +625,19 @@ export const Schedules: React.FC<SchedulesProps> = ({
       postSermonSong: finalPostSermonSong
     };
 
-    let updatedList: Schedule[] = [];
+    const currentList = schedules || [];
+    let updatedList: Schedule[];
     if (editingId) {
-      setSchedules(prev => {
-        updatedList = prev.map(s => s.id === editingId ? scheduleData : s);
-        try {
-          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
-        } catch (e) {
-          console.error('Erro ao salvar no localStorage:', e);
-        }
-        return updatedList;
-      });
+      updatedList = currentList.map(s => s.id === editingId ? scheduleData : s);
     } else {
-      setSchedules(prev => {
-        updatedList = [scheduleData, ...prev].sort((a, b) => b.date.localeCompare(a.date));
-        try {
-          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
-        } catch (e) {
-          console.error('Erro ao salvar no localStorage:', e);
-        }
-        return updatedList;
-      });
+      updatedList = [scheduleData, ...currentList.filter(s => s.id !== scheduleData.id)].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    }
+
+    setSchedules(updatedList);
+    try {
+      localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+    } catch (e) {
+      console.error('Erro ao salvar no localStorage:', e);
     }
 
     if (onSaveToCloud) {
@@ -660,16 +664,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const removeSchedule = (id: string) => {
     if (!isAdmin) return;
     if (window.confirm('Remover esta escala?')) {
-      let updatedList: Schedule[] = [];
-      setSchedules(prev => {
-        updatedList = prev.filter(s => s.id !== id);
-        try {
-          localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
-        } catch (e) {
-          console.error('Erro ao salvar no localStorage:', e);
-        }
-        return updatedList;
-      });
+      const currentList = schedules || [];
+      const updatedList = currentList.filter(s => s.id !== id);
+      setSchedules(updatedList);
+      try {
+        localStorage.setItem('louvor_schedules', JSON.stringify(updatedList));
+      } catch (e) {
+        console.error('Erro ao salvar no localStorage:', e);
+      }
       if (onSaveToCloud) {
         onSaveToCloud({ schedules: updatedList });
       }
@@ -1249,13 +1251,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   onClick={(e) => { 
                     e.stopPropagation(); 
                     const isConcluding = !sch.confirmed;
-                    setSchedules(prev => prev.map(s => {
+                    const current = schedules || [];
+                    const updated = current.map(s => {
                       if (s.id !== sch.id) return s;
-                      return {
-                        ...s,
-                        confirmed: isConcluding
-                      };
-                    }));
+                      return { ...s, confirmed: isConcluding };
+                    });
+                    setSchedules(updated);
+                    try { localStorage.setItem('louvor_schedules', JSON.stringify(updated)); } catch (err) {}
+                    if (onSaveToCloud) onSaveToCloud({ schedules: updated });
                   }}
                   className={`mt-6 w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${sch.confirmed ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-white/10 text-white/60 hover:bg-white/20 border border-white/10'}`}
                 >

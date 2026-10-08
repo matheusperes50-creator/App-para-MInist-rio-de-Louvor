@@ -11,8 +11,16 @@ import { Events } from './components/Events';
 import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote } from './types';
-import { DEFAULT_MEMBERS, DEFAULT_SONGS, DEFAULT_SCHEDULES, DEFAULT_EVENTS, DEFAULT_NOTES } from './initialData';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut } from 'lucide-react';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { 
+  DEFAULT_MEMBERS, 
+  DEFAULT_SONGS, 
+  DEFAULT_SCHEDULES, 
+  DEFAULT_STYLES, 
+  DEFAULT_NOTES, 
+  DEFAULT_EVENTS, 
+  DEFAULT_ANNOUNCEMENTS 
+} from './initialData';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
@@ -24,65 +32,74 @@ export const App: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
-  const hasFetchedRef = useRef(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
   
   const [members, setMembers] = useState<Member[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_members');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_MEMBERS;
-    } catch { return DEFAULT_MEMBERS; }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_MEMBERS;
   });
 
   const [songs, setSongs] = useState<Song[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_songs');
       const parsed = saved ? JSON.parse(saved) : null;
-      const validSongs = Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SONGS;
-      return validSongs.map(s => ({ ...s, status: s.status || SongStatus.READY }));
-    } catch { return DEFAULT_SONGS; }
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((s: any) => ({ ...s, status: s.status || SongStatus.READY }));
+      }
+    } catch {}
+    return DEFAULT_SONGS;
   });
 
   const [schedules, setSchedules] = useState<Schedule[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_schedules');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_SCHEDULES;
-    } catch { return DEFAULT_SCHEDULES; }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_SCHEDULES;
   });
 
   const [events, setEvents] = useState<ExternalEvent[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_events');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_EVENTS;
-    } catch { return DEFAULT_EVENTS; }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_EVENTS;
   });
 
   const [styles, setStyles] = useState<LookStyleType[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_styles');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_STYLES;
   });
 
   const [notes, setNotes] = useState<RehearsalNote[]>(() => {
     try {
       const saved = localStorage.getItem('louvor_notes');
       const parsed = saved ? JSON.parse(saved) : null;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_NOTES;
-    } catch { return DEFAULT_NOTES; }
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_NOTES;
   });
 
   const [announcements, setAnnouncements] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('louvor_announcements');
-      return saved || '';
-    } catch { return ''; }
+      if (saved && saved.trim()) return saved;
+    } catch {}
+    return DEFAULT_ANNOUNCEMENTS;
   });
 
-  // Keep live references to state to prevent stale closures during async sync
+  // Keep live references to state
   const membersRef = useRef(members);
   const songsRef = useRef(songs);
   const schedulesRef = useRef(schedules);
@@ -98,8 +115,6 @@ export const App: React.FC = () => {
   useEffect(() => { stylesRef.current = styles; }, [styles]);
   useEffect(() => { notesRef.current = notes; }, [notes]);
   useEffect(() => { announcementsRef.current = announcements; }, [announcements]);
-
-  const isInitialMount = useRef(true);
 
   // Sync state to localStorage immediately whenever state changes
   useEffect(() => {
@@ -124,7 +139,7 @@ export const App: React.FC = () => {
     setUserRole('guest');
   };
 
-  // Immediate cloud save function
+  // Immediate cloud save function - ONLY triggered by explicit actions
   const saveToCloudNow = useCallback(async (overridePayload?: {
     members?: Member[];
     songs?: Song[];
@@ -175,8 +190,8 @@ export const App: React.FC = () => {
     }
   }, [userRole]);
 
-  // SMART NON-DESTRUCTIVE SYNC FROM SHEETS:
-  // Merges cloud data with local data so newly created scales or edits are NEVER wiped out!
+  // SYNC FROM SHEETS:
+  // Reads cloud data and safely applies it to state and localStorage.
   const syncFromSheets = useCallback(async (isAuto = false) => {
     if (!isAuto) setIsSyncing(true);
     setSyncStatus('idle');
@@ -188,176 +203,110 @@ export const App: React.FC = () => {
         cache: 'no-store'
       });
 
-      if (!response.ok) throw new Error('Falha na conexão');
+      if (!response.ok) {
+        console.warn('Falha HTTP ao conectar com a planilha:', response.status);
+        if (!isAuto) setSyncStatus('error');
+        return;
+      }
 
       const text = await response.text();
-      const data = JSON.parse(text);
+      let data: any = null;
+      try {
+        const trimmed = (text || '').trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          data = JSON.parse(trimmed);
+        }
+      } catch (parseErr) {
+        console.warn('Dados recebidos da planilha não são JSON válido, mantendo dados locais intactos:', parseErr);
+        if (!isAuto) setSyncStatus('error');
+        return;
+      }
 
       if (data && typeof data === 'object') {
-        let hasLocalExtraSchedules = false;
+        // Members: apply from cloud only if non-empty array
+        if (Array.isArray(data.members) && data.members.length > 0) {
+          setMembers(data.members);
+          try {
+            localStorage.setItem('louvor_members', JSON.stringify(data.members));
+          } catch (e) {}
+        }
 
-        // 1. SMART MERGE SCHEDULES
-        const cloudSchedules: Schedule[] = Array.isArray(data.schedules) ? data.schedules : [];
-        let finalMergedSchedules: Schedule[] = [];
+        // Songs: apply from cloud only if non-empty array
+        if (Array.isArray(data.songs) && data.songs.length > 0) {
+          const validSongs = data.songs.map((s: any) => ({
+            ...s,
+            status: s.status || SongStatus.READY
+          }));
+          setSongs(validSongs);
+          try {
+            localStorage.setItem('louvor_songs', JSON.stringify(validSongs));
+          } catch (e) {}
+        }
 
-        setSchedules(prev => {
-          const scheduleMap = new Map<string, Schedule>();
-
-          // First populate with cloud schedules
-          cloudSchedules.forEach(s => {
-            if (s && s.id) {
-              scheduleMap.set(s.id, s);
-            }
+        // Schedules: merge cloud with any local drafts/schedules
+        if (Array.isArray(data.schedules) && data.schedules.length > 0) {
+          setSchedules(prev => {
+            const cloudIds = new Set((data.schedules || []).map((s: any) => s.id));
+            const localOnly = (prev || []).filter(s => s && s.id && !cloudIds.has(s.id));
+            const merged = [...data.schedules, ...localOnly].sort((a, b) => 
+              (b.date || '').localeCompare(a.date || '')
+            );
+            try {
+              localStorage.setItem('louvor_schedules', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
           });
+        }
 
-          // Then merge local schedules (preserve any newly created schedules!)
-          (prev || []).forEach(local => {
-            if (!local || !local.id) return;
-            const cloudExisting = scheduleMap.get(local.id);
-            if (!cloudExisting) {
-              // Local schedule is not present in cloud yet: ALWAYS PRESERVE IT!
-              scheduleMap.set(local.id, local);
-              hasLocalExtraSchedules = true;
-            } else {
-              // Present in both: preserve local details if local has songs, assignments, observations or attendance
-              const hasLocalDetails = (local.songs && local.songs.length > 0) ||
-                (local.assignments && local.assignments.length > 0) ||
-                (local.leaderIds && local.leaderIds.length > 0) ||
-                local.attendanceMarked ||
-                local.observations;
+        // Events: apply from cloud only if non-empty array
+        if (Array.isArray(data.events) && data.events.length > 0) {
+          setEvents(data.events);
+          try {
+            localStorage.setItem('louvor_events', JSON.stringify(data.events));
+          } catch (e) {}
+        }
 
-              if (hasLocalDetails) {
-                scheduleMap.set(local.id, { ...cloudExisting, ...local });
-              }
-            }
-          });
+        // Notes: apply from cloud only if non-empty array
+        if (Array.isArray(data.notes) && data.notes.length > 0) {
+          setNotes(data.notes);
+          try {
+            localStorage.setItem('louvor_notes', JSON.stringify(data.notes));
+          } catch (e) {}
+        }
 
-          finalMergedSchedules = Array.from(scheduleMap.values()).sort((a, b) => 
-            (b.date || '').localeCompare(a.date || '')
-          );
-          localStorage.setItem('louvor_schedules', JSON.stringify(finalMergedSchedules));
-          return finalMergedSchedules;
-        });
-
-        // 2. SMART MERGE MEMBERS
-        const cloudMembers: Member[] = Array.isArray(data.members) ? data.members : [];
-        let finalMergedMembers: Member[] = [];
-        setMembers(prev => {
-          const memberMap = new Map<string, Member>();
-          cloudMembers.forEach(m => { if (m && m.id) memberMap.set(m.id, m); });
-          (prev || []).forEach(local => {
-            if (!local || !local.id) return;
-            if (!memberMap.has(local.id)) {
-              memberMap.set(local.id, local);
-              hasLocalExtraSchedules = true;
-            } else {
-              memberMap.set(local.id, { ...memberMap.get(local.id)!, ...local });
-            }
-          });
-          finalMergedMembers = Array.from(memberMap.values());
-          localStorage.setItem('louvor_members', JSON.stringify(finalMergedMembers));
-          return finalMergedMembers;
-        });
-
-        // 3. SMART MERGE SONGS
-        const cloudSongs: Song[] = Array.isArray(data.songs) ? data.songs : [];
-        let finalMergedSongs: Song[] = [];
-        setSongs(prev => {
-          const songMap = new Map<string, Song>();
-          cloudSongs.forEach(s => {
-            if (s && s.id) {
-              songMap.set(s.id, { ...s, status: s.status || SongStatus.READY });
-            }
-          });
-          (prev || []).forEach(local => {
-            if (!local || !local.id) return;
-            if (!songMap.has(local.id)) {
-              songMap.set(local.id, { ...local, status: local.status || SongStatus.READY });
-              hasLocalExtraSchedules = true;
-            } else {
-              songMap.set(local.id, { ...songMap.get(local.id)!, ...local });
-            }
-          });
-          finalMergedSongs = Array.from(songMap.values());
-          localStorage.setItem('louvor_songs', JSON.stringify(finalMergedSongs));
-          return finalMergedSongs;
-        });
-
-        // 4. SMART MERGE EVENTS
-        const cloudEvents: ExternalEvent[] = Array.isArray(data.events) ? data.events : [];
-        setEvents(prev => {
-          const eventMap = new Map<string, ExternalEvent>();
-          cloudEvents.forEach(e => { if (e && e.id) eventMap.set(e.id, e); });
-          (prev || []).forEach(local => {
-            if (!local || !local.id) return;
-            if (!eventMap.has(local.id)) {
-              eventMap.set(local.id, local);
-            }
-          });
-          const merged = Array.from(eventMap.values());
-          localStorage.setItem('louvor_events', JSON.stringify(merged));
-          return merged;
-        });
-
-        // 5. SMART MERGE NOTES
-        const cloudNotes: RehearsalNote[] = Array.isArray(data.notes) ? data.notes : [];
-        setNotes(prev => {
-          const noteMap = new Map<string, RehearsalNote>();
-          cloudNotes.forEach(n => { if (n && n.id) noteMap.set(n.id, n); });
-          (prev || []).forEach(local => {
-            if (!local || !local.id) return;
-            if (!noteMap.has(local.id)) {
-              noteMap.set(local.id, local);
-            }
-          });
-          const merged = Array.from(noteMap.values());
-          localStorage.setItem('louvor_notes', JSON.stringify(merged));
-          return merged;
-        });
-
-        // 6. STYLES & ANNOUNCEMENTS
+        // Styles: apply from cloud only if non-empty array
         if (Array.isArray(data.styles) && data.styles.length > 0) {
           setStyles(data.styles);
-          localStorage.setItem('louvor_styles', JSON.stringify(data.styles));
+          try {
+            localStorage.setItem('louvor_styles', JSON.stringify(data.styles));
+          } catch (e) {}
         }
 
-        if (data.announcements !== undefined) {
+        // Announcements: apply from cloud only if non-empty
+        if (typeof data.announcements === 'string' && data.announcements.trim()) {
           setAnnouncements(data.announcements);
-          localStorage.setItem('louvor_announcements', data.announcements);
+          try {
+            localStorage.setItem('louvor_announcements', data.announcements);
+          } catch (e) {}
         }
 
-        hasFetchedRef.current = true;
         setHasFetchedFromCloud(true);
         if (!isAuto) setSyncStatus('success');
-
-        // If local had unsynced schedules/members/songs, push them back up to the cloud!
-        if (hasLocalExtraSchedules && userRole === 'admin') {
-          setTimeout(() => {
-            saveToCloudNow({
-              schedules: finalMergedSchedules,
-              members: finalMergedMembers,
-              songs: finalMergedSongs
-            });
-          }, 1000);
-        }
       }
     } catch (error) {
-      console.error('Erro ao sincronizar da nuvem:', error);
+      console.warn('Erro ao sincronizar da nuvem:', error);
       if (!isAuto) setSyncStatus('error');
     } finally {
       setIsSyncing(false);
       setInitialLoading(false);
       if (!isAuto) setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [userRole, saveToCloudNow]);
+  }, []);
 
-  // Full two-way manual sync
+  // Full manual sync
   const handleManualSync = useCallback(async () => {
     await syncFromSheets(false);
-    if (userRole === 'admin') {
-      await saveToCloudNow();
-    }
-  }, [syncFromSheets, userRole, saveToCloudNow]);
+  }, [syncFromSheets]);
 
   // Initial cloud fetch upon login
   useEffect(() => {
@@ -366,29 +315,110 @@ export const App: React.FC = () => {
     }
   }, [syncFromSheets, userRole]);
 
-  // Auto-sync debounced timer when admin makes changes
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (userRole === 'admin') {
-      const timer = setTimeout(() => {
-        saveToCloudNow();
-      }, 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [members, songs, schedules, events, styles, notes, announcements, userRole, saveToCloudNow]);
-
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
     try {
       localStorage.setItem('louvor_announcements', val);
     } catch (e) {}
     if (userRole === 'admin') {
-      setTimeout(() => saveToCloudNow({ announcements: val }), 800);
+      saveToCloudNow({ announcements: val });
     }
   }, [userRole, saveToCloudNow]);
+
+  // Export full JSON backup
+  const handleExportBackup = () => {
+    const backupData = {
+      members,
+      songs,
+      schedules,
+      events,
+      styles,
+      notes,
+      announcements,
+      exportedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_louvor_pibje_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setRestoreFeedback('Backup JSON exportado com sucesso!');
+    setTimeout(() => setRestoreFeedback(null), 3500);
+  };
+
+  // Import full JSON backup
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed && typeof parsed === 'object') {
+          if (Array.isArray(parsed.members)) setMembers(parsed.members);
+          if (Array.isArray(parsed.songs)) setSongs(parsed.songs);
+          if (Array.isArray(parsed.schedules)) setSchedules(parsed.schedules);
+          if (Array.isArray(parsed.events)) setEvents(parsed.events);
+          if (Array.isArray(parsed.styles)) setStyles(parsed.styles);
+          if (Array.isArray(parsed.notes)) setNotes(parsed.notes);
+          if (typeof parsed.announcements === 'string') setAnnouncements(parsed.announcements);
+
+          setRestoreFeedback('Backup importado com sucesso! Sincronizando com a nuvem...');
+          if (userRole === 'admin') {
+            await saveToCloudNow(parsed);
+          }
+          setTimeout(() => {
+            setRestoreFeedback(null);
+            setShowRestoreModal(false);
+          }, 2500);
+        }
+      } catch (err) {
+        setRestoreFeedback('Erro ao ler arquivo de backup. Verifique o formato JSON.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  // Reset all to default official PIBJE ministry data
+  const handleResetToDefaultMinistryData = async () => {
+    setMembers(DEFAULT_MEMBERS);
+    setSongs(DEFAULT_SONGS);
+    setSchedules(DEFAULT_SCHEDULES);
+    setEvents(DEFAULT_EVENTS);
+    setStyles(DEFAULT_STYLES);
+    setNotes(DEFAULT_NOTES);
+    setAnnouncements(DEFAULT_ANNOUNCEMENTS);
+
+    try {
+      localStorage.setItem('louvor_members', JSON.stringify(DEFAULT_MEMBERS));
+      localStorage.setItem('louvor_songs', JSON.stringify(DEFAULT_SONGS));
+      localStorage.setItem('louvor_schedules', JSON.stringify(DEFAULT_SCHEDULES));
+      localStorage.setItem('louvor_events', JSON.stringify(DEFAULT_EVENTS));
+      localStorage.setItem('louvor_styles', JSON.stringify(DEFAULT_STYLES));
+      localStorage.setItem('louvor_notes', JSON.stringify(DEFAULT_NOTES));
+      localStorage.setItem('louvor_announcements', DEFAULT_ANNOUNCEMENTS);
+    } catch (e) {}
+
+    setRestoreFeedback('Dados oficiais do Ministério PIBJE restaurados com sucesso! Sincronizando com a nuvem...');
+    if (userRole === 'admin') {
+      await saveToCloudNow({
+        members: DEFAULT_MEMBERS,
+        songs: DEFAULT_SONGS,
+        schedules: DEFAULT_SCHEDULES,
+        events: DEFAULT_EVENTS,
+        styles: DEFAULT_STYLES,
+        notes: DEFAULT_NOTES,
+        announcements: DEFAULT_ANNOUNCEMENTS
+      });
+    }
+    setTimeout(() => {
+      setRestoreFeedback(null);
+      setShowRestoreModal(false);
+    }, 2200);
+  };
 
   if (userRole === 'guest') {
     return <Login onLogin={handleLogin} />;
@@ -431,38 +461,171 @@ export const App: React.FC = () => {
 
   return (
     <Layout currentView={view} setView={setView} userRole={userRole}>
-      <div className="flex justify-between items-center mb-4 md:mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4 md:mb-6">
+        <div className="flex items-center gap-2 flex-wrap">
           <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-            <Cloud size={12} /> {hasFetchedFromCloud ? 'Sincronizado' : 'Offline / Local'}
+            <Cloud size={12} /> {hasFetchedFromCloud ? 'Conectado à Planilha' : 'Offline / Local'}
           </div>
           {isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <RefreshCw size={12} className="animate-spin" /> Salvando na nuvem...
+              <RefreshCw size={12} className="animate-spin" /> Sincronizando...
             </div>
           )}
           {syncStatus === 'success' && !isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <CheckCircle2 size={12} /> Sincronizado com sucesso
+              <CheckCircle2 size={12} /> Atualizado
             </div>
           )}
           {syncStatus === 'error' && !isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-red-700 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
-              <AlertCircle size={12} /> Erro ao sincronizar nuvem
+              <AlertCircle size={12} /> Erro de conexão
             </div>
           )}
         </div>
         
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer"
-        >
-          Sair <LogOut size={12} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowRestoreModal(true)}
+            className="flex items-center gap-1.5 text-[9px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all cursor-pointer shadow-sm"
+            title="Recuperar dados anteriores ou restaurar versão"
+          >
+            <History size={12} /> Recuperar / Backup
+          </button>
+
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer"
+          >
+            Sair <LogOut size={12} />
+          </button>
+        </div>
       </div>
+
       {renderContent()}
+
+      {/* RESTORE / BACKUP MODAL */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => setShowRestoreModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <FileSpreadsheet size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Recuperação e Backup de Dados</h3>
+                <p className="text-xs text-slate-500 font-medium">Restaure o histórico da planilha ou importe um backup</p>
+              </div>
+            </div>
+
+            {restoreFeedback && (
+              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 size={16} /> {restoreFeedback}
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Opção 1: Restaurar Histórico da Planilha Google */}
+              <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">1</span>
+                  <h4 className="font-black text-sm text-slate-900">Restaurar pelo Histórico do Google Sheets (Recomendado)</h4>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  O Google Sheets salva automaticamente <strong>todas as versões anteriores</strong> da sua planilha. Se as informações originais foram sobrescritas:
+                </p>
+                <ol className="text-xs text-slate-600 space-y-1.5 list-decimal pl-5">
+                  <li>Abra sua planilha do Google Drive vinculada a este app.</li>
+                  <li>Clique no menu <strong>Arquivo &gt; Histórico de versões &gt; Ver histórico de versões</strong> (ou <kbd className="bg-white px-1.5 py-0.5 rounded border text-[10px] font-mono">Ctrl + Alt + Shift + H</kbd>).</li>
+                  <li>Selecione a versão anterior de hoje ou de ontem.</li>
+                  <li>Clique no botão verde <strong>"Restaurar esta versão"</strong> no topo da planilha.</li>
+                </ol>
+                <div className="pt-2">
+                  <button 
+                    onClick={() => {
+                      syncFromSheets(false);
+                      setRestoreFeedback('Buscando e recarregando os dados da planilha Google...');
+                      setTimeout(() => setRestoreFeedback(null), 3000);
+                    }}
+                    disabled={isSyncing}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                    Recarregar Dados da Planilha Agora
+                  </button>
+                </div>
+              </div>
+
+              {/* Opção 2: Backup Local em JSON */}
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-black flex items-center justify-center">2</span>
+                  <h4 className="font-black text-sm text-slate-900">Backup e Restauração em Arquivo JSON</h4>
+                </div>
+                <p className="text-xs text-slate-500">
+                  Salve uma cópia de segurança em seu computador ou envie um arquivo de backup salvo anteriormente:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <button 
+                    onClick={handleExportBackup}
+                    className="py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    <Download size={14} /> Baixar Backup JSON
+                  </button>
+
+                  <label className="py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer text-center">
+                    <Upload size={14} /> Importar Backup JSON
+                    <input 
+                      type="file" 
+                      accept=".json" 
+                      onChange={handleImportBackup} 
+                      className="hidden" 
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Opção 3: Restaurar Todos os Dados Oficiais PIBJE */}
+              <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-amber-600 text-white text-xs font-black flex items-center justify-center">3</span>
+                  <h4 className="font-black text-sm text-slate-900">Restaurar Informações Oficiais do Ministério PIBJE</h4>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Restaura instantaneamente todos os integrantes da equipe (Matheus Peres, Lucas Silva, Ana Paula e ministros), repertório completo com tons e links, e as escalas de cultos.
+                </p>
+                <div className="pt-1">
+                  <button 
+                    onClick={handleResetToDefaultMinistryData}
+                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <RotateCcw size={14} />
+                    Restaurar Dados Completos do Ministério Agora
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setShowRestoreModal(false)}
+                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
 
 export default App;
+

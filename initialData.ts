@@ -1,54 +1,177 @@
-import { Member, Song, Schedule, ExternalEvent, RehearsalNote, Role, SongStatus } from './types';
+import { Member, Song, Schedule, ExternalEvent, RehearsalNote, Role, SongStatus, LookStyle } from './types';
 
 export const DEFAULT_MEMBERS: Member[] = [
-  { id: 'Z9C3CC', name: 'Matheus Peres', roles: [Role.VOCAL, Role.GUITAR, Role.KEYS], isActive: true },
-  { id: '7FUW2H', name: 'Amanda Silva', roles: [Role.VOCAL], isActive: true },
-  { id: 'GGOR98', name: 'Gabriel Gomes', roles: [Role.VOCAL, Role.GUITAR, Role.BASS], isActive: true },
-  { id: 'X17RHN', name: 'Lucas Oliveira', roles: [Role.VOCAL], isActive: true },
-  { id: 'DKSUWB', name: 'Daniel Souza', roles: [Role.VOCAL], isActive: true },
-  { id: 'QL783O', name: 'Raquel Lima', roles: [Role.VOCAL], isActive: true },
-  { id: 'ZUSMHY', name: 'Juliana Santos', roles: [Role.VOCAL], isActive: true },
-  { id: '6RXLI2', name: 'Rebecca Costa', roles: [Role.VOCAL], isActive: true },
-  { id: '7PC6VT', name: 'Priscila Carvalho', roles: [Role.VOCAL], isActive: true },
-  { id: '8ZRVW2', name: 'Beatriz Ramos', roles: [Role.VOCAL], isActive: true },
-  { id: '24BWIX', name: 'Bruno Wagner', roles: [Role.KEYS], isActive: true },
-  { id: '6310A5', name: 'Gustavo Alves', roles: [Role.BASS], isActive: true },
-  { id: 'PKNF87', name: 'Pedro Henrique', roles: [Role.DRUMS], isActive: true },
-  { id: 'MPSD03', name: 'Marcos Paulo', roles: [Role.DRUMS], isActive: true },
-  { id: 'JLIN30', name: 'João Lucas', roles: [Role.DRUMS], isActive: true },
-  { id: 'VDANAH', name: 'Vinícius Dias', roles: [Role.GUITAR], isActive: true }
+  { 
+    id: 'Z9C3CC', 
+    name: 'Matheus Peres', 
+    roles: [Role.VOCAL, Role.GUITAR, Role.KEYS], 
+    isActive: true, 
+    birthDate: '1996-05-14',
+    photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'QL783O', 
+    name: 'Lucas Silva', 
+    roles: [Role.VOCAL, Role.GUITAR], 
+    isActive: true, 
+    birthDate: '1998-08-22',
+    photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'ZUSMHY', 
+    name: 'Ana Paula Rocha', 
+    roles: [Role.VOCAL], 
+    isActive: true, 
+    birthDate: '1995-11-30',
+    photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: '7FUW2H', 
+    name: 'Gabriel Souza', 
+    roles: [Role.KEYS, Role.VOCAL], 
+    isActive: true, 
+    birthDate: '2000-02-18',
+    photoUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: '24BWIX', 
+    name: 'Beatriz Santos', 
+    roles: [Role.VOCAL], 
+    isActive: true, 
+    birthDate: '1997-09-05',
+    photoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'GGOR98', 
+    name: 'Guilherme Oliveira', 
+    roles: [Role.BASS], 
+    isActive: true, 
+    birthDate: '1994-04-12',
+    photoUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'PKNF87', 
+    name: 'Pedro Henrique (Batera)', 
+    roles: [Role.DRUMS], 
+    isActive: true, 
+    birthDate: '1999-07-25',
+    photoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'M9A1RT', 
+    name: 'Mariana Costa', 
+    roles: [Role.VOCAL], 
+    isActive: true, 
+    birthDate: '2001-03-10',
+    photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=faces' 
+  },
+  { 
+    id: 'F4L2OP', 
+    name: 'Felipe Ramos', 
+    roles: [Role.GUITAR], 
+    isActive: true, 
+    birthDate: '1993-10-14' 
+  },
+  { 
+    id: 'T8K3NX', 
+    name: 'Thiago Martins', 
+    roles: [Role.KEYS, Role.BASS], 
+    isActive: true, 
+    birthDate: '1996-12-03' 
+  }
 ];
 
 export const DEFAULT_SONGS: Song[] = [
-  { id: '9U33GC', title: 'Ousado Amor', artist: 'Isaías Saad', key: 'B', status: SongStatus.READY },
-  { id: 'IEY0Z6', title: 'Bondade de Deus', artist: 'Isaías Saad', key: 'E', status: SongStatus.READY },
-  { id: 'B14ALL', title: 'A Bênção', artist: 'Gabriel Guedes', key: 'C', status: SongStatus.READY },
-  { id: 'DEA5Q0', title: 'Porque Ele Vive', artist: 'Harpa Cristã', key: 'E', status: SongStatus.READY },
-  { id: 'K4H8QM', title: 'Vitorioso És', artist: 'Gabriel Guedes', key: 'A', status: SongStatus.READY },
-  { id: 'X3HING', title: 'Lugar Secreto', artist: 'Gabriela Rocha', key: 'A', status: SongStatus.READY },
-  { id: 'HMP9TK', title: 'Ruja o Leão', artist: 'Talita Catanzaro', key: 'G', status: SongStatus.READY },
-  { id: 'L4J3CL', title: 'Vem Me Buscar', artist: 'Jefferson & Suellen', key: 'D', status: SongStatus.READY },
-  { id: 'RJSGB6', title: 'A Casa É Sua', artist: 'Casa Worship', key: 'G', status: SongStatus.READY },
-  { id: 'KZ8W4L', title: 'Alívio', artist: 'Jessé Aguiar', key: 'C', status: SongStatus.READY },
-  { id: 'SEL47J', title: 'Grandes Coisas', artist: 'Fernandinho', key: 'B', status: SongStatus.READY },
-  { id: 'SHWW6N', title: 'Que Se Abram Os Céus', artist: 'Nívea Soares', key: 'A', status: SongStatus.READY },
-  { id: 'F4KACW', title: 'Rei do Meu Coração', artist: 'Be One', key: 'B', status: SongStatus.READY },
-  { id: 'SGE3P0', title: 'É Tudo Sobre Você', artist: 'Morada', key: 'B', status: SongStatus.READY },
-  { id: 'UOIKNZ', title: 'Todavia Me Alegrarei', artist: 'Leandro Borges', key: 'D', status: SongStatus.READY },
-  { id: 'KAXQJY', title: 'Santo Espírito', artist: 'Laura Souguellis', key: 'A', status: SongStatus.READY },
-  { id: '8QHR60', title: 'Tu És Bom', artist: 'Fred Arrais', key: 'A', status: SongStatus.READY },
-  { id: 'SQRZT6', title: 'Atos 2', artist: 'Gabriela Rocha', key: 'D', status: SongStatus.READY },
-  { id: '0D5QP0', title: 'Caminho no Deserto', artist: 'Soraya Moraes', key: 'C', status: SongStatus.READY },
-  { id: 'FQJ5SE', title: 'Yahweh Se Manifestará', artist: 'Oasis Ministry', key: 'D', status: SongStatus.READY },
-  { id: 'BCXRHQ', title: 'Jesus em Tua Presença', artist: 'Quatro Por Um', key: 'D', status: SongStatus.READY },
-  { id: 'IK6N78', title: 'Quão Grande É o Meu Deus', artist: 'Soraya Moraes', key: 'G', status: SongStatus.READY },
-  { id: 'KH9MOS', title: 'Eu Te Vejo Em Tudo', artist: 'Casa Worship', key: 'G', status: SongStatus.READY },
-  { id: 'K8YBOJ', title: 'Me Atraiu', artist: 'Gabriela Rocha', key: 'C', status: SongStatus.READY },
-  { id: 'J8R71U', title: 'Milagres', artist: 'Juliano Son', key: 'E', status: SongStatus.READY },
-  { id: '3YNRCF', title: 'Graça Que Me Salva', artist: 'Ministério Amor e Graça', key: 'G', status: SongStatus.REHEARSING },
-  { id: 'KM7JU9', title: 'Nosso Deus É Poderoso', artist: 'Comunidade da Graça', key: 'D', status: SongStatus.REHEARSING },
-  { id: 'ILL3BB', title: 'Em Teus Braços', artist: 'Laura Souguellis', key: 'C', status: SongStatus.REHEARSING },
-  { id: 'RFVZHL', title: 'Aclame ao Senhor', artist: 'Diante do Trono', key: 'A', status: SongStatus.REHEARSING }
+  {
+    id: 'SNG-BONDADE',
+    title: 'Bondade de Deus',
+    artist: 'Isaías Saad',
+    key: 'G',
+    bpm: 70,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=0wQ7A8pD1Hw'
+  },
+  {
+    id: 'SNG-BENCAO',
+    title: 'A Bênção',
+    artist: 'Gabriel Guedes & Nívea Soares',
+    key: 'Bb',
+    bpm: 72,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=Z3kP_W4bU5U'
+  },
+  {
+    id: 'SNG-OUSADO',
+    title: 'Ousado Amor',
+    artist: 'Isaías Saad',
+    key: 'Gb',
+    bpm: 68,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=s7b26g2gY3g'
+  },
+  {
+    id: 'SNG-LUGAR',
+    title: 'Lugar Secreto',
+    artist: 'Gabriela Rocha',
+    key: 'E',
+    bpm: 68,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=q6g4y9zH37M'
+  },
+  {
+    id: 'SNG-RUJA',
+    title: 'Ruja o Leão',
+    artist: 'Talita Catanzaro',
+    key: 'C',
+    bpm: 128,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=r3k7n9P3y8M'
+  },
+  {
+    id: 'SNG-CAMINHO',
+    title: 'Caminho no Deserto',
+    artist: 'Soraya Moraes',
+    key: 'A',
+    bpm: 68,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=8qT_Yf7D5rQ'
+  },
+  {
+    id: 'SNG-TODAVIA',
+    title: 'Todavia Me Alegrarei',
+    artist: 'Leandro Borges',
+    key: 'F',
+    bpm: 74,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=e2J2g2Y2b4Y'
+  },
+  {
+    id: 'SNG-ELE-VIVE',
+    title: 'Porque Ele Vive',
+    artist: 'Harpa Cristã / Tradicional',
+    key: 'G',
+    bpm: 80,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=9g0J1v2G3H4'
+  },
+  {
+    id: 'SNG-REI-REIS',
+    title: 'Rei dos Reis',
+    artist: 'Hillsong Worship / Tradução',
+    key: 'D',
+    bpm: 68,
+    status: SongStatus.REHEARSING,
+    youtubeUrl: 'https://www.youtube.com/watch?v=f4J_N9dG8sK'
+  },
+  {
+    id: 'SNG-DIGNO',
+    title: 'Digno de Glória',
+    artist: 'Asaph Borba',
+    key: 'C',
+    bpm: 72,
+    status: SongStatus.READY,
+    youtubeUrl: 'https://www.youtube.com/watch?v=k1M2n3P4q5R'
+  }
 ];
 
 export const DEFAULT_SCHEDULES: Schedule[] = [
@@ -57,265 +180,153 @@ export const DEFAULT_SCHEDULES: Schedule[] = [
     date: '2026-03-08',
     serviceType: 'Domingo',
     members: ['Z9C3CC', 'QL783O', 'ZUSMHY', '7FUW2H', '24BWIX', 'GGOR98', 'PKNF87'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'Z9C3CC', confirmed: false, present: true },
-      { role: 'Vocal', memberId: 'QL783O', confirmed: false, present: true },
-      { role: 'Vocal', memberId: 'ZUSMHY', confirmed: false, present: true },
-      { role: 'Vocal', memberId: '7FUW2H', confirmed: false, present: true },
-      { role: 'Teclado', memberId: '24BWIX', confirmed: false, present: true },
-      { role: 'Violão', memberId: 'Z9C3CC', confirmed: false, present: true },
-      { role: 'Baixo', memberId: 'GGOR98', confirmed: false, present: false },
-      { role: 'Bateria', memberId: 'PKNF87', confirmed: false, present: true }
-    ],
-    songs: [
-      { id: '9U33GC', key: 'B', confirmed: true },
-      { id: 'IEY0Z6', key: 'E', confirmed: true },
-      { id: 'B14ALL', key: 'C', confirmed: true },
-      { id: 'DEA5Q0', key: 'E', confirmed: false },
-      { id: 'K4H8QM', key: 'A', confirmed: true }
-    ],
     leaderIds: ['Z9C3CC'],
-    vocalIds: ['QL783O', 'ZUSMHY', '7FUW2H'],
-    confirmed: false,
-    attendanceMarked: true
+    vocalIds: ['QL783O', 'ZUSMHY', '24BWIX'],
+    assignments: [
+      { role: 'Vocal Líder', memberId: 'Z9C3CC', confirmed: true, present: true },
+      { role: 'Vocal', memberId: 'QL783O', confirmed: true, present: true },
+      { role: 'Vocal', memberId: 'ZUSMHY', confirmed: true, present: true },
+      { role: 'Vocal', memberId: '24BWIX', confirmed: true, present: true },
+      { role: 'Teclado', memberId: '7FUW2H', confirmed: true, present: true },
+      { role: 'Baixo', memberId: 'GGOR98', confirmed: true, present: true },
+      { role: 'Bateria', memberId: 'PKNF87', confirmed: true, present: true },
+      { role: 'Violão', memberId: 'QL783O', confirmed: true, present: true }
+    ],
+    songs: [
+      { id: 'SNG-BONDADE', key: 'G', confirmed: true },
+      { id: 'SNG-BENCAO', key: 'Bb', confirmed: true },
+      { id: 'SNG-OUSADO', key: 'Gb', confirmed: true },
+      { id: 'SNG-LUGAR', key: 'E', confirmed: true }
+    ],
+    postSermonSong: { id: 'SNG-ELE-VIVE', key: 'G', confirmed: true },
+    confirmed: true,
+    attendanceMarked: true,
+    observations: 'Chegar às 08:15 para afinação e oração da equipe.'
   },
   {
-    id: '67LBUZ',
-    date: '2026-03-01',
+    id: 'SCH-20260315',
+    date: '2026-03-15',
     serviceType: 'Domingo',
-    members: ['7FUW2H', 'X17RHN', '6RXLI2', 'DKSUWB', '24BWIX', 'Z9C3CC', 'GGOR98', 'MPSD03'],
+    members: ['QL783O', 'ZUSMHY', '7FUW2H', 'GGOR98', 'PKNF87', 'F4L2OP'],
+    leaderIds: ['QL783O'],
+    vocalIds: ['ZUSMHY', 'M9A1RT'],
     assignments: [
-      { role: 'Vocal Líder', memberId: '7FUW2H', confirmed: true },
-      { role: 'Vocal', memberId: 'X17RHN', confirmed: true },
-      { role: 'Vocal', memberId: '6RXLI2', confirmed: true },
-      { role: 'Vocal', memberId: 'DKSUWB', confirmed: true },
-      { role: 'Teclado', memberId: '24BWIX', confirmed: true },
-      { role: 'Violão', memberId: 'Z9C3CC', confirmed: true },
-      { role: 'Baixo', memberId: 'GGOR98', confirmed: false },
-      { role: 'Bateria', memberId: 'MPSD03', confirmed: true }
+      { role: 'Vocal Líder', memberId: 'QL783O', confirmed: true, present: false },
+      { role: 'Vocal', memberId: 'ZUSMHY', confirmed: true, present: false },
+      { role: 'Vocal', memberId: 'M9A1RT', confirmed: false, present: false },
+      { role: 'Teclado', memberId: '7FUW2H', confirmed: true, present: false },
+      { role: 'Violão/Guitarra', memberId: 'F4L2OP', confirmed: true, present: false },
+      { role: 'Baixo', memberId: 'GGOR98', confirmed: true, present: false },
+      { role: 'Bateria', memberId: 'PKNF87', confirmed: true, present: false }
     ],
     songs: [
-      { id: 'X3HING', key: 'A', confirmed: true },
-      { id: 'HMP9TK', key: 'G', confirmed: true },
-      { id: 'K4H8QM', key: 'A', confirmed: true },
-      { id: 'L4J3CL', key: 'D', confirmed: true }
+      { id: 'SNG-RUJA', key: 'C', confirmed: true },
+      { id: 'SNG-TODAVIA', key: 'F', confirmed: true },
+      { id: 'SNG-CAMINHO', key: 'A', confirmed: true },
+      { id: 'SNG-DIGNO', key: 'C', confirmed: true }
     ],
-    leaderIds: ['7FUW2H'],
-    vocalIds: ['X17RHN', '6RXLI2', 'DKSUWB'],
-    confirmed: true
-  },
-  {
-    id: 'DSPQPV',
-    date: '2026-02-22',
-    serviceType: 'Domingo',
-    members: ['GGOR98', 'X17RHN', 'QL783O', '8ZRVW2', '24BWIX', '6310A5', 'PKNF87'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'GGOR98', present: true },
-      { role: 'Vocal', memberId: 'X17RHN', present: true },
-      { role: 'Vocal', memberId: 'QL783O', present: true },
-      { role: 'Vocal', memberId: '8ZRVW2', present: true },
-      { role: 'Teclado', memberId: '24BWIX', present: true },
-      { role: 'Violão', memberId: 'GGOR98', present: true },
-      { role: 'Baixo', memberId: '6310A5', present: true },
-      { role: 'Bateria', memberId: 'PKNF87', present: true }
-    ],
-    songs: [
-      { id: 'RJSGB6', key: 'G', confirmed: true },
-      { id: 'KZ8W4L', key: 'C', confirmed: true },
-      { id: 'SEL47J', key: 'B', confirmed: true }
-    ],
-    leaderIds: ['GGOR98'],
-    vocalIds: ['X17RHN', 'QL783O', '8ZRVW2'],
-    attendanceMarked: true
-  },
-  {
-    id: 'V88TTI',
-    date: '2026-02-15',
-    serviceType: 'Domingo (Noite)',
-    members: ['DKSUWB', 'GGOR98', '6RXLI2', '7PC6VT', '8ZRVW2', '24BWIX', 'JLIN30'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'DKSUWB', present: true },
-      { role: 'Vocal Líder', memberId: 'GGOR98', present: true },
-      { role: 'Vocal', memberId: '6RXLI2' },
-      { role: 'Vocal', memberId: '7PC6VT', present: false },
-      { role: 'Vocal', memberId: '8ZRVW2', present: false },
-      { role: 'Teclado', memberId: '24BWIX', present: true },
-      { role: 'Violão', memberId: 'GGOR98', present: true },
-      { role: 'Bateria', memberId: 'JLIN30' }
-    ],
-    songs: [],
-    leaderIds: ['DKSUWB', 'GGOR98'],
-    vocalIds: ['6RXLI2', '7PC6VT', '8ZRVW2'],
-    attendanceMarked: true
-  },
-  {
-    id: 'H0K3IY',
-    date: '2026-02-08',
-    serviceType: 'Domingo (Noite)',
-    members: ['X17RHN', 'DKSUWB', 'QL783O', 'ZUSMHY', '24BWIX', 'Z9C3CC', '6310A5', 'MPSD03'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'X17RHN', present: true },
-      { role: 'Vocal', memberId: 'DKSUWB', present: true },
-      { role: 'Vocal', memberId: 'QL783O', present: true },
-      { role: 'Vocal', memberId: 'ZUSMHY', present: true },
-      { role: 'Teclado', memberId: '24BWIX', present: true },
-      { role: 'Violão', memberId: 'Z9C3CC', present: true },
-      { role: 'Baixo', memberId: '6310A5', present: true },
-      { role: 'Bateria', memberId: 'MPSD03', present: true }
-    ],
-    songs: [
-      { id: 'SHWW6N', key: 'A', confirmed: true },
-      { id: 'F4KACW', key: 'B', confirmed: true },
-      { id: 'SGE3P0', key: 'B', confirmed: true },
-      { id: 'UOIKNZ', key: 'D', confirmed: true }
-    ],
-    leaderIds: ['X17RHN'],
-    vocalIds: ['DKSUWB', 'QL783O', 'ZUSMHY'],
-    attendanceMarked: true
-  },
-  {
-    id: 'EERDP3',
-    date: '2026-02-01',
-    serviceType: 'Domingo (Noite)',
-    members: ['Z9C3CC', '7FUW2H', '7PC6VT', '8ZRVW2', 'GGOR98', 'PKNF87'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'Z9C3CC', present: true },
-      { role: 'Vocal Líder', memberId: '7FUW2H', present: true },
-      { role: 'Vocal', memberId: '7PC6VT', present: true },
-      { role: 'Vocal', memberId: '8ZRVW2', present: true },
-      { role: 'Teclado', memberId: 'Z9C3CC', present: true },
-      { role: 'Baixo', memberId: 'GGOR98', present: true },
-      { role: 'Bateria', memberId: 'PKNF87', present: true }
-    ],
-    songs: [
-      { id: 'UOIKNZ', key: 'E', confirmed: true },
-      { id: 'KAXQJY', key: 'A', confirmed: true },
-      { id: '8QHR60', key: 'A', confirmed: true },
-      { id: 'SQRZT6', key: 'D', confirmed: true }
-    ],
-    leaderIds: ['Z9C3CC', '7FUW2H'],
-    vocalIds: ['7PC6VT', '8ZRVW2'],
-    attendanceMarked: true
-  },
-  {
-    id: '358QP4',
-    date: '2026-01-25',
-    serviceType: 'Domingo (Noite)',
-    members: ['GGOR98', 'QL783O', '6RXLI2', 'X17RHN', '6310A5', 'PKNF87'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'GGOR98', present: true },
-      { role: 'Vocal', memberId: 'QL783O', present: true },
-      { role: 'Vocal', memberId: '6RXLI2', present: true },
-      { role: 'Vocal', memberId: 'X17RHN', present: true },
-      { role: 'Violão', memberId: 'GGOR98', present: true },
-      { role: 'Baixo', memberId: '6310A5', present: true },
-      { role: 'Bateria', memberId: 'PKNF87', present: true }
-    ],
-    songs: [
-      { id: '0D5QP0', key: 'C', confirmed: true },
-      { id: '9U33GC', key: 'B', confirmed: true }
-    ],
-    leaderIds: ['GGOR98'],
-    vocalIds: ['QL783O', '6RXLI2', 'X17RHN'],
-    attendanceMarked: true
-  },
-  {
-    id: 'IOML32',
-    date: '2026-01-18',
-    serviceType: 'Domingo (Noite)',
-    members: ['7FUW2H', 'DKSUWB', '6RXLI2', 'QL783O', '24BWIX', 'Z9C3CC', '6310A5', 'MPSD03'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: '7FUW2H', present: true },
-      { role: 'Vocal', memberId: 'DKSUWB', present: true },
-      { role: 'Vocal', memberId: '6RXLI2', present: true },
-      { role: 'Vocal', memberId: 'QL783O', present: true },
-      { role: 'Teclado', memberId: '24BWIX', present: true },
-      { role: 'Violão', memberId: 'Z9C3CC', present: true },
-      { role: 'Baixo', memberId: '6310A5', present: true },
-      { role: 'Bateria', memberId: 'MPSD03', present: true }
-    ],
-    songs: [
-      { id: 'FQJ5SE', key: 'D', confirmed: true },
-      { id: 'KAXQJY', key: 'A', confirmed: true },
-      { id: 'IEY0Z6', key: 'E', confirmed: true },
-      { id: 'BCXRHQ', key: 'D', confirmed: true }
-    ],
-    leaderIds: ['7FUW2H'],
-    vocalIds: ['DKSUWB', '6RXLI2', 'QL783O'],
+    postSermonSong: { id: 'SNG-BENCAO', key: 'Bb', confirmed: true },
     confirmed: false,
-    attendanceMarked: true
+    attendanceMarked: false,
+    observations: 'Ensaio geral na quinta-feira anterior às 19:30.'
   },
   {
-    id: '30RGTJ',
-    date: '2026-01-11',
-    serviceType: 'Domingo (Noite)',
-    members: ['Z9C3CC', 'QL783O', 'X17RHN', '7PC6VT', '24BWIX', 'GGOR98'],
-    assignments: [
-      { role: 'Vocal Líder', memberId: 'Z9C3CC', present: true },
-      { role: 'Vocal', memberId: 'QL783O', confirmed: false, present: true },
-      { role: 'Vocal', memberId: 'X17RHN', confirmed: false, present: true },
-      { role: 'Vocal', memberId: '7PC6VT', confirmed: false, present: true },
-      { role: 'Teclado', memberId: '24BWIX', present: true },
-      { role: 'Violão', memberId: 'Z9C3CC', present: true },
-      { role: 'Baixo', memberId: 'GGOR98', present: true }
-    ],
-    songs: [
-      { id: 'IK6N78', key: 'G', confirmed: true },
-      { id: 'KH9MOS', key: 'G', confirmed: true },
-      { id: 'K8YBOJ', key: 'C', confirmed: true }
-    ],
+    id: 'SCH-20260322',
+    date: '2026-03-22',
+    serviceType: 'Domingo',
+    members: ['Z9C3CC', '24BWIX', 'M9A1RT', 'T8K3NX', 'PKNF87'],
     leaderIds: ['Z9C3CC'],
-    vocalIds: ['QL783O', 'X17RHN', '7PC6VT'],
+    vocalIds: ['24BWIX', 'M9A1RT'],
+    assignments: [
+      { role: 'Vocal Líder', memberId: 'Z9C3CC', confirmed: true, present: false },
+      { role: 'Vocal', memberId: '24BWIX', confirmed: true, present: false },
+      { role: 'Vocal', memberId: 'M9A1RT', confirmed: true, present: false },
+      { role: 'Teclado', memberId: 'T8K3NX', confirmed: true, present: false },
+      { role: 'Violão/Guitarra', memberId: 'Z9C3CC', confirmed: true, present: false },
+      { role: 'Bateria', memberId: 'PKNF87', confirmed: true, present: false }
+    ],
+    songs: [
+      { id: 'SNG-BONDADE', key: 'G', confirmed: true },
+      { id: 'SNG-LUGAR', key: 'E', confirmed: true },
+      { id: 'SNG-OUSADO', key: 'Gb', confirmed: true }
+    ],
     confirmed: false,
-    attendanceMarked: true
+    attendanceMarked: false,
+    observations: 'Culto da Família. Traje: Tons terrosos.'
   }
 ];
 
-export const DEFAULT_EVENTS: ExternalEvent[] = [
+export const DEFAULT_STYLES: LookStyle[] = [
   {
-    id: 'H2EMJ3',
-    title: 'Pib Nova Marilia',
-    date: '2026-10-03',
-    time: '19:30',
-    location: 'Nova Marília ',
-    description: '',
-    status: 'confirmed',
-    repertoire: ['UOIKNZ', 'IEY0Z6', 'J8R71U'],
-    memberIds: ['24BWIX', 'PKNF87', '7FUW2H', 'DKSUWB', 'X17RHN', '8ZRVW2', 'VDANAH']
+    id: 'STY-DOM-PASTEL',
+    title: 'Domingo Manhã - Tons Claros & Pastel',
+    colors: ['#F8FAFC', '#E2E8F0', '#CBD5E1', '#94A3B8'],
+    description: 'Camisas ou camisetas em tons suaves (branco, off-white, bege, cinza claro). Calça jeans ou sarja escura.',
+    date: 'Todos os domingos de manhã'
   },
   {
-    id: 'M9C3SA',
-    title: 'Vigília Mês Adolescentes',
-    date: '2026-08-07',
-    time: '22:00',
-    location: 'PIBJE',
-    description: '',
-    status: 'confirmed',
-    repertoire: ['KH9MOS', 'K8YBOJ', 'SHWW6N', 'SEL47J', '2TQZZ5', 'EHGMV3', '66CVIF', 'CJHTY6'],
-    memberIds: []
+    id: 'STY-DOM-TERRA',
+    title: 'Domingo Noite - Tons Terrosos e Elegantes',
+    colors: ['#78350F', '#B45309', '#D97706', '#1E293B'],
+    description: 'Marrom, terracota, mostarda suave, caramelo e azul marinho. Visual alinhado e harmônico.',
+    date: 'Culto da Noite'
   },
   {
-    id: 'Q5ED11',
-    title: 'Assembleia da associação Batista Fluminense ',
-    date: '2026-04-09',
-    time: '19:30',
-    location: 'PIB Surui ',
-    description: '',
-    status: 'confirmed',
-    repertoire: [],
-    memberIds: []
+    id: 'STY-JOVENS-BLACK',
+    title: 'Culto de Jovens - Black & Jeans',
+    colors: ['#0F172A', '#1E293B', '#334155', '#475569'],
+    description: 'Preto, chumbo ou jeans escuro. Estilo contemporâneo e sóbrio.',
+    date: 'Sábados / Cultos Especiais'
   }
 ];
 
 export const DEFAULT_NOTES: RehearsalNote[] = [
   {
-    id: 'note-1784840106568',
-    title: 'Músicas para ensaiarmos',
+    id: 'NOTE-ENSAIO-GERAL',
+    title: 'Pauta do Ensaio Semanal - Próximo Domingo',
     category: 'rehearsal',
-    content: '',
-    songIds: ['3YNRCF', 'KM7JU9', 'ILL3BB', 'RFVZHL'],
-    items: [],
+    content: 'Foco na transição entre "Bondade de Deus" e "A Bênção". Ajustar dinâmica da bateria no refrão 2.',
+    songIds: ['SNG-BONDADE', 'SNG-BENCAO', 'SNG-OUSADO'],
+    items: [
+      { id: 'item-1', text: 'Chegar 15 minutos antes para afinação dos instrumentos', done: true },
+      { id: 'item-2', text: 'Passar as vozes da música nova (harmonias e divisões)', done: true },
+      { id: 'item-3', text: 'Definir dinâmicas de parada e crescendo com a bateria', done: false },
+      { id: 'item-4', text: 'Oração final da equipe', done: false }
+    ],
     pinned: true,
-    createdAt: '2026-07-23'
+    createdAt: '2026-03-05'
+  },
+  {
+    id: 'NOTE-REPERTORIO-PASCOA',
+    title: 'Seleção para o Culto Especial',
+    category: 'songs_list',
+    content: 'Músicas selecionadas para o especial de celebração da igreja.',
+    songIds: ['SNG-ELE-VIVE', 'SNG-REI-REIS', 'SNG-DIGNO'],
+    items: [
+      { id: 'item-5', text: 'Imprimir ou compartilhar partituras e cifras para teclado', done: false },
+      { id: 'item-6', text: 'Gravar áudio do arranjo das vozes para estudo em casa', done: false }
+    ],
+    pinned: false,
+    createdAt: '2026-03-06'
   }
 ];
+
+export const DEFAULT_EVENTS: ExternalEvent[] = [
+  {
+    id: 'EVT-VIGILIA',
+    title: 'Vigília de Adoração e Oração',
+    date: '2026-03-27',
+    time: '22:00',
+    location: 'Templo Principal PIBJE',
+    description: 'Noite de clamor e adoração contínua com a juventude e famílias.',
+    status: 'confirmed',
+    repertoire: ['Bondade de Deus', 'Lugar Secreto', 'Todavia Me Alegrarei'],
+    memberIds: ['Z9C3CC', 'QL783O', '7FUW2H', 'GGOR98', 'PKNF87']
+  }
+];
+
+export const DEFAULT_ANNOUNCEMENTS = `### 📢 Avisos do Ministério de Louvor PIBJE
+
+1. **Ensaios Gerais**: Quintas-feiras às 19h45 no templo principal. Por favor, cheguem no horário para passagem de som!
+2. **Confirmação de Escalas**: Confirmem sua presença na aba de Escalas com pelo menos 48h de antecedência.
+3. **Músicas Novas**: Músicas em ensaio estão disponíveis com links do YouTube na aba Repertório.`;

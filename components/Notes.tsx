@@ -30,6 +30,7 @@ interface NotesProps {
   setNotes: React.Dispatch<React.SetStateAction<RehearsalNote[]>>;
   songs: Song[];
   onSync: () => void;
+  onSaveToCloud?: (payload?: any) => Promise<void>;
   isSyncing: boolean;
   isAdmin: boolean;
 }
@@ -39,6 +40,7 @@ export const Notes: React.FC<NotesProps> = ({
   setNotes,
   songs = [],
   onSync,
+  onSaveToCloud,
   isSyncing,
   isAdmin
 }) => {
@@ -47,6 +49,11 @@ export const Notes: React.FC<NotesProps> = ({
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingNote, setEditingNote] = useState<RehearsalNote | null>(null);
   const [copiedNoteId, setCopiedNoteId] = useState<string | null>(null);
+
+  // Post-save WhatsApp Share modal state
+  const [savedNoteForShare, setSavedNoteForShare] = useState<RehearsalNote | null>(null);
+  const [copiedShareFeedback, setCopiedShareFeedback] = useState<boolean>(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -68,6 +75,7 @@ export const Notes: React.FC<NotesProps> = ({
     setNewItemText('');
     setPinned(false);
     setSongSearchInput('');
+    setFormError(null);
     setShowModal(true);
   };
 
@@ -81,12 +89,14 @@ export const Notes: React.FC<NotesProps> = ({
     setNewItemText('');
     setPinned(!!note.pinned);
     setSongSearchInput('');
+    setFormError(null);
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setEditingNote(null);
+    setFormError(null);
   };
 
   const handleAddItem = () => {
@@ -113,22 +123,28 @@ export const Notes: React.FC<NotesProps> = ({
   const handleSaveNote = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Por favor, informe o título da anotação.');
+      setFormError('Por favor, informe o título da anotação.');
       return;
     }
+    setFormError(null);
+
+    let targetNote: RehearsalNote;
+    const currentNotes = notes || [];
+    let updatedNotes: RehearsalNote[];
 
     if (editingNote) {
-      setNotes(prev => prev.map(n => n.id === editingNote.id ? {
-        ...n,
+      targetNote = {
+        ...editingNote,
         title: title.trim(),
         category,
         content: content.trim(),
         songIds: selectedSongIds,
         items,
         pinned
-      } : n));
+      };
+      updatedNotes = currentNotes.map(n => n.id === editingNote.id ? targetNote : n);
     } else {
-      const newNote: RehearsalNote = {
+      targetNote = {
         id: `note-${Date.now()}`,
         title: title.trim(),
         category,
@@ -138,10 +154,23 @@ export const Notes: React.FC<NotesProps> = ({
         pinned,
         createdAt: new Date().toISOString().split('T')[0]
       };
-      setNotes(prev => [newNote, ...prev]);
+      updatedNotes = [targetNote, ...currentNotes];
+    }
+
+    setNotes(updatedNotes);
+    try {
+      localStorage.setItem('louvor_notes', JSON.stringify(updatedNotes));
+    } catch (err) {
+      console.error('Falha ao salvar anotação localmente:', err);
+    }
+
+    if (onSaveToCloud) {
+      onSaveToCloud({ notes: updatedNotes });
     }
 
     closeModal();
+    // Offer WhatsApp copy & share immediately!
+    setSavedNoteForShare(targetNote);
   };
 
   const handleDeleteNote = (id: string) => {
@@ -530,6 +559,11 @@ export const Notes: React.FC<NotesProps> = ({
             </div>
 
             <form onSubmit={handleSaveNote} className="space-y-6">
+              {formError && (
+                <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-bold rounded-xl flex items-center gap-2">
+                  <X size={16} /> {formError}
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Title */}
                 <div className="md:col-span-2 space-y-1">
@@ -688,6 +722,80 @@ export const Notes: React.FC<NotesProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* WHATSAPP SHARE / COPY MODAL AFTER SAVING NOTE */}
+      {savedNoteForShare && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 md:p-8 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <button 
+              onClick={() => { setSavedNoteForShare(null); setCopiedShareFeedback(false); }}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                <MessageCircle size={26} />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full inline-block mb-1 border border-emerald-200">
+                  Anotação Salva com Sucesso!
+                </span>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Copiar para o WhatsApp</h3>
+                <p className="text-xs text-slate-500 font-medium">Envie a pauta ou lista de ensaio diretamente para a equipe</p>
+              </div>
+            </div>
+
+            {/* Formatted Preview */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 mb-6 font-mono text-xs text-slate-700 whitespace-pre-wrap max-h-56 overflow-y-auto leading-relaxed select-all">
+              {formatNoteForWhatsApp(savedNoteForShare)}
+            </div>
+
+            <div className="space-y-3">
+              <button 
+                onClick={() => {
+                  const text = formatNoteForWhatsApp(savedNoteForShare);
+                  navigator.clipboard.writeText(text);
+                  setCopiedShareFeedback(true);
+                  setTimeout(() => setCopiedShareFeedback(false), 3000);
+                }}
+                className={`w-full py-3.5 px-5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer ${
+                  copiedShareFeedback 
+                    ? 'bg-emerald-700 text-white' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                }`}
+              >
+                {copiedShareFeedback ? (
+                  <>
+                    <Check size={18} /> Copiado! Pronto para Colar no WhatsApp
+                  </>
+                ) : (
+                  <>
+                    <Copy size={18} /> Copiar Texto para WhatsApp
+                  </>
+                )}
+              </button>
+
+              <button 
+                onClick={() => {
+                  handleShareToWhatsApp(savedNoteForShare);
+                }}
+                className="w-full py-3.5 px-5 bg-white hover:bg-slate-50 border border-slate-200 text-emerald-700 font-black text-xs uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                <Send size={18} /> Abrir Diretamente no WhatsApp
+              </button>
+
+              <button 
+                onClick={() => { setSavedNoteForShare(null); setCopiedShareFeedback(false); }}
+                className="w-full py-2.5 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-wider transition-colors text-center cursor-pointer"
+              >
+                Concluir e Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
