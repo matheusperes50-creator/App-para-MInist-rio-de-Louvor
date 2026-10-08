@@ -76,22 +76,22 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                   <Users size={24} />
                 </div>
                 <div className="text-left">
-                  <p className="font-black text-slate-800">Acesso Membro</p>
-                  <p className="text-xs text-slate-400">Apenas visualização de escalas</p>
+                  <p className="font-black text-slate-800 text-base">Acesso Integrantes</p>
+                  <p className="text-xs text-slate-400">Visualização de escalas e repertório</p>
                 </div>
                 <ChevronRight className="ml-auto text-slate-300 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button 
                 onClick={() => setMode('password')}
-                className="w-full group bg-emerald-600 hover:bg-emerald-700 p-6 rounded-3xl flex items-center gap-4 transition-all shadow-xl shadow-emerald-900/20"
+                className="w-full group bg-emerald-600 hover:bg-emerald-700 p-6 rounded-3xl flex items-center gap-4 transition-all shadow-xl shadow-emerald-900/20 text-white"
               >
                 <div className="bg-white/20 p-3 rounded-2xl text-white group-hover:scale-110 transition-transform">
                   <ShieldCheck size={24} />
                 </div>
                 <div className="text-left">
-                  <p className="font-black text-white">Administrador</p>
-                  <p className="text-xs text-emerald-100">Gestão completa e edições</p>
+                  <p className="font-black text-white text-base">Administrador</p>
+                  <p className="text-xs text-emerald-100">Gestão completa, edições e escalas</p>
                 </div>
                 <ChevronRight className="ml-auto text-emerald-200 group-hover:translate-x-1 transition-transform" />
               </button>

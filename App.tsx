@@ -26,18 +26,19 @@ import {
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
 
-// Detect whether running in sandbox preview / test / local environment
-const isPreviewOrDev = typeof window !== 'undefined' && (
-  window.location.hostname.includes('run.app') ||
-  window.location.hostname.includes('localhost') ||
-  window.location.hostname.includes('127.0.0.1') ||
-  window.location.hostname.includes('webcontainer') ||
-  Boolean((import.meta as any).env?.DEV)
-);
+// Check if current URL directs straight to attendance
+const checkIsAttendanceDirectLink = () => {
+  if (typeof window === 'undefined') return false;
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewParam = (urlParams.get('view') || urlParams.get('aba') || urlParams.get('page') || '').toLowerCase();
+  const hash = (window.location.hash || '').toLowerCase();
+  return viewParam === 'presenca' || viewParam === 'attendance' || hash.includes('presenca') || hash.includes('attendance');
+};
 
 export const App: React.FC = () => {
-  const [view, setView] = useState<ViewType>('dashboard');
-  const [userRole, setUserRole] = useState<UserRoleType>('guest');
+  const isDirectAttendance = checkIsAttendanceDirectLink();
+  const [view, setView] = useState<ViewType>(() => isDirectAttendance ? 'attendance' : 'dashboard');
+  const [userRole, setUserRole] = useState<UserRoleType>(() => isDirectAttendance ? 'member' : 'guest');
   
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -46,14 +47,21 @@ export const App: React.FC = () => {
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
 
-  // Master sheet protection: strictly prevents test data from overwriting real Google Sheets
-  const [isMasterSheetProtected, setIsMasterSheetProtected] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('louvor_master_sheet_protected');
-      if (saved !== null) return saved === 'true';
-    } catch {}
-    return isPreviewOrDev;
-  });
+  // Synchronize view with URL query/hash changes
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (checkIsAttendanceDirectLink()) {
+        setView('attendance');
+        setUserRole(prev => prev === 'guest' ? 'member' : prev);
+      }
+    };
+    window.addEventListener('popstate', handleUrlChange);
+    window.addEventListener('hashchange', handleUrlChange);
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('hashchange', handleUrlChange);
+    };
+  }, []);
   
   const [members, setMembers] = useState<Member[]>(() => {
     try {
@@ -171,7 +179,7 @@ export const App: React.FC = () => {
     setUserRole('guest');
   };
 
-  // Immediate cloud save function - ONLY triggered by explicit actions
+  // Immediate cloud save function - saves locally and pushes to Google Sheets
   const saveToCloudNow = useCallback(async (overridePayload?: {
     members?: Member[];
     songs?: Song[];
@@ -180,16 +188,10 @@ export const App: React.FC = () => {
     styles?: LookStyleType[];
     notes?: RehearsalNote[];
     announcements?: string;
+    attendanceEvents?: AttendanceEvent[];
   }) => {
-    if (userRole !== 'admin') return;
-
-    // PROTECTION: Do not write or overwrite the master Google Sheet with test data during testing
-    if (isMasterSheetProtected) {
-      console.info('🛡️ [Planilha Mestre Protegida] Gravação no Google Sheets bloqueada para proteger o banco de dados oficial da PIBJE. Dados preservados com sucesso no navegador.');
-      setSyncStatus('success');
-      setTimeout(() => setSyncStatus('idle'), 3000);
-      return;
-    }
+    // Only admins can modify core data; members are permitted to save attendance votes
+    if (userRole !== 'admin' && !overridePayload?.attendanceEvents) return;
 
     setIsSyncing(true);
     setSyncStatus('idle');
@@ -201,7 +203,33 @@ export const App: React.FC = () => {
     const targetStyles = overridePayload?.styles ?? stylesRef.current ?? [];
     const targetNotes = overridePayload?.notes ?? notesRef.current ?? [];
     const targetAnnouncements = overridePayload?.announcements ?? announcementsRef.current ?? '';
+    const targetAttendanceEvents = overridePayload?.attendanceEvents ?? attendanceEventsRef.current ?? [];
 
+    // 1. Immediately persist to localStorage for instant local reliability
+    try {
+      if (overridePayload?.members) localStorage.setItem('louvor_members', JSON.stringify(targetMembers));
+      if (overridePayload?.songs) localStorage.setItem('louvor_songs', JSON.stringify(targetSongs));
+      if (overridePayload?.schedules) localStorage.setItem('louvor_schedules', JSON.stringify(targetSchedules));
+      if (overridePayload?.events) localStorage.setItem('louvor_events', JSON.stringify(targetEvents));
+      if (overridePayload?.styles) localStorage.setItem('louvor_styles', JSON.stringify(targetStyles));
+      if (overridePayload?.notes) localStorage.setItem('louvor_notes', JSON.stringify(targetNotes));
+      if (overridePayload?.announcements !== undefined) localStorage.setItem('louvor_announcements', targetAnnouncements);
+      if (overridePayload?.attendanceEvents) localStorage.setItem('louvor_attendance', JSON.stringify(targetAttendanceEvents));
+    } catch (e) {
+      console.error('Falha ao salvar no localStorage:', e);
+    }
+
+    // 2. Immediately update state if override passed
+    if (overridePayload?.members) setMembers(targetMembers);
+    if (overridePayload?.songs) setSongs(targetSongs);
+    if (overridePayload?.schedules) setSchedules(targetSchedules);
+    if (overridePayload?.events) setEvents(targetEvents);
+    if (overridePayload?.styles) setStyles(targetStyles);
+    if (overridePayload?.notes) setNotes(targetNotes);
+    if (overridePayload?.announcements !== undefined) setAnnouncements(targetAnnouncements);
+    if (overridePayload?.attendanceEvents) setAttendanceEvents(targetAttendanceEvents);
+
+    // 3. Post to Google Sheets Apps Script
     try {
       const payload = {
         members: targetMembers,
@@ -210,7 +238,8 @@ export const App: React.FC = () => {
         events: targetEvents,
         styles: targetStyles,
         notes: targetNotes,
-        announcements: targetAnnouncements
+        announcements: targetAnnouncements,
+        attendanceEvents: targetAttendanceEvents
       };
 
       await fetch(SCRIPT_URL, {
@@ -228,11 +257,11 @@ export const App: React.FC = () => {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [userRole, isMasterSheetProtected]);
+  }, [userRole]);
 
   // SYNC FROM SHEETS:
-  // Reads cloud data and safely applies it to state and localStorage.
-  const syncFromSheets = useCallback(async (isAuto = false) => {
+  // Reads cloud data and safely merges it with state and localStorage.
+  const syncFromSheets = useCallback(async (isAuto = false, forceReplace = false) => {
     if (!isAuto) setIsSyncing(true);
     setSyncStatus('idle');
 
@@ -283,12 +312,51 @@ export const App: React.FC = () => {
           } catch (e) {}
         }
 
-        // Schedules: apply official schedules directly from the Google Sheets database
+        // Schedules: merge cloud with locally created schedules so user work is never wiped
         if (Array.isArray(data.schedules) && data.schedules.length > 0) {
-          setSchedules(data.schedules);
-          try {
-            localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
-          } catch (e) {}
+          if (forceReplace) {
+            setSchedules(data.schedules);
+            try {
+              localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
+            } catch (e) {}
+          } else {
+            setSchedules(prev => {
+              const current = prev || [];
+              const cloudIds = new Set(data.schedules.map((s: any) => s.id));
+              const localOnly = current.filter(s => s && s.id && !cloudIds.has(s.id));
+              const merged = [...localOnly, ...data.schedules].sort((a, b) => 
+                (b.date || '').localeCompare(a.date || '')
+              );
+              try {
+                localStorage.setItem('louvor_schedules', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
+          }
+        }
+
+        // Attendance: merge cloud attendance events if available
+        const cloudAttendance = Array.isArray(data.attendanceEvents) ? data.attendanceEvents : (Array.isArray(data.attendance) ? data.attendance : null);
+        if (cloudAttendance && cloudAttendance.length > 0) {
+          if (forceReplace) {
+            setAttendanceEvents(cloudAttendance);
+            try {
+              localStorage.setItem('louvor_attendance', JSON.stringify(cloudAttendance));
+            } catch (e) {}
+          } else {
+            setAttendanceEvents(prev => {
+              const current = prev || [];
+              const cloudIds = new Set(cloudAttendance.map((e: any) => e.id));
+              const localOnly = current.filter(e => e && e.id && !cloudIds.has(e.id));
+              const merged = [...localOnly, ...cloudAttendance].sort((a, b) => 
+                (b.date || '').localeCompare(a.date || '')
+              );
+              try {
+                localStorage.setItem('louvor_attendance', JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
+          }
         }
 
         // Events: apply from cloud only if non-empty array
@@ -512,15 +580,6 @@ export const App: React.FC = () => {
             <Cloud size={12} /> {hasFetchedFromCloud ? 'Conectado à Planilha' : 'Offline / Local'}
           </div>
 
-          {isMasterSheetProtected && (
-            <div 
-              className="flex items-center gap-1.5 text-[9px] font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs cursor-help"
-              title="Ambiente de Testes: Os dados criados durante os testes aqui são salvos somente no navegador para não alterar a planilha oficial do Google Sheets. Ao publicar no GitHub, o app continuará utilizando a sua planilha mestre como banco de dados."
-            >
-              <ShieldCheck size={12} className="text-sky-600" /> Planilha Mestre Protegida (Modo Teste)
-            </div>
-          )}
-
           {isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
               <RefreshCw size={12} className="animate-spin" /> Sincronizando...
@@ -528,7 +587,7 @@ export const App: React.FC = () => {
           )}
           {syncStatus === 'success' && !isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <CheckCircle2 size={12} /> {isMasterSheetProtected ? 'Salvo localmente (Planilha Mestre Segura)' : 'Atualizado'}
+              <CheckCircle2 size={12} /> Salvo e Sincronizado
             </div>
           )}
           {syncStatus === 'error' && !isSyncing && (

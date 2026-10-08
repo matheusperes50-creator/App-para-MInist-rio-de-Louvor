@@ -23,7 +23,9 @@ import {
   Users,
   Search, 
   Eye,
-  Settings2
+  Settings2,
+  Link2,
+  Copy
 } from 'lucide-react';
 
 interface AttendanceProps {
@@ -562,6 +564,39 @@ export const Attendance: React.FC<AttendanceProps> = ({
     }
   };
 
+  // Obter link direto para a página de presença
+  const getDirectAttendanceUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+    return `${origin}${pathname}?view=presenca`;
+  };
+
+  const handleCopyDirectLink = async () => {
+    const url = getDirectAttendanceUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('🔗 Link direto copiado! Envie no WhatsApp para os integrantes entrarem direto na enquete.');
+    } catch {
+      showToast(`Link: ${url}`);
+    }
+  };
+
+  const handleShareDirectLink = async () => {
+    const url = getDirectAttendanceUrl();
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Confirmação de Presença - Ministério de Louvor',
+          text: 'Olá equipe! Por favor, confirmem as datas em que podem servir:',
+          url
+        });
+      } catch (err) {}
+    } else {
+      handleCopyDirectLink();
+    }
+  };
+
   // COPIAR ENQUETE FORMATADA PARA WHATSAPP
   const handleCopyWhatsAppPoll = () => {
     if (attendanceEvents.length === 0) {
@@ -585,10 +620,11 @@ export const Attendance: React.FC<AttendanceProps> = ({
       text += `\n`;
     });
 
-    text += `📲 *Responda no App ou marque as opções acima!*\nDeus abençoe! 🙏`;
+    const directUrl = getDirectAttendanceUrl();
+    text += `📲 *Para votar direto pelo celular com 1 clique, acesse:*\n${directUrl}\n\nDeus abençoe! 🙏`;
 
     navigator.clipboard.writeText(text);
-    showToast('📋 Texto da enquete copiado! Cole no grupo do WhatsApp.');
+    showToast('📋 Texto da enquete copiado com o link direto! Cole no grupo do WhatsApp.');
   };
 
   // Cálculo da porcentagem de votos para a barra de progresso estilo WhatsApp
@@ -697,6 +733,15 @@ export const Attendance: React.FC<AttendanceProps> = ({
             </button>
 
             <button
+              onClick={handleCopyDirectLink}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold rounded-xl transition-all shadow-xs"
+              title="Copiar link direto para os integrantes acessarem e votarem"
+            >
+              <Link2 className="w-4 h-4 text-emerald-600" />
+              Copiar Link Direto
+            </button>
+
+            <button
               onClick={handleCopyWhatsAppPoll}
               disabled={attendanceEvents.length === 0}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all ml-auto disabled:opacity-40"
@@ -707,6 +752,46 @@ export const Attendance: React.FC<AttendanceProps> = ({
             </button>
           </div>
         )}
+      </div>
+
+      {/* BANNER DE LINK DIRETO PARA COMPARTILHAR COM A EQUIPE */}
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border border-emerald-200 dark:border-emerald-800/60 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/20">
+            <Link2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-slate-900 dark:text-white text-sm">
+                Link Direto para Confirmar Presença
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-black uppercase">
+                Acesso Rápido
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
+              Ao entrar por este link, os participantes caem <strong>diretamente nesta página</strong> de confirmação de presença (sem precisar de senha).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <button
+            onClick={handleCopyDirectLink}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center gap-2 cursor-pointer"
+            title="Copiar link direto para a área de transferência"
+          >
+            <Copy className="w-3.5 h-3.5" />
+            Copiar Link da Presença
+          </button>
+          <button
+            onClick={handleShareDirectLink}
+            className="p-2.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl transition-all shadow-xs cursor-pointer"
+            title="Compartilhar no WhatsApp ou outro app"
+          >
+            <Share2 className="w-4 h-4 text-emerald-600" />
+          </button>
+        </div>
       </div>
 
       {/* O CARD DA ENQUETE ESTILO WHATSAPP */}
