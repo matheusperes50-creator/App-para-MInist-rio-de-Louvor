@@ -10,8 +10,9 @@ import { Reports } from './components/Reports';
 import { Events } from './components/Events';
 import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
-import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote } from './types';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, FileSpreadsheet, RotateCcw } from 'lucide-react';
+import { Attendance } from './components/Attendance';
+import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database } from 'lucide-react';
 import { 
   DEFAULT_MEMBERS, 
   DEFAULT_SONGS, 
@@ -19,10 +20,20 @@ import {
   DEFAULT_STYLES, 
   DEFAULT_NOTES, 
   DEFAULT_EVENTS, 
-  DEFAULT_ANNOUNCEMENTS 
+  DEFAULT_ANNOUNCEMENTS,
+  DEFAULT_ATTENDANCE_EVENTS
 } from './initialData';
 
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyeUYtQd3mDz6cBQxTrJm_jPcV-_ywtI7yxWOQNdfKKFprEXouHdlbUshccSy2DF34I/exec';
+
+// Detect whether running in sandbox preview / test / local environment
+const isPreviewOrDev = typeof window !== 'undefined' && (
+  window.location.hostname.includes('run.app') ||
+  window.location.hostname.includes('localhost') ||
+  window.location.hostname.includes('127.0.0.1') ||
+  window.location.hostname.includes('webcontainer') ||
+  Boolean((import.meta as any).env?.DEV)
+);
 
 export const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
@@ -34,6 +45,15 @@ export const App: React.FC = () => {
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
+
+  // Master sheet protection: strictly prevents test data from overwriting real Google Sheets
+  const [isMasterSheetProtected, setIsMasterSheetProtected] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('louvor_master_sheet_protected');
+      if (saved !== null) return saved === 'true';
+    } catch {}
+    return isPreviewOrDev;
+  });
   
   const [members, setMembers] = useState<Member[]>(() => {
     try {
@@ -99,6 +119,15 @@ export const App: React.FC = () => {
     return DEFAULT_ANNOUNCEMENTS;
   });
 
+  const [attendanceEvents, setAttendanceEvents] = useState<AttendanceEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem('louvor_attendance');
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch {}
+    return DEFAULT_ATTENDANCE_EVENTS;
+  });
+
   // Keep live references to state
   const membersRef = useRef(members);
   const songsRef = useRef(songs);
@@ -107,6 +136,7 @@ export const App: React.FC = () => {
   const stylesRef = useRef(styles);
   const notesRef = useRef(notes);
   const announcementsRef = useRef(announcements);
+  const attendanceEventsRef = useRef(attendanceEvents);
 
   useEffect(() => { membersRef.current = members; }, [members]);
   useEffect(() => { songsRef.current = songs; }, [songs]);
@@ -115,6 +145,7 @@ export const App: React.FC = () => {
   useEffect(() => { stylesRef.current = styles; }, [styles]);
   useEffect(() => { notesRef.current = notes; }, [notes]);
   useEffect(() => { announcementsRef.current = announcements; }, [announcements]);
+  useEffect(() => { attendanceEventsRef.current = attendanceEvents; }, [attendanceEvents]);
 
   // Sync state to localStorage immediately whenever state changes
   useEffect(() => {
@@ -126,10 +157,11 @@ export const App: React.FC = () => {
       localStorage.setItem('louvor_styles', JSON.stringify(styles));
       localStorage.setItem('louvor_notes', JSON.stringify(notes));
       localStorage.setItem('louvor_announcements', announcements);
+      localStorage.setItem('louvor_attendance', JSON.stringify(attendanceEvents));
     } catch (e) {
       console.error('Falha ao salvar no localStorage:', e);
     }
-  }, [members, songs, schedules, events, styles, notes, announcements]);
+  }, [members, songs, schedules, events, styles, notes, announcements, attendanceEvents]);
 
   const handleLogin = (role: UserRoleType) => {
     setUserRole(role);
@@ -150,6 +182,14 @@ export const App: React.FC = () => {
     announcements?: string;
   }) => {
     if (userRole !== 'admin') return;
+
+    // PROTECTION: Do not write or overwrite the master Google Sheet with test data during testing
+    if (isMasterSheetProtected) {
+      console.info('🛡️ [Planilha Mestre Protegida] Gravação no Google Sheets bloqueada para proteger o banco de dados oficial da PIBJE. Dados preservados com sucesso no navegador.');
+      setSyncStatus('success');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+      return;
+    }
 
     setIsSyncing(true);
     setSyncStatus('idle');
@@ -188,7 +228,7 @@ export const App: React.FC = () => {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
-  }, [userRole]);
+  }, [userRole, isMasterSheetProtected]);
 
   // SYNC FROM SHEETS:
   // Reads cloud data and safely applies it to state and localStorage.
@@ -243,19 +283,12 @@ export const App: React.FC = () => {
           } catch (e) {}
         }
 
-        // Schedules: merge cloud with any local drafts/schedules
+        // Schedules: apply official schedules directly from the Google Sheets database
         if (Array.isArray(data.schedules) && data.schedules.length > 0) {
-          setSchedules(prev => {
-            const cloudIds = new Set((data.schedules || []).map((s: any) => s.id));
-            const localOnly = (prev || []).filter(s => s && s.id && !cloudIds.has(s.id));
-            const merged = [...data.schedules, ...localOnly].sort((a, b) => 
-              (b.date || '').localeCompare(a.date || '')
-            );
-            try {
-              localStorage.setItem('louvor_schedules', JSON.stringify(merged));
-            } catch (e) {}
-            return merged;
-          });
+          setSchedules(data.schedules);
+          try {
+            localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
+          } catch (e) {}
         }
 
         // Events: apply from cloud only if non-empty array
@@ -308,12 +341,10 @@ export const App: React.FC = () => {
     await syncFromSheets(false);
   }, [syncFromSheets]);
 
-  // Initial cloud fetch upon login
+  // Initial cloud fetch from Google Sheets database immediately on initial mount
   useEffect(() => {
-    if (userRole !== 'guest') {
-      syncFromSheets(true);
-    }
-  }, [syncFromSheets, userRole]);
+    syncFromSheets(true);
+  }, [syncFromSheets]);
 
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
@@ -391,6 +422,7 @@ export const App: React.FC = () => {
     setStyles(DEFAULT_STYLES);
     setNotes(DEFAULT_NOTES);
     setAnnouncements(DEFAULT_ANNOUNCEMENTS);
+    setAttendanceEvents(DEFAULT_ATTENDANCE_EVENTS);
 
     try {
       localStorage.setItem('louvor_members', JSON.stringify(DEFAULT_MEMBERS));
@@ -400,6 +432,7 @@ export const App: React.FC = () => {
       localStorage.setItem('louvor_styles', JSON.stringify(DEFAULT_STYLES));
       localStorage.setItem('louvor_notes', JSON.stringify(DEFAULT_NOTES));
       localStorage.setItem('louvor_announcements', DEFAULT_ANNOUNCEMENTS);
+      localStorage.setItem('louvor_attendance', JSON.stringify(DEFAULT_ATTENDANCE_EVENTS));
     } catch (e) {}
 
     setRestoreFeedback('Dados oficiais do Ministério PIBJE restaurados com sucesso! Sincronizando com a nuvem...');
@@ -436,6 +469,18 @@ export const App: React.FC = () => {
     switch (view) {
       case 'dashboard': 
         return <Dashboard members={members} songs={songs} schedules={schedules} announcements={announcements} setAnnouncements={handleUpdateAnnouncements} {...syncProps} />;
+      case 'attendance':
+        return (
+          <Attendance 
+            attendanceEvents={attendanceEvents} 
+            setAttendanceEvents={setAttendanceEvents} 
+            members={members} 
+            schedules={schedules} 
+            setSchedules={setSchedules} 
+            setView={setView} 
+            {...syncProps} 
+          />
+        );
       case 'members': 
         return <Members members={members} setMembers={setMembers} {...syncProps} />;
       case 'songs': 
@@ -451,7 +496,7 @@ export const App: React.FC = () => {
       case 'style': 
         return <LookStyle styles={styles} setStyles={setStyles} {...syncProps} />;
       case 'auto-schedules': 
-        return <AutoSchedules schedules={schedules} setSchedules={setSchedules} members={members} setView={setView} {...syncProps} />;
+        return <AutoSchedules schedules={schedules} setSchedules={setSchedules} members={members} setView={setView} attendanceEvents={attendanceEvents} {...syncProps} />;
       case 'notes': 
         return <Notes notes={notes} setNotes={setNotes} songs={songs} {...syncProps} />;
       default: 
@@ -466,6 +511,16 @@ export const App: React.FC = () => {
           <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
             <Cloud size={12} /> {hasFetchedFromCloud ? 'Conectado à Planilha' : 'Offline / Local'}
           </div>
+
+          {isMasterSheetProtected && (
+            <div 
+              className="flex items-center gap-1.5 text-[9px] font-bold text-sky-800 bg-sky-50 px-2.5 py-1 rounded-full border border-sky-200 shadow-xs cursor-help"
+              title="Ambiente de Testes: Os dados criados durante os testes aqui são salvos somente no navegador para não alterar a planilha oficial do Google Sheets. Ao publicar no GitHub, o app continuará utilizando a sua planilha mestre como banco de dados."
+            >
+              <ShieldCheck size={12} className="text-sky-600" /> Planilha Mestre Protegida (Modo Teste)
+            </div>
+          )}
+
           {isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
               <RefreshCw size={12} className="animate-spin" /> Sincronizando...
@@ -473,7 +528,7 @@ export const App: React.FC = () => {
           )}
           {syncStatus === 'success' && !isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <CheckCircle2 size={12} /> Atualizado
+              <CheckCircle2 size={12} /> {isMasterSheetProtected ? 'Salvo localmente (Planilha Mestre Segura)' : 'Atualizado'}
             </div>
           )}
           {syncStatus === 'error' && !isSyncing && (
@@ -483,13 +538,27 @@ export const App: React.FC = () => {
           )}
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button 
+            onClick={() => {
+              syncFromSheets(false);
+              setRestoreFeedback('Buscando e recarregando os dados oficiais da planilha Google...');
+              setTimeout(() => setRestoreFeedback(null), 3500);
+            }}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 text-[9px] font-black text-slate-700 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all cursor-pointer shadow-xs disabled:opacity-50"
+            title="Recarregar dados originais e oficiais da Planilha Google (descarta dados de teste temporários)"
+          >
+            <Database size={12} className={isSyncing ? 'animate-spin text-emerald-600' : 'text-emerald-600'} /> 
+            Recarregar Planilha Oficial
+          </button>
+
           <button 
             onClick={() => setShowRestoreModal(true)}
             className="flex items-center gap-1.5 text-[9px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all cursor-pointer shadow-sm"
             title="Recuperar dados anteriores ou restaurar versão"
           >
-            <History size={12} /> Recuperar / Backup
+            <History size={12} /> Backup / Histórico
           </button>
 
           <button 

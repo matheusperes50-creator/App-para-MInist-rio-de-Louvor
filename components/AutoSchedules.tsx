@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Member, Schedule, ScheduleAssignment, ViewType, Role, SongStatus } from '../types';
+import { Member, Schedule, ScheduleAssignment, ViewType, Role, SongStatus, AttendanceEvent } from '../types';
 import { 
   Calendar as CalendarIcon, 
   Users, 
@@ -14,6 +14,7 @@ import {
   Music, 
   Drum, 
   Mic2,
+  Mic,
   Wand2,
   ArrowRight,
   Sliders,
@@ -31,6 +32,7 @@ interface AutoSchedulesProps {
   onSaveToCloud?: (payload?: any) => Promise<void>;
   isSyncing: boolean;
   isAdmin: boolean;
+  attendanceEvents?: AttendanceEvent[];
 }
 
 interface DraftSchedule {
@@ -61,7 +63,8 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   onSync,
   onSaveToCloud,
   isSyncing,
-  isAdmin
+  isAdmin,
+  attendanceEvents = []
 }) => {
   const [exportSuccessToast, setExportSuccessToast] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
@@ -76,14 +79,15 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   const [generated, setGenerated] = useState<GeneratedSchedule[]>([]);
   const [expandedDraftId, setExpandedDraftId] = useState<string | null>(null);
   const [availabilityRoleFilter, setAvailabilityRoleFilter] = useState<string>('all');
+  const [onlySundays, setOnlySundays] = useState<boolean>(true);
   
-  // Generation Settings
+  // Generation Settings: default 4 Vocais + 1 Ministro
   const [requirements, setRequirements] = useState({
-    leader: true,
-    vocalsCount: 2,
+    minister: true, // 1 Ministro automatically chosen from members with Role.MINISTER
+    vocalsCount: 4, // 4 Vocais automatically chosen from members with Role.VOCAL
     keys: true,
     guitar: true,
-    electricGuitar: true,
+    electricGuitar: false,
     bass: true,
     drums: true,
   });
@@ -91,6 +95,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   // Helper inside Member to get standard abbreviations of roles for badges
   const getMemberRolesLabel = (m: Member) => {
     const labels: string[] = [];
+    if (m.roles.includes(Role.MINISTER)) labels.push('🎤');
     if (m.roles.includes(Role.VOCAL)) labels.push('🎙️');
     if (m.roles.includes(Role.KEYS)) labels.push('🎹');
     if (m.roles.includes(Role.GUITAR)) labels.push('🎸');
@@ -103,7 +108,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     return (members || []).filter(m => m.isActive);
   }, [members]);
 
-  // Handle month generation
+  // Handle month generation with option for only Sundays
   const handleGenerateMonthDrafts = () => {
     if (!selectedMonth) return;
     const [yearStr, monthStr] = selectedMonth.split('-');
@@ -121,7 +126,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
       if (dayOfWeek === 0) { // Sunday
         datesForDrafts.push({ dateStr, serviceType: 'Domingo (Noite)' });
-      } else if (dayOfWeek === 3) { // Wednesday
+      } else if (dayOfWeek === 3 && !onlySundays) { // Wednesday
         datesForDrafts.push({ dateStr, serviceType: 'Quarta-feira' });
       }
       dateCursor.setDate(dateCursor.getDate() + 1);
@@ -159,6 +164,31 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
     setDrafts(prev => [...prev, newDraft]);
     setExpandedDraftId(newDraft.id);
+  };
+
+  // Import drafts from attendance confirmations
+  const handleImportFromAttendance = () => {
+    if (!attendanceEvents || attendanceEvents.length === 0) return;
+    const importedDrafts: DraftSchedule[] = attendanceEvents.map((evt, index) => {
+      const confirmedIds = (evt.confirmations || [])
+        .filter(c => c.status === 'confirmed')
+        .map(c => c.memberId);
+
+      const effectiveIds = confirmedIds.length > 0 ? confirmedIds : activeMembers.map(m => m.id);
+
+      return {
+        id: `draft-att-${evt.id}-${index}`,
+        date: evt.date,
+        serviceType: evt.title,
+        availableMemberIds: effectiveIds
+      };
+    });
+
+    setDrafts(importedDrafts);
+    setGenerated([]);
+    if (importedDrafts.length > 0) {
+      setExpandedDraftId(importedDrafts[0].id);
+    }
   };
 
   // Remove individual draft
@@ -247,8 +277,15 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
         );
 
         if (candidates.length === 0) {
-          // Fallback if strict validation fails (especially for Vocal/Leader)
-          if (roleValidators.includes(Role.VOCAL)) {
+          // Fallback if strict validation fails
+          if (roleValidators.includes(Role.MINISTER)) {
+            // If no member with Role.MINISTER is available on this date, fallback to vocalists
+            candidates = activeMembers.filter(m => 
+              availableIds.includes(m.id) && 
+              !assignedOnThisDate.has(m.id) &&
+              m.roles.includes(Role.VOCAL)
+            );
+          } else if (roleValidators.includes(Role.VOCAL)) {
             // Pick any available who isn't booked yet
             candidates = activeMembers.filter(m => 
               availableIds.includes(m.id) && 
@@ -260,7 +297,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
         if (candidates.length === 0) return null;
 
         // Sort candidates primarily by participation counts (ascending)
-        // to balance/distribute workload perfectly!
+        // to balance/distribute workload perfectly across the ministry!
         candidates.sort((a, b) => {
           const countA = participationCounts[a.id] || 0;
           const countB = participationCounts[b.id] || 0;
@@ -278,11 +315,11 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
         return chosen.id;
       };
 
-      // 1. Assign Leader (Vocal Líder)
-      if (requirements.leader) {
-        const leaderId = assignRole('Vocal Líder', [Role.VOCAL]);
-        if (leaderId) {
-          filledAssignments.push({ role: 'Vocal Líder', memberId: leaderId });
+      // 1. Assign Minister (1 Ministro escolhido automaticamente a partir da função Ministro)
+      if (requirements.minister) {
+        const ministerId = assignRole('Ministro', [Role.MINISTER]);
+        if (ministerId) {
+          filledAssignments.push({ role: 'Ministro', memberId: ministerId });
         }
       }
 
@@ -318,7 +355,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
         if (id) filledAssignments.push({ role: 'Bateria', memberId: id });
       }
 
-      // 3. Assign Vocals (Backing)
+      // 3. Assign Vocals (4 Vocais ou quantidade configurada)
       const targetVocals = requirements.vocalsCount;
       for (let i = 0; i < targetVocals; i++) {
         const vocalId = assignRole('Vocal', [Role.VOCAL]);
@@ -373,7 +410,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
       const assignedIds = gen.assignments.map(a => a.memberId);
       const uniqueMemberIds = Array.from(new Set(assignedIds));
 
-      const leaders = gen.assignments.filter(a => a.role === 'Vocal Líder').map(a => a.memberId);
+      const leaders = gen.assignments.filter(a => a.role === 'Ministro' || a.role === 'Vocal Líder').map(a => a.memberId);
       const backupVocals = gen.assignments.filter(a => a.role === 'Vocal').map(a => a.memberId);
 
       const finalAssignments: ScheduleAssignment[] = gen.assignments.map(a => ({
@@ -421,6 +458,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
   const getRoleIcon = (roleName: string) => {
     switch (roleName) {
+      case 'Ministro': return <Mic className="text-amber-500" size={16} />;
       case 'Vocal Líder': return <Mic2 className="text-emerald-500" size={16} />;
       case 'Vocal': return <Mic2 className="text-emerald-300" size={16} />;
       case 'Teclado': return <Piano className="text-indigo-400" size={16} />;
@@ -435,6 +473,8 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   // Convert Role enum/string to labels
   const getRoleValidationEnum = (roleName: string): Role[] => {
     switch (roleName) {
+      case 'Ministro':
+        return [Role.MINISTER, Role.VOCAL];
       case 'Vocal Líder':
       case 'Vocal': 
         return [Role.VOCAL];
@@ -474,8 +514,8 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">MÊS DE AGENDAMENTO</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">1. MÊS DE AGENDAMENTO</label>
             <div className="flex gap-2">
               <input 
                 type="month" 
@@ -485,30 +525,96 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
               />
               <button 
                 onClick={handleGenerateMonthDrafts}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-md"
+                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-md shrink-0"
               >
                 Gerar Datas
               </button>
             </div>
+
+            <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input 
+                  type="checkbox" 
+                  checked={onlySundays} 
+                  onChange={(e) => setOnlySundays(e.target.checked)} 
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                />
+                <span className="text-xs font-black text-slate-700">Somente Domingos do mês</span>
+              </label>
+              <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl uppercase ${onlySundays ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+                {onlySundays ? 'Só Domingos' : 'Domingos + Quartas'}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2 flex flex-col justify-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ou crie manualmente</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ou crie manualmente / importe</span>
             <button 
               onClick={handleAddCustomDraft}
-              className="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
             >
               <Plus size={16} /> Adicionar Data Avulsa
             </button>
+            {attendanceEvents && attendanceEvents.length > 0 && (
+              <button 
+                onClick={handleImportFromAttendance}
+                className="w-full px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-black rounded-2xl text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                title="Carregar datas e integrantes confirmados da aba Presença"
+              >
+                <UserCheck size={14} /> Carregar das Presenças ({attendanceEvents.length} datas)
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Filtro de Requisitos</label>
-            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2 rounded-2xl border border-slate-100">
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" checked={requirements.leader} onChange={(e) => setRequirements(r => ({ ...r, leader: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
-                Líder
+            <div className="flex items-center justify-between">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">2. Requisitos da Equipe</label>
+              <button
+                type="button"
+                onClick={() => setRequirements(r => ({ ...r, minister: true, vocalsCount: 4 }))}
+                className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase transition-all border ${
+                  requirements.minister && requirements.vocalsCount === 4
+                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-emerald-300'
+                }`}
+                title="Ativar predefinição: 4 Vocais e 1 Ministro"
+              >
+                🎤 4 Vocais + 1 Ministro
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer col-span-2 pb-2 border-b border-slate-200/60">
+                <input 
+                  type="checkbox" 
+                  checked={requirements.minister} 
+                  onChange={(e) => setRequirements(r => ({ ...r, minister: e.target.checked }))} 
+                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" 
+                />
+                <Mic size={14} className="text-amber-500 shrink-0" />
+                <span className="font-extrabold text-slate-800">1 Ministro</span>
+                <span className="text-[9px] text-slate-400 font-medium ml-auto">(escolhido automático)</span>
               </label>
+
+              <div className="flex items-center justify-between col-span-2 py-2 border-b border-slate-200/60">
+                <span className="flex items-center gap-1.5 font-bold text-slate-700">
+                  <Mic2 size={14} className="text-emerald-500 shrink-0" />
+                  <span>Vocais:</span>
+                </span>
+                <select 
+                  value={requirements.vocalsCount}
+                  onChange={(e) => setRequirements(r => ({ ...r, vocalsCount: parseInt(e.target.value) }))}
+                  className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-black text-emerald-700 focus:ring-emerald-500 outline-none shadow-xs"
+                >
+                  <option value={0}>0 Vocais</option>
+                  <option value={1}>1 Vocal</option>
+                  <option value={2}>2 Vocais</option>
+                  <option value={3}>3 Vocais</option>
+                  <option value={4}>4 Vocais (4 Vocais + 1 Ministro)</option>
+                  <option value={5}>5 Vocais</option>
+                </select>
+              </div>
+
               <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
                 <input type="checkbox" checked={requirements.keys} onChange={(e) => setRequirements(r => ({ ...r, keys: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                 Teclado
@@ -525,22 +631,9 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 <input type="checkbox" checked={requirements.bass} onChange={(e) => setRequirements(r => ({ ...r, bass: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                 Baixo
               </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer col-span-2">
                 <input type="checkbox" checked={requirements.drums} onChange={(e) => setRequirements(r => ({ ...r, drums: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
                 Bateria
-              </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer col-span-2 mt-1 border-t pt-1 border-slate-200">
-                <span className="text-[10px] text-slate-400">Backings:</span>
-                <select 
-                  value={requirements.vocalsCount}
-                  onChange={(e) => setRequirements(r => ({ ...r, vocalsCount: parseInt(e.target.value) }))}
-                  className="bg-transparent border-0 py-0 text-xs font-black text-emerald-600 focus:ring-0 outline-none"
-                >
-                  <option value={0}>Nenhum</option>
-                  <option value={1}>1 Vocal</option>
-                  <option value={2}>2 Vocais</option>
-                  <option value={3}>3 Vocais</option>
-                </select>
               </label>
             </div>
           </div>
@@ -663,6 +756,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                           <div className="flex flex-wrap gap-1.5 py-1 border-b border-slate-50">
                             {[
                               { label: 'Todos', value: 'all' },
+                              { label: '🎤 Ministro', value: Role.MINISTER },
                               { label: '🎙️ Vocais', value: Role.VOCAL },
                               { label: '🎹 Teclado', value: Role.KEYS },
                               { label: '🎸 Violão/Guitarra', value: Role.GUITAR },
@@ -781,9 +875,9 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
                         <div className="space-y-2.5">
                           {/* Role adjust fields */}
-                          {['Vocal Líder', 'Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'].map((role) => {
+                          {['Ministro', 'Teclado', 'Violão', 'Guitarra', 'Baixo', 'Bateria'].map((role) => {
                             // Check if this role was generated
-                            const isReq = role === 'Vocal Líder' ? requirements.leader :
+                            const isReq = role === 'Ministro' ? requirements.minister :
                                           role === 'Teclado' ? requirements.keys :
                                           role === 'Violão' ? requirements.guitar :
                                           role === 'Guitarra' ? requirements.electricGuitar :

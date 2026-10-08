@@ -589,9 +589,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const existingSchedule = editingId ? schedules.find(s => s.id === editingId) : null;
     const finalAssignments: ScheduleAssignment[] = [
       ...leaderIds.map(id => ({ 
-        role: 'Vocal Líder', 
+        role: 'Ministro', 
         memberId: id,
-        confirmed: editingId ? ((existingSchedule?.assignments || []).find(a => a.memberId === id && a.role === 'Vocal Líder')?.confirmed || false) : false
+        confirmed: editingId ? ((existingSchedule?.assignments || []).find(a => a.memberId === id && (a.role === 'Ministro' || a.role === 'Vocal Líder'))?.confirmed || false) : false
       })),
       ...filteredVocals.map(id => ({ 
         role: 'Vocal', 
@@ -1082,14 +1082,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   <div className="flex items-center gap-3">
                     <Mic2 size={18} className="text-emerald-400 shrink-0" />
                     <span className="text-sm font-medium">
-                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Líder(es):</strong> 
+                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Ministro(s):</strong> 
                       {leaderNames.join(', ') || 'A definir'}
                     </span>
                   </div>
                   {isAdmin && (
                     <div className="flex gap-1">
                       {(sch.leaderIds || []).map(id => {
-                        const assignment = (sch.assignments || []).find(a => a.memberId === id && a.role === 'Vocal Líder');
+                        const assignment = (sch.assignments || []).find(a => a.memberId === id && (a.role === 'Ministro' || a.role === 'Vocal Líder'));
+                        const roleName = assignment?.role || 'Ministro';
                         const isConfirmed = assignment?.confirmed || assignment?.present;
                         return (
                           <button 
@@ -1097,9 +1098,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
                             onClick={(e) => { 
                               e.stopPropagation(); 
                               if (isPassed) {
-                                toggleAttendance(sch.id, id, 'Vocal Líder');
+                                toggleAttendance(sch.id, id, roleName);
                               } else {
-                                toggleAssignmentConfirm(sch.id, id, 'Vocal Líder');
+                                toggleAssignmentConfirm(sch.id, id, roleName);
                               }
                             }}
                             className={`p-1 transition-all ${isConfirmed ? 'text-emerald-400' : 'text-white/20 hover:text-white/40'}`}
@@ -1117,7 +1118,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   <div className="flex items-start gap-3">
                     <MessageSquare size={18} className="text-emerald-400 shrink-0 mt-1" />
                     <span className="text-sm font-medium">
-                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Vocals:</strong> 
+                      <strong className="font-black uppercase text-[10px] tracking-widest text-emerald-200/60 block">Vocais:</strong> 
                       {vocalNames.join(', ') || 'A definir'}
                     </span>
                   </div>
@@ -1148,7 +1149,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   )}
                 </div>
 
-                {(sch.assignments || []).filter(a => !['Vocal Líder', 'Vocal'].includes(a.role)).map((a, i) => {
+                {(sch.assignments || []).filter(a => !['Vocal Líder', 'Ministro', 'Vocal'].includes(a.role)).map((a, i) => {
                   const m = members.find(x => x.id === a.memberId);
                   const Icon = instrumentIcons[a.role] || Music;
                   return (

@@ -17,7 +17,8 @@ import {
   Calendar,
   Shirt,
   Wand2,
-  StickyNote
+  StickyNote,
+  CalendarCheck
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -37,6 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
 
   const navItems = [
     { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+    { id: 'attendance' as ViewType, label: 'Presença', icon: CalendarCheck, adminOnly: false },
     { id: 'schedules' as ViewType, label: 'Escalas', icon: CalendarDays, adminOnly: false },
     { id: 'songs' as ViewType, label: 'Repertório', icon: Library, adminOnly: false },
     { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },

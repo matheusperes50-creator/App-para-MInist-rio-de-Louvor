@@ -258,7 +258,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         disabled={!isAdmin}
                         className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
-                        {role}
+                        {role === Role.MINISTER ? `🎤 ${role}` : role}
                       </button>
                     ))}
                   </div>
@@ -351,8 +351,15 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     <td className="px-10 py-6">
                       <div className="flex flex-wrap gap-1.5">
                         {(m.roles || []).map((r, i) => (
-                          <span key={i} className="px-2 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black uppercase text-slate-500 rounded-lg">
-                            {r}
+                          <span 
+                            key={i} 
+                            className={`px-2 py-1 border text-[9px] font-black uppercase rounded-lg inline-flex items-center gap-1 ${
+                              r === Role.MINISTER 
+                                ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-xs' 
+                                : 'bg-slate-50 border-slate-100 text-slate-500'
+                            }`}
+                          >
+                            {r === Role.MINISTER && '🎤'} {r}
                           </span>
                         ))}
                       </div>
@@ -430,8 +437,15 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
               
               <div className="flex flex-wrap gap-1.5 mb-6">
                 {(m.roles || []).map((r, i) => (
-                  <span key={i} className="px-2.5 py-1 bg-slate-50 border border-slate-100 text-[9px] font-black uppercase text-slate-500 rounded-lg">
-                    {r}
+                  <span 
+                    key={i} 
+                    className={`px-2.5 py-1 border text-[9px] font-black uppercase rounded-lg inline-flex items-center gap-1 ${
+                      r === Role.MINISTER 
+                        ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-xs' 
+                        : 'bg-slate-50 border-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {r === Role.MINISTER && '🎤'} {r}
                   </span>
                 ))}
               </div>

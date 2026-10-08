@@ -12,7 +12,7 @@ import {
   ResponsiveContainer, 
   Cell
 } from 'recharts';
-import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2, Cake, MessageSquare } from 'lucide-react';
+import { Music, Users, Calendar, Trophy, RefreshCw, TrendingUp, Heart, Search, CalendarDays, Mic, Mic2, Music2, Megaphone, Edit3, Save, X, CheckCircle2, Cake, MessageSquare } from 'lucide-react';
 
 interface DashboardProps {
   members: Member[];
@@ -161,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   
                   <div className="flex flex-wrap gap-3">
                     <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                      <p className="text-[10px] font-black uppercase text-emerald-300 mb-1">Ministro</p>
+                      <p className="text-[10px] font-black uppercase text-emerald-300 mb-1 flex items-center gap-1.5"><Mic size={12} className="text-amber-300" /> Ministro</p>
                       <p className="text-sm font-bold">
                         {nextSchedule.leaderIds.map(id => members.find(m => m.id === id)?.name).filter(Boolean).join(', ') || 'A definir'}
                       </p>

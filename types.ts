@@ -1,4 +1,5 @@
 export enum Role {
+  MINISTER = 'Ministro',
   VOCAL = 'Vocal',
   GUITAR = 'Violão/Guitarra',
   BASS = 'Baixo',
@@ -101,4 +102,22 @@ export interface RehearsalNote {
   createdAt: string;
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes';
+export interface AttendanceConfirmation {
+  memberId: string;
+  status: 'confirmed' | 'declined' | 'pending';
+  note?: string;
+  confirmedAt?: string;
+}
+
+export interface AttendanceEvent {
+  id: string;
+  date: string;
+  title: string;
+  time?: string;
+  description?: string;
+  confirmations: AttendanceConfirmation[];
+  deadline?: string;
+  createdScheduleId?: string;
+}
+
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance';

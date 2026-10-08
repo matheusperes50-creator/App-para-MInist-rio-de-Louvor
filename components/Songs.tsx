@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Song, Schedule, SongStatus } from '../types';
-import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Youtube, ExternalLink, Sparkles, LayoutGrid, List } from 'lucide-react';
+import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List } from 'lucide-react';
 
 interface SongsProps {
   songs: Song[];
@@ -13,6 +13,21 @@ interface SongsProps {
 }
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+
+// Helper to extract YouTube video ID from various link formats
+export const getYoutubeVideoId = (url?: string): string | null => {
+  if (!url) return null;
+  const clean = url.trim();
+  const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+  const match = clean.match(regExp);
+  return match ? match[1] : null;
+};
+
+// Helper to retrieve the official video cover thumbnail from YouTube
+export const getYoutubeThumbnail = (url?: string): string | null => {
+  const id = getYoutubeVideoId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
+};
 
 export const Songs: React.FC<SongsProps> = ({ 
   songs = [], 
@@ -322,13 +337,29 @@ export const Songs: React.FC<SongsProps> = ({
         <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20" : "flex flex-col gap-3 pb-20"}>
           {filteredSongs.map((song) => {
             const stat = songsStats[song.id] || { last30Days: 0, allKeys: new Set() };
+            const thumbUrl = getYoutubeThumbnail(song.youtubeUrl);
             
             if (viewMode === 'list') {
               return (
                 <div key={song.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getStatusStyle(song.status).split(' ')[0]}`}>
-                    {getStatusIcon(song.status)}
-                  </div>
+                  {thumbUrl ? (
+                    <a
+                      href={song.youtubeUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-16 h-12 rounded-xl overflow-hidden relative group/thumb shrink-0 border border-slate-100 shadow-xs block bg-slate-900"
+                      title="Assistir no YouTube"
+                    >
+                      <img src={thumbUrl} alt={song.title} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform" />
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-opacity">
+                        <Play size={14} className="text-white drop-shadow" fill="white" />
+                      </div>
+                    </a>
+                  ) : (
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getStatusStyle(song.status).split(' ')[0]}`}>
+                      {getStatusIcon(song.status)}
+                    </div>
+                  )}
                   
                   <div className="flex-1 min-w-0">
                     <h4 className="font-black text-slate-800 text-sm truncate">{song.title}</h4>
@@ -357,6 +388,7 @@ export const Songs: React.FC<SongsProps> = ({
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        title="Ver no YouTube"
                       >
                         <Youtube size={18} />
                       </a>
@@ -374,37 +406,72 @@ export const Songs: React.FC<SongsProps> = ({
 
             return (
               <div key={song.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full relative overflow-hidden">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 ${getStatusStyle(song.status)}`}>
-                    {getStatusIcon(song.status)} {song.status}
-                  </div>
-                  <div className="flex gap-1">
-                    {song.youtubeUrl && (
-                      <a 
-                        href={song.youtubeUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        title="Ver Referência"
-                      >
-                        <Youtube size={18} />
-                      </a>
-                    )}
-                    {isAdmin && (
-                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                        <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                {thumbUrl ? (
+                  <div className="relative -mx-6 -mt-6 mb-4 aspect-video bg-slate-900 overflow-hidden group/thumb shadow-xs">
+                    <img 
+                      src={thumbUrl} 
+                      alt={song.title} 
+                      className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500" 
+                      loading="lazy" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent flex flex-col justify-between p-4">
+                      <div className="flex justify-between items-start">
+                        <div className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-1.5 shadow-md backdrop-blur-xs ${getStatusStyle(song.status)}`}>
+                          {getStatusIcon(song.status)} {song.status}
+                        </div>
+                        {song.youtubeUrl && (
+                          <a 
+                            href={song.youtubeUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-transform hover:scale-110 flex items-center justify-center"
+                            title="Abrir no YouTube"
+                          >
+                            <Youtube size={14} />
+                          </a>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
 
-                <div className="flex-1 mt-2">
+                      <div className="flex items-center justify-between">
+                        <a 
+                          href={song.youtubeUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest backdrop-blur-sm transition-all shadow-sm"
+                        >
+                          <Play size={10} fill="currentColor" /> Reproduzir Capa
+                        </a>
+                        {isAdmin && (
+                          <div className="flex gap-1 bg-black/50 backdrop-blur-sm p-1 rounded-xl">
+                            <button onClick={() => handleEdit(song)} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Editar"><Edit3 size={14} /></button>
+                            <button onClick={() => removeSong(song.id)} className="p-1.5 text-white/80 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 ${getStatusStyle(song.status)}`}>
+                      {getStatusIcon(song.status)} {song.status}
+                    </div>
+                    <div className="flex gap-1">
+                      {isAdmin && (
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 size={16} /></button>
+                          <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex-1 mt-1">
                   <h4 className="font-black text-slate-800 text-xl leading-tight line-clamp-2">{song.title}</h4>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-tight mt-1">{song.artist}</p>
                 </div>
 
-                <div className="mt-6 space-y-4 pt-4 border-t border-slate-50">
+                <div className="mt-5 space-y-4 pt-4 border-t border-slate-50">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tom Base</p>
@@ -431,9 +498,9 @@ export const Songs: React.FC<SongsProps> = ({
                       href={song.youtubeUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="w-full py-3 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-100 transition-all"
+                      className="w-full py-2.5 bg-red-50 hover:bg-red-100 border border-red-100/80 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition-all shadow-xs"
                     >
-                      <ExternalLink size={12} /> Referência YouTube
+                      <Youtube size={14} className="text-red-600" /> Assistir Vídeo no YouTube
                     </a>
                   )}
 

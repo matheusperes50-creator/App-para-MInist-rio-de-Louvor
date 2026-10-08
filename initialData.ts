@@ -1,10 +1,10 @@
-import { Member, Song, Schedule, ExternalEvent, RehearsalNote, Role, SongStatus, LookStyle } from './types';
+import { Member, Song, Schedule, ExternalEvent, RehearsalNote, Role, SongStatus, LookStyle, AttendanceEvent } from './types';
 
 export const DEFAULT_MEMBERS: Member[] = [
   { 
     id: 'Z9C3CC', 
     name: 'Matheus Peres', 
-    roles: [Role.VOCAL, Role.GUITAR, Role.KEYS], 
+    roles: [Role.MINISTER, Role.VOCAL, Role.GUITAR, Role.KEYS], 
     isActive: true, 
     birthDate: '1996-05-14',
     photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces' 
@@ -20,7 +20,7 @@ export const DEFAULT_MEMBERS: Member[] = [
   { 
     id: 'ZUSMHY', 
     name: 'Ana Paula Rocha', 
-    roles: [Role.VOCAL], 
+    roles: [Role.MINISTER, Role.VOCAL], 
     isActive: true, 
     birthDate: '1995-11-30',
     photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces' 
@@ -89,7 +89,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'G',
     bpm: 70,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=0wQ7A8pD1Hw'
+    youtubeUrl: 'https://www.youtube.com/watch?v=mZ9yZYo9Mmk'
   },
   {
     id: 'SNG-BENCAO',
@@ -98,7 +98,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'Bb',
     bpm: 72,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=Z3kP_W4bU5U'
+    youtubeUrl: 'https://www.youtube.com/watch?v=v8gaG2ed01I'
   },
   {
     id: 'SNG-OUSADO',
@@ -107,7 +107,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'Gb',
     bpm: 68,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=s7b26g2gY3g'
+    youtubeUrl: 'https://www.youtube.com/watch?v=wSKKEAnLTDw'
   },
   {
     id: 'SNG-LUGAR',
@@ -116,7 +116,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'E',
     bpm: 68,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=q6g4y9zH37M'
+    youtubeUrl: 'https://www.youtube.com/watch?v=YnrN0o0lubM'
   },
   {
     id: 'SNG-RUJA',
@@ -125,7 +125,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'C',
     bpm: 128,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=r3k7n9P3y8M'
+    youtubeUrl: 'https://www.youtube.com/watch?v=jtm9HiYZ7UQ'
   },
   {
     id: 'SNG-CAMINHO',
@@ -134,7 +134,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'A',
     bpm: 68,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=8qT_Yf7D5rQ'
+    youtubeUrl: 'https://www.youtube.com/watch?v=xDR4vQtArMo'
   },
   {
     id: 'SNG-TODAVIA',
@@ -143,7 +143,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'F',
     bpm: 74,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=e2J2g2Y2b4Y'
+    youtubeUrl: 'https://www.youtube.com/watch?v=rNBedSCKwVc'
   },
   {
     id: 'SNG-ELE-VIVE',
@@ -152,7 +152,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'G',
     bpm: 80,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=9g0J1v2G3H4'
+    youtubeUrl: 'https://www.youtube.com/watch?v=tVx6KHWz0HU'
   },
   {
     id: 'SNG-REI-REIS',
@@ -161,7 +161,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'D',
     bpm: 68,
     status: SongStatus.REHEARSING,
-    youtubeUrl: 'https://www.youtube.com/watch?v=f4J_N9dG8sK'
+    youtubeUrl: 'https://www.youtube.com/watch?v=oMneWx9IPts'
   },
   {
     id: 'SNG-DIGNO',
@@ -170,7 +170,7 @@ export const DEFAULT_SONGS: Song[] = [
     key: 'C',
     bpm: 72,
     status: SongStatus.READY,
-    youtubeUrl: 'https://www.youtube.com/watch?v=k1M2n3P4q5R'
+    youtubeUrl: 'https://www.youtube.com/watch?v=pQju8cyof8k'
   }
 ];
 
@@ -330,3 +330,64 @@ export const DEFAULT_ANNOUNCEMENTS = `### 📢 Avisos do Ministério de Louvor P
 1. **Ensaios Gerais**: Quintas-feiras às 19h45 no templo principal. Por favor, cheguem no horário para passagem de som!
 2. **Confirmação de Escalas**: Confirmem sua presença na aba de Escalas com pelo menos 48h de antecedência.
 3. **Músicas Novas**: Músicas em ensaio estão disponíveis com links do YouTube na aba Repertório.`;
+
+export const DEFAULT_ATTENDANCE_EVENTS: AttendanceEvent[] = [
+  {
+    id: 'ATT-DOM-22',
+    date: '2026-03-22',
+    title: 'Culto de Domingo - Noite',
+    time: '19:00',
+    description: 'Culto de celebração da noite no templo principal.',
+    deadline: '2026-03-20',
+    confirmations: [
+      { memberId: 'Z9C3CC', status: 'confirmed', confirmedAt: '2026-03-16 10:30' },
+      { memberId: '983Q7L', status: 'confirmed', confirmedAt: '2026-03-16 11:15' },
+      { memberId: 'QL783O', status: 'confirmed', confirmedAt: '2026-03-16 12:00' },
+      { memberId: '7FUW2H', status: 'confirmed', confirmedAt: '2026-03-16 14:20' },
+      { memberId: 'GGOR98', status: 'confirmed', confirmedAt: '2026-03-16 15:00' },
+      { memberId: 'PKNF87', status: 'confirmed', confirmedAt: '2026-03-16 16:30' },
+      { memberId: 'TECL01', status: 'confirmed', confirmedAt: '2026-03-16 17:10' },
+      { memberId: 'GUIT01', status: 'confirmed', confirmedAt: '2026-03-16 18:00' },
+      { memberId: 'BASS01', status: 'confirmed', confirmedAt: '2026-03-16 19:00' },
+      { memberId: 'DRUM01', status: 'confirmed', confirmedAt: '2026-03-16 19:40' }
+    ]
+  },
+  {
+    id: 'ATT-DOM-29',
+    date: '2026-03-29',
+    title: 'Culto de Domingo - Manhã',
+    time: '09:00',
+    description: 'Culto da manhã com Ceia do Senhor.',
+    deadline: '2026-03-27',
+    confirmations: [
+      { memberId: '983Q7L', status: 'confirmed', confirmedAt: '2026-03-17 09:10' },
+      { memberId: 'QL783O', status: 'confirmed', confirmedAt: '2026-03-17 10:00' },
+      { memberId: '7FUW2H', status: 'confirmed', confirmedAt: '2026-03-17 10:45' },
+      { memberId: 'PKNF87', status: 'confirmed', confirmedAt: '2026-03-17 11:20' },
+      { memberId: 'TECL01', status: 'confirmed', confirmedAt: '2026-03-17 14:00' },
+      { memberId: 'GUIT01', status: 'confirmed', confirmedAt: '2026-03-17 15:30' },
+      { memberId: 'DRUM01', status: 'confirmed', confirmedAt: '2026-03-17 16:00' },
+      { memberId: 'Z9C3CC', status: 'declined', note: 'Viagem de trabalho' }
+    ]
+  },
+  {
+    id: 'ATT-PASCOA-05',
+    date: '2026-04-05',
+    title: 'Culto Especial de Páscoa - Noite',
+    time: '19:00',
+    description: 'Cantata e celebração da ressurreição.',
+    deadline: '2026-04-02',
+    confirmations: [
+      { memberId: 'Z9C3CC', status: 'confirmed' },
+      { memberId: '983Q7L', status: 'confirmed' },
+      { memberId: 'QL783O', status: 'confirmed' },
+      { memberId: '7FUW2H', status: 'confirmed' },
+      { memberId: 'GGOR98', status: 'confirmed' },
+      { memberId: 'PKNF87', status: 'confirmed' },
+      { memberId: 'TECL01', status: 'confirmed' },
+      { memberId: 'GUIT01', status: 'confirmed' },
+      { memberId: 'BASS01', status: 'confirmed' },
+      { memberId: 'DRUM01', status: 'confirmed' }
+    ]
+  }
+];

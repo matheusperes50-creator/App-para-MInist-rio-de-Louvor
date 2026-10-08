@@ -23,6 +23,7 @@ import {
   PieChart as PieChartIcon,
   FileText,
   Music,
+  Mic,
   Search,
   X,
   ChevronRight
@@ -262,7 +263,7 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
         {/* Relatório de Ministros */}
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-emerald-50 p-2 rounded-lg"><Award size={18} className="text-emerald-600" /></div>
+            <div className="bg-emerald-50 p-2 rounded-lg"><Mic size={18} className="text-emerald-600" /></div>
             <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Ranking de Ministros</h3>
           </div>
           
