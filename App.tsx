@@ -61,13 +61,34 @@ checkAndPurgeOldMockCache();
 export const App: React.FC = () => {
   const isDirectAttendance = checkIsAttendanceDirectLink();
   const [view, setView] = useState<ViewType>(() => isDirectAttendance ? 'attendance' : 'dashboard');
-  const [userRole, setUserRole] = useState<UserRoleType>(() => isDirectAttendance ? 'member' : 'guest');
+  const [userRole, setUserRole] = useState<UserRoleType>(() => {
+    if (isDirectAttendance) return 'member';
+    try {
+      const saved = localStorage.getItem('louvor_user_role') as UserRoleType;
+      if (saved === 'admin' || saved === 'member') return saved;
+    } catch {}
+    return 'guest';
+  });
   
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
+  const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(() => {
+    try { return localStorage.getItem('louvor_last_saved_time'); } catch { return null; }
+  });
+
+  // Keep user role persisted so page reloads do not drop admin privileges
+  useEffect(() => {
+    try {
+      if (userRole !== 'guest') {
+        localStorage.setItem('louvor_user_role', userRole);
+      } else {
+        localStorage.removeItem('louvor_user_role');
+      }
+    } catch {}
+  }, [userRole]);
 
   // Synchronize view with URL query/hash changes
   useEffect(() => {
@@ -194,10 +215,107 @@ export const App: React.FC = () => {
   }, [members, songs, schedules, events, styles, notes, announcements, attendanceEvents]);
 
   const handleLogout = () => {
+    try { localStorage.removeItem('louvor_user_role'); } catch {}
     setUserRole('guest');
   };
 
-  // Immediate cloud save function - saves locally and pushes to Google Sheets
+  // Queue of pending data to be written to Google Sheets
+  const pendingSaveRef = useRef<{
+    members?: Member[];
+    songs?: Song[];
+    schedules?: Schedule[];
+    events?: ExternalEvent[];
+    styles?: LookStyleType[];
+    notes?: RehearsalNote[];
+    announcements?: string;
+    attendanceEvents?: AttendanceEvent[];
+  } | null>(null);
+
+  const isSavingProcessRef = useRef(false);
+
+  // Serialized, atomic cloud save engine - ensures only ONE save request in-flight at a time
+  const executeCloudSave = useCallback(async () => {
+    if (isSavingProcessRef.current) return;
+    isSavingProcessRef.current = true;
+    setIsSyncing(true);
+    setSyncStatus('idle');
+
+    try {
+      while (pendingSaveRef.current) {
+        // Take queued snapshot
+        const currentBatch = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+
+        // Build authoritative complete payload
+        const payload = {
+          members: currentBatch.members ?? membersRef.current ?? [],
+          songs: currentBatch.songs ?? songsRef.current ?? [],
+          schedules: currentBatch.schedules ?? schedulesRef.current ?? [],
+          events: currentBatch.events ?? eventsRef.current ?? [],
+          styles: currentBatch.styles ?? stylesRef.current ?? [],
+          notes: currentBatch.notes ?? notesRef.current ?? [],
+          announcements: currentBatch.announcements ?? announcementsRef.current ?? '',
+          attendanceEvents: currentBatch.attendanceEvents ?? attendanceEventsRef.current ?? []
+        };
+
+        const bodyStr = JSON.stringify(payload);
+        let saveSuccess = false;
+        let lastErr: any = null;
+
+        // Attempt 1: Standard POST with Content-Type text/plain (CORS safelisted)
+        try {
+          const res = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: bodyStr
+          });
+          if (res.ok || res.status === 200 || res.type === 'opaque') {
+            saveSuccess = true;
+          }
+        } catch (corsErr) {
+          lastErr = corsErr;
+          console.warn('Tentativa padrão de envio falhou, tentando fallback:', corsErr);
+        }
+
+        // Attempt 2: Fallback with no-cors if browser blocked redirect
+        if (!saveSuccess) {
+          try {
+            await fetch(SCRIPT_URL, {
+              method: 'POST',
+              mode: 'no-cors',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: bodyStr
+            });
+            saveSuccess = true;
+          } catch (noCorsErr) {
+            lastErr = noCorsErr;
+            console.error('Tentativa fallback no-cors falhou:', noCorsErr);
+          }
+        }
+
+        if (!saveSuccess) {
+          throw lastErr || new Error('Falha ao comunicar com a planilha Google');
+        }
+
+        const nowFormatted = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        setLastSavedTimestamp(nowFormatted);
+        try { localStorage.setItem('louvor_last_saved_time', nowFormatted); } catch {}
+        setSyncStatus('success');
+        setHasFetchedFromCloud(true);
+      }
+    } catch (error) {
+      console.error('Erro ao persistir dados na planilha Google:', error);
+      setSyncStatus('error');
+    } finally {
+      isSavingProcessRef.current = false;
+      setIsSyncing(false);
+      setTimeout(() => {
+        setSyncStatus(prev => prev === 'success' ? 'idle' : prev);
+      }, 4000);
+    }
+  }, []);
+
+  // Public save function: persists immediately locally and enqueues cloud save
   const saveToCloudNow = useCallback(async (overridePayload?: {
     members?: Member[];
     songs?: Song[];
@@ -208,91 +326,63 @@ export const App: React.FC = () => {
     announcements?: string;
     attendanceEvents?: AttendanceEvent[];
   }) => {
-    // Only admins can modify core data; members are permitted to save attendance votes
-    if (userRole !== 'admin' && !overridePayload?.attendanceEvents) return;
+    // Check permission: admins can save everything, members can only save attendance votes
+    const currentRole = userRole;
+    if (currentRole !== 'admin' && !overridePayload?.attendanceEvents) return;
 
-    setIsSyncing(true);
-    setSyncStatus('idle');
-
-    const targetMembers = overridePayload?.members ?? membersRef.current ?? [];
-    const targetSongs = overridePayload?.songs ?? songsRef.current ?? [];
-    const targetSchedules = overridePayload?.schedules ?? schedulesRef.current ?? [];
-    const targetEvents = overridePayload?.events ?? eventsRef.current ?? [];
-    const targetStyles = overridePayload?.styles ?? stylesRef.current ?? [];
-    const targetNotes = overridePayload?.notes ?? notesRef.current ?? [];
-    const targetAnnouncements = overridePayload?.announcements ?? announcementsRef.current ?? '';
-    const targetAttendanceEvents = overridePayload?.attendanceEvents ?? attendanceEventsRef.current ?? [];
-
-    // 1. Immediately persist to localStorage for instant local reliability
-    try {
-      if (overridePayload?.members) localStorage.setItem('louvor_members', JSON.stringify(targetMembers));
-      if (overridePayload?.songs) localStorage.setItem('louvor_songs', JSON.stringify(targetSongs));
-      if (overridePayload?.schedules) localStorage.setItem('louvor_schedules', JSON.stringify(targetSchedules));
-      if (overridePayload?.events) localStorage.setItem('louvor_events', JSON.stringify(targetEvents));
-      if (overridePayload?.styles) localStorage.setItem('louvor_styles', JSON.stringify(targetStyles));
-      if (overridePayload?.notes) localStorage.setItem('louvor_notes', JSON.stringify(targetNotes));
-      if (overridePayload?.announcements !== undefined) localStorage.setItem('louvor_announcements', targetAnnouncements);
-      if (overridePayload?.attendanceEvents) localStorage.setItem('louvor_attendance', JSON.stringify(targetAttendanceEvents));
-    } catch (e) {
-      console.error('Falha ao salvar no localStorage:', e);
+    // 1. Immediately apply to local state, refs, and localStorage
+    if (overridePayload?.members) {
+      membersRef.current = overridePayload.members;
+      setMembers(overridePayload.members);
+      try { localStorage.setItem('louvor_members', JSON.stringify(overridePayload.members)); } catch {}
+    }
+    if (overridePayload?.songs) {
+      songsRef.current = overridePayload.songs;
+      setSongs(overridePayload.songs);
+      try { localStorage.setItem('louvor_songs', JSON.stringify(overridePayload.songs)); } catch {}
+    }
+    if (overridePayload?.schedules) {
+      schedulesRef.current = overridePayload.schedules;
+      setSchedules(overridePayload.schedules);
+      try { localStorage.setItem('louvor_schedules', JSON.stringify(overridePayload.schedules)); } catch {}
+    }
+    if (overridePayload?.events) {
+      eventsRef.current = overridePayload.events;
+      setEvents(overridePayload.events);
+      try { localStorage.setItem('louvor_events', JSON.stringify(overridePayload.events)); } catch {}
+    }
+    if (overridePayload?.styles) {
+      stylesRef.current = overridePayload.styles;
+      setStyles(overridePayload.styles);
+      try { localStorage.setItem('louvor_styles', JSON.stringify(overridePayload.styles)); } catch {}
+    }
+    if (overridePayload?.notes) {
+      notesRef.current = overridePayload.notes;
+      setNotes(overridePayload.notes);
+      try { localStorage.setItem('louvor_notes', JSON.stringify(overridePayload.notes)); } catch {}
+    }
+    if (overridePayload?.announcements !== undefined) {
+      announcementsRef.current = overridePayload.announcements;
+      setAnnouncements(overridePayload.announcements);
+      try { localStorage.setItem('louvor_announcements', overridePayload.announcements); } catch {}
+    }
+    if (overridePayload?.attendanceEvents) {
+      attendanceEventsRef.current = overridePayload.attendanceEvents;
+      setAttendanceEvents(overridePayload.attendanceEvents);
+      try { localStorage.setItem('louvor_attendance', JSON.stringify(overridePayload.attendanceEvents)); } catch {}
     }
 
-    // 2. Immediately update state if override passed
-    if (overridePayload?.members) setMembers(targetMembers);
-    if (overridePayload?.songs) setSongs(targetSongs);
-    if (overridePayload?.schedules) setSchedules(targetSchedules);
-    if (overridePayload?.events) setEvents(targetEvents);
-    if (overridePayload?.styles) setStyles(targetStyles);
-    if (overridePayload?.notes) setNotes(targetNotes);
-    if (overridePayload?.announcements !== undefined) setAnnouncements(targetAnnouncements);
-    if (overridePayload?.attendanceEvents) setAttendanceEvents(targetAttendanceEvents);
-
-    // 3. Post to Google Sheets Apps Script
-    const payload = {
-      members: targetMembers,
-      songs: targetSongs,
-      schedules: targetSchedules,
-      events: targetEvents,
-      styles: targetStyles,
-      notes: targetNotes,
-      announcements: targetAnnouncements,
-      attendanceEvents: targetAttendanceEvents
+    // 2. Enqueue into pending cloud save
+    pendingSaveRef.current = {
+      ...(pendingSaveRef.current || {}),
+      ...(overridePayload || {})
     };
 
-    try {
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      });
+    // 3. Trigger cloud execution
+    await executeCloudSave();
+  }, [userRole, executeCloudSave]);
 
-      setSyncStatus('success');
-      setHasFetchedFromCloud(true);
-    } catch (error) {
-      console.error('Erro ao salvar na nuvem:', error);
-      // Retry once after 1s
-      try {
-        await new Promise(r => setTimeout(r, 1000));
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        setSyncStatus('success');
-        setHasFetchedFromCloud(true);
-      } catch (retryError) {
-        console.error('Falha na segunda tentativa de salvar na nuvem:', retryError);
-        setSyncStatus('error');
-      }
-    } finally {
-      setIsSyncing(false);
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    }
-  }, [userRole]);
-
-  // Dedicated update handlers that synchronously update state, refs, localStorage, and immediately persist to Google Sheets
+  // Dedicated update handlers
   const handleSetMembers = useCallback((action: React.SetStateAction<Member[]>) => {
     setMembers(prev => {
       const updated = typeof action === 'function' ? action(prev) : action;
@@ -378,6 +468,11 @@ export const App: React.FC = () => {
   // SYNC FROM SHEETS:
   // Reads authoritative cloud data and updates state and localStorage directly so all devices match.
   const syncFromSheets = useCallback(async (isAuto = false, forceReplace = false) => {
+    // If local changes are actively saving or pending in the queue, do not clobber with older cloud data!
+    if (!forceReplace && (isSavingProcessRef.current || pendingSaveRef.current)) {
+      return;
+    }
+
     if (!isAuto) setIsSyncing(true);
     setSyncStatus('idle');
 
@@ -743,7 +838,7 @@ export const App: React.FC = () => {
           )}
           {syncStatus === 'success' && !isSyncing && (
             <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-              <CheckCircle2 size={12} /> Salvo e Sincronizado
+              <CheckCircle2 size={12} /> Salvo e Sincronizado {lastSavedTimestamp ? `(${lastSavedTimestamp})` : ''}
             </div>
           )}
           {syncStatus === 'error' && !isSyncing && (

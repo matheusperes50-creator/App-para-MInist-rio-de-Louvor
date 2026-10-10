@@ -85,6 +85,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [exportMonth, setExportMonth] = useState('');
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const [leaderIds, setLeaderIds] = useState<string[]>([]);
@@ -552,8 +553,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
       }
     });
 
+    let finalSongsList = songs;
     if (newSongsToRegister.length > 0) {
-      setSongs(prev => [...prev, ...newSongsToRegister]);
+      finalSongsList = [...finalSongsList, ...newSongsToRegister];
     }
 
     let finalPostSermonSong: ScheduleSong | undefined = undefined;
@@ -576,12 +578,16 @@ export const Schedules: React.FC<SchedulesProps> = ({
           status: SongStatus.PENDING,
           youtubeUrl: ''
         };
-        setSongs(prev => [...prev, newSong]);
+        finalSongsList = [...finalSongsList, newSong];
         finalPostSermonSong = {
           id: newId,
           key: (postSermonItem.key || '').toUpperCase()
         };
       }
+    }
+
+    if (finalSongsList !== songs) {
+      setSongs(finalSongsList);
     }
 
     const filteredVocals = vocalIds.filter(vId => !leaderIds.includes(vId));
@@ -641,8 +647,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     if (onSaveToCloud) {
-      onSaveToCloud({ schedules: updatedList });
+      onSaveToCloud({ 
+        schedules: updatedList,
+        ...(finalSongsList !== songs ? { songs: finalSongsList } : {})
+      });
     }
+
+    setSaveFeedback('Escala salva com sucesso e sincronizada na nuvem!');
+    setTimeout(() => setSaveFeedback(null), 3500);
 
     setIsAdding(false);
     resetForm();
@@ -753,6 +765,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
           )}
         </div>
       </header>
+
+      {saveFeedback && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-xs animate-in fade-in">
+          <Check size={16} className="text-emerald-600 shrink-0" />
+          <span>{saveFeedback}</span>
+        </div>
+      )}
 
       {/* Export Modal (remains same) */}
       {showExportModal && (
