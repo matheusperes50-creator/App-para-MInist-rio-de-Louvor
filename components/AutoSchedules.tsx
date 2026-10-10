@@ -29,7 +29,7 @@ interface AutoSchedulesProps {
   members: Member[];
   setView: (view: ViewType) => void;
   onSync: () => void;
-  onSaveToCloud?: (payload?: any) => Promise<void>;
+  onSaveToCloud?: (payload?: any) => Promise<any>;
   isSyncing: boolean;
   isAdmin: boolean;
   attendanceEvents?: AttendanceEvent[];

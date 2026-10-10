@@ -38,7 +38,7 @@ interface SchedulesProps {
   songs: Song[];
   setSongs: React.Dispatch<React.SetStateAction<Song[]>>;
   onSync: () => void;
-  onSaveToCloud?: (payload?: any) => Promise<void>;
+  onSaveToCloud?: (payload?: any) => Promise<any>;
   isSyncing: boolean;
   isAdmin: boolean;
 }
@@ -647,14 +647,25 @@ export const Schedules: React.FC<SchedulesProps> = ({
     }
 
     if (onSaveToCloud) {
-      onSaveToCloud({ 
+      setSaveFeedback('Sincronizando com a planilha Google...');
+      Promise.resolve(onSaveToCloud({ 
         schedules: updatedList,
         ...(finalSongsList !== songs ? { songs: finalSongsList } : {})
+      })).then((res) => {
+        if (res !== false) {
+          setSaveFeedback('Escala salva e sincronizada na planilha Google!');
+        } else {
+          setSaveFeedback('Escala salva localmente (sem permissão de admin na nuvem)');
+        }
+        setTimeout(() => setSaveFeedback(null), 4000);
+      }).catch(() => {
+        setSaveFeedback('Escala salva localmente (falha temporária de rede)');
+        setTimeout(() => setSaveFeedback(null), 4000);
       });
+    } else {
+      setSaveFeedback('Escala salva com sucesso!');
+      setTimeout(() => setSaveFeedback(null), 3500);
     }
-
-    setSaveFeedback('Escala salva com sucesso e sincronizada na nuvem!');
-    setTimeout(() => setSaveFeedback(null), 3500);
 
     setIsAdding(false);
     resetForm();

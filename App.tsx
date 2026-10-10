@@ -36,6 +36,85 @@ const checkIsAttendanceDirectLink = () => {
   return viewParam === 'presenca' || viewParam === 'attendance' || hash.includes('presenca') || hash.includes('attendance');
 };
 
+// Compact payload before sending to Google Sheets so it fits well within the 50,000 character limit per cell
+export const compactPayloadForCloud = (payload: {
+  members?: Member[];
+  songs?: Song[];
+  schedules?: Schedule[];
+  events?: ExternalEvent[];
+  styles?: LookStyleType[];
+  notes?: RehearsalNote[];
+  announcements?: string;
+  attendanceEvents?: AttendanceEvent[];
+}) => {
+  // Members: omit heavy base64 images over the wire to keep JSON small
+  const cleanMembers = (payload.members || []).map(m => {
+    const clean: any = {
+      id: m.id,
+      name: m.name,
+      roles: m.roles,
+      isActive: m.isActive
+    };
+    if (m.birthDate) clean.birthDate = m.birthDate;
+    if (m.photoUrl && !m.photoUrl.startsWith('data:image')) {
+      clean.photoUrl = m.photoUrl;
+    }
+    return clean;
+  });
+
+  // Songs: omit defaults/empties
+  const cleanSongs = (payload.songs || []).map(s => {
+    const clean: any = {
+      id: s.id,
+      title: s.title,
+      artist: s.artist,
+      key: s.key || ''
+    };
+    if (s.status && s.status !== SongStatus.READY) clean.status = s.status;
+    if (s.youtubeUrl) clean.youtubeUrl = s.youtubeUrl;
+    if (s.bpm) clean.bpm = s.bpm;
+    return clean;
+  });
+
+  // Schedules: omit redundant fields and false flags
+  const cleanSchedules = (payload.schedules || []).map(s => {
+    const clean: any = {
+      id: s.id,
+      date: s.date,
+      serviceType: s.serviceType || 'Domingo (Noite)',
+      leaderIds: s.leaderIds || [],
+      vocalIds: s.vocalIds || [],
+      songs: (s.songs || []).map(sg => {
+        const item: any = { id: sg.id, key: sg.key || '' };
+        if (sg.confirmed) item.confirmed = true;
+        return item;
+      }),
+      assignments: (s.assignments || []).map(a => {
+        const item: any = { role: a.role, memberId: a.memberId };
+        if (a.confirmed) item.confirmed = true;
+        if (a.present) item.present = true;
+        return item;
+      })
+    };
+    if (s.observations && s.observations.trim()) clean.observations = s.observations.trim();
+    if (s.postSermonSong) clean.postSermonSong = s.postSermonSong;
+    if (s.confirmed) clean.confirmed = true;
+    if (s.attendanceMarked) clean.attendanceMarked = true;
+    return clean;
+  });
+
+  return {
+    members: cleanMembers,
+    songs: cleanSongs,
+    schedules: cleanSchedules,
+    events: payload.events || [],
+    styles: payload.styles || [],
+    notes: payload.notes || [],
+    announcements: payload.announcements ?? '',
+    attendanceEvents: payload.attendanceEvents || []
+  };
+};
+
 // Purge any outdated mock test cache if it contains old dummy names from previous testing
 const checkAndPurgeOldMockCache = () => {
   if (typeof window === 'undefined') return;
@@ -234,11 +313,13 @@ export const App: React.FC = () => {
   const isSavingProcessRef = useRef(false);
 
   // Serialized, atomic cloud save engine - ensures only ONE save request in-flight at a time
-  const executeCloudSave = useCallback(async () => {
-    if (isSavingProcessRef.current) return;
+  const executeCloudSave = useCallback(async (): Promise<boolean> => {
+    if (isSavingProcessRef.current) return true;
     isSavingProcessRef.current = true;
     setIsSyncing(true);
     setSyncStatus('idle');
+
+    let overallSuccess = false;
 
     try {
       while (pendingSaveRef.current) {
@@ -247,7 +328,7 @@ export const App: React.FC = () => {
         pendingSaveRef.current = null;
 
         // Build authoritative complete payload
-        const payload = {
+        const rawPayload = {
           members: currentBatch.members ?? membersRef.current ?? [],
           songs: currentBatch.songs ?? songsRef.current ?? [],
           schedules: currentBatch.schedules ?? schedulesRef.current ?? [],
@@ -258,7 +339,9 @@ export const App: React.FC = () => {
           attendanceEvents: currentBatch.attendanceEvents ?? attendanceEventsRef.current ?? []
         };
 
-        const bodyStr = JSON.stringify(payload);
+        // Compact payload so it safely fits within the Google Sheets 50,000 char per cell limit
+        const compactPayload = compactPayloadForCloud(rawPayload);
+        const bodyStr = JSON.stringify(compactPayload);
         let saveSuccess = false;
         let lastErr: any = null;
 
@@ -297,15 +380,18 @@ export const App: React.FC = () => {
           throw lastErr || new Error('Falha ao comunicar com a planilha Google');
         }
 
+        overallSuccess = true;
         const nowFormatted = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
         setLastSavedTimestamp(nowFormatted);
         try { localStorage.setItem('louvor_last_saved_time', nowFormatted); } catch {}
         setSyncStatus('success');
         setHasFetchedFromCloud(true);
       }
+      return overallSuccess;
     } catch (error) {
       console.error('Erro ao persistir dados na planilha Google:', error);
       setSyncStatus('error');
+      return false;
     } finally {
       isSavingProcessRef.current = false;
       setIsSyncing(false);
@@ -325,10 +411,10 @@ export const App: React.FC = () => {
     notes?: RehearsalNote[];
     announcements?: string;
     attendanceEvents?: AttendanceEvent[];
-  }) => {
+  }): Promise<boolean> => {
     // Check permission: admins can save everything, members can only save attendance votes
     const currentRole = userRole;
-    if (currentRole !== 'admin' && !overridePayload?.attendanceEvents) return;
+    if (currentRole !== 'admin' && !overridePayload?.attendanceEvents) return false;
 
     // 1. Immediately apply to local state, refs, and localStorage
     if (overridePayload?.members) {
@@ -379,7 +465,7 @@ export const App: React.FC = () => {
     };
 
     // 3. Trigger cloud execution
-    await executeCloudSave();
+    return await executeCloudSave();
   }, [userRole, executeCloudSave]);
 
   // Dedicated update handlers
@@ -502,10 +588,17 @@ export const App: React.FC = () => {
       if (data && typeof data === 'object') {
         // Members: authoritative array from Google Sheets
         if (Array.isArray(data.members)) {
-          setMembers(data.members);
-          membersRef.current = data.members;
+          const enrichedMembers = data.members.map((m: any) => {
+            const defaultMatch = DEFAULT_MEMBERS.find(dm => dm.id === m.id);
+            return {
+              ...m,
+              photoUrl: m.photoUrl || defaultMatch?.photoUrl || ''
+            };
+          });
+          setMembers(enrichedMembers);
+          membersRef.current = enrichedMembers;
           try {
-            localStorage.setItem('louvor_members', JSON.stringify(data.members));
+            localStorage.setItem('louvor_members', JSON.stringify(enrichedMembers));
           } catch (e) {}
         }
 
@@ -513,7 +606,9 @@ export const App: React.FC = () => {
         if (Array.isArray(data.songs)) {
           const validSongs = data.songs.map((s: any) => ({
             ...s,
-            status: s.status || SongStatus.READY
+            status: s.status || SongStatus.READY,
+            key: s.key || '',
+            youtubeUrl: s.youtubeUrl || ''
           }));
           setSongs(validSongs);
           songsRef.current = validSongs;
@@ -529,6 +624,15 @@ export const App: React.FC = () => {
               ? sch.leaderIds 
               : (sch.leaderId ? [sch.leaderId] : []);
               
+            const vocalIds = Array.isArray(sch.vocalIds) ? sch.vocalIds : [];
+
+            const assignments = (sch.assignments || []).map((a: any) => ({
+              role: a.role || '',
+              memberId: a.memberId || '',
+              confirmed: !!a.confirmed,
+              present: !!a.present
+            }));
+
             const songs = (sch.songs || []).map((songItem: any) => {
               if (typeof songItem === 'string') {
                 return { id: songItem, key: '', confirmed: true };
@@ -540,13 +644,25 @@ export const App: React.FC = () => {
               };
             });
 
+            const membersList = Array.isArray(sch.members) && sch.members.length > 0
+              ? sch.members
+              : Array.from(new Set([
+                  ...leaderIds,
+                  ...vocalIds,
+                  ...assignments.map((a: any) => a.memberId).filter(Boolean)
+                ]));
+
             return {
               ...sch,
               serviceType: sch.serviceType || 'Domingo (Noite)',
               leaderIds,
+              vocalIds,
+              assignments,
               songs,
-              vocalIds: sch.vocalIds || [],
-              assignments: sch.assignments || []
+              members: membersList,
+              confirmed: !!sch.confirmed,
+              attendanceMarked: !!sch.attendanceMarked,
+              observations: sch.observations || ''
             };
           });
 

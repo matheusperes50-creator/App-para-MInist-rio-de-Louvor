@@ -672,6 +672,219 @@ export const DEFAULT_SONGS: Song[] = [
 
 export const DEFAULT_SCHEDULES: Schedule[] = [
   {
+    "id": "sch-2026-10-25",
+    "date": "2026-10-25",
+    "serviceType": "Domingo (Noite)",
+    "members": [
+      "Z9C3CC",
+      "8ZRVW2",
+      "X17RHN",
+      "24BWIX",
+      "MPSD03"
+    ],
+    "assignments": [
+      {
+        "role": "Ministro",
+        "memberId": "Z9C3CC",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "8ZRVW2",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "X17RHN",
+        "confirmed": false
+      },
+      {
+        "role": "Teclado",
+        "memberId": "24BWIX",
+        "confirmed": false
+      },
+      {
+        "role": "Bateria",
+        "memberId": "MPSD03",
+        "confirmed": false
+      }
+    ],
+    "songs": [],
+    "leaderIds": [
+      "Z9C3CC"
+    ],
+    "vocalIds": [
+      "8ZRVW2",
+      "X17RHN"
+    ],
+    "confirmed": false,
+    "observations": "Escala Oficial PIBJE - 25/10/2026",
+    "attendanceMarked": false
+  },
+  {
+    "id": "sch-2026-10-18",
+    "date": "2026-10-18",
+    "serviceType": "Domingo (Noite)",
+    "members": [
+      "VDANAH",
+      "QL783O",
+      "7PC6VT",
+      "24BWIX",
+      "PKNF87"
+    ],
+    "assignments": [
+      {
+        "role": "Ministro",
+        "memberId": "VDANAH",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "QL783O",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "7PC6VT",
+        "confirmed": false
+      },
+      {
+        "role": "Teclado",
+        "memberId": "24BWIX",
+        "confirmed": false
+      },
+      {
+        "role": "Bateria",
+        "memberId": "PKNF87",
+        "confirmed": false
+      }
+    ],
+    "songs": [],
+    "leaderIds": [
+      "VDANAH"
+    ],
+    "vocalIds": [
+      "QL783O",
+      "7PC6VT"
+    ],
+    "confirmed": false,
+    "observations": "Escala Oficial PIBJE - 18/10/2026",
+    "attendanceMarked": false
+  },
+  {
+    "id": "sch-2026-10-11",
+    "date": "2026-10-11",
+    "serviceType": "Domingo (Noite)",
+    "members": [
+      "ZUSMHY",
+      "DKSUWB",
+      "7FUW2H",
+      "24BWIX",
+      "MPSD03"
+    ],
+    "assignments": [
+      {
+        "role": "Ministro",
+        "memberId": "ZUSMHY",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "DKSUWB",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "7FUW2H",
+        "confirmed": false
+      },
+      {
+        "role": "Teclado",
+        "memberId": "24BWIX",
+        "confirmed": false
+      },
+      {
+        "role": "Bateria",
+        "memberId": "MPSD03",
+        "confirmed": false
+      }
+    ],
+    "songs": [],
+    "leaderIds": [
+      "ZUSMHY"
+    ],
+    "vocalIds": [
+      "DKSUWB",
+      "7FUW2H"
+    ],
+    "confirmed": false,
+    "observations": "Escala Oficial PIBJE - 11/10/2026",
+    "attendanceMarked": false
+  },
+  {
+    "id": "sch-2026-10-04",
+    "date": "2026-10-04",
+    "serviceType": "Domingo (Noite)",
+    "members": [
+      "Z9C3CC",
+      "8ZRVW2",
+      "X17RHN",
+      "7FUW2H",
+      "24BWIX",
+      "MPSD03"
+    ],
+    "assignments": [
+      {
+        "role": "Ministro",
+        "memberId": "Z9C3CC",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "8ZRVW2",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "X17RHN",
+        "confirmed": false
+      },
+      {
+        "role": "Vocal",
+        "memberId": "7FUW2H",
+        "confirmed": false
+      },
+      {
+        "role": "Teclado",
+        "memberId": "24BWIX",
+        "confirmed": false
+      },
+      {
+        "role": "Bateria",
+        "memberId": "MPSD03",
+        "confirmed": false
+      }
+    ],
+    "songs": [
+      {
+        "id": "S4OASX",
+        "key": "A",
+        "confirmed": false
+      }
+    ],
+    "leaderIds": [
+      "Z9C3CC"
+    ],
+    "vocalIds": [
+      "8ZRVW2",
+      "X17RHN",
+      "7FUW2H"
+    ],
+    "confirmed": false,
+    "observations": "Escala Oficial PIBJE - 04/10/2026",
+    "attendanceMarked": false
+  },
+  {
     "id": "sch-1788486106856-7",
     "date": "2026-09-27",
     "serviceType": "Domingo (Noite)",

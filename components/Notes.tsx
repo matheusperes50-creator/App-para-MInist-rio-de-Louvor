@@ -30,7 +30,7 @@ interface NotesProps {
   setNotes: React.Dispatch<React.SetStateAction<RehearsalNote[]>>;
   songs: Song[];
   onSync: () => void;
-  onSaveToCloud?: (payload?: any) => Promise<void>;
+  onSaveToCloud?: (payload?: any) => Promise<any>;
   isSyncing: boolean;
   isAdmin: boolean;
 }
