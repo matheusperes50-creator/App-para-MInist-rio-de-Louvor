@@ -36,6 +36,28 @@ const checkIsAttendanceDirectLink = () => {
   return viewParam === 'presenca' || viewParam === 'attendance' || hash.includes('presenca') || hash.includes('attendance');
 };
 
+// Purge any outdated mock test cache if it contains old dummy names from previous testing
+const checkAndPurgeOldMockCache = () => {
+  if (typeof window === 'undefined') return;
+  try {
+    const saved = localStorage.getItem('louvor_members');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.some((m: any) => m.name === 'Matheus Peres' || m.name === 'Lucas Silva' || m.name === 'Ana Paula Rocha')) {
+        localStorage.removeItem('louvor_members');
+        localStorage.removeItem('louvor_songs');
+        localStorage.removeItem('louvor_schedules');
+        localStorage.removeItem('louvor_events');
+        localStorage.removeItem('louvor_styles');
+        localStorage.removeItem('louvor_notes');
+        localStorage.removeItem('louvor_announcements');
+        localStorage.removeItem('louvor_attendance');
+      }
+    }
+  } catch {}
+};
+checkAndPurgeOldMockCache();
+
 export const App: React.FC = () => {
   const isDirectAttendance = checkIsAttendanceDirectLink();
   const [view, setView] = useState<ViewType>(() => isDirectAttendance ? 'attendance' : 'dashboard');
@@ -170,10 +192,6 @@ export const App: React.FC = () => {
       console.error('Falha ao salvar no localStorage:', e);
     }
   }, [members, songs, schedules, events, styles, notes, announcements, attendanceEvents]);
-
-  const handleLogin = (role: UserRoleType) => {
-    setUserRole(role);
-  };
 
   const handleLogout = () => {
     setUserRole('guest');
@@ -364,11 +382,8 @@ export const App: React.FC = () => {
     setSyncStatus('idle');
 
     try {
-      const response = await fetch(SCRIPT_URL, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-store'
-      });
+      const fetchUrl = `${SCRIPT_URL}?_t=${Date.now()}`;
+      const response = await fetch(fetchUrl);
 
       if (!response.ok) {
         console.warn('Falha HTTP ao conectar com a planilha:', response.status);
@@ -412,12 +427,38 @@ export const App: React.FC = () => {
           } catch (e) {}
         }
 
-        // Schedules: authoritative list from Google Sheets
+        // Schedules: authoritative list from Google Sheets (normalize song IDs if needed)
         if (Array.isArray(data.schedules)) {
-          setSchedules(data.schedules);
-          schedulesRef.current = data.schedules;
+          const normalized = data.schedules.map((sch: any) => {
+            const leaderIds = Array.isArray(sch.leaderIds) 
+              ? sch.leaderIds 
+              : (sch.leaderId ? [sch.leaderId] : []);
+              
+            const songs = (sch.songs || []).map((songItem: any) => {
+              if (typeof songItem === 'string') {
+                return { id: songItem, key: '', confirmed: true };
+              }
+              return {
+                id: songItem?.id || '',
+                key: songItem?.key || '',
+                confirmed: songItem?.confirmed ?? false
+              };
+            });
+
+            return {
+              ...sch,
+              serviceType: sch.serviceType || 'Domingo (Noite)',
+              leaderIds,
+              songs,
+              vocalIds: sch.vocalIds || [],
+              assignments: sch.assignments || []
+            };
+          });
+
+          setSchedules(normalized);
+          schedulesRef.current = normalized;
           try {
-            localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
+            localStorage.setItem('louvor_schedules', JSON.stringify(normalized));
           } catch (e) {}
         }
 
@@ -488,6 +529,12 @@ export const App: React.FC = () => {
   // Settings sync bridge
   const handleSettingsSync = useCallback(async (force = false) => {
     await syncFromSheets(false, force);
+  }, [syncFromSheets]);
+
+  // Login handler that sets role and immediately triggers a cloud sync to load fresh data
+  const handleLogin = useCallback((role: UserRoleType) => {
+    setUserRole(role);
+    syncFromSheets(true);
   }, [syncFromSheets]);
 
   // Initial cloud fetch from Google Sheets database immediately on initial mount
