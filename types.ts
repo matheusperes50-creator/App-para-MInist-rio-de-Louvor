@@ -120,4 +120,4 @@ export interface AttendanceEvent {
   createdScheduleId?: string;
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance';
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance' | 'settings';

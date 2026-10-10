@@ -11,6 +11,7 @@ import { Events } from './components/Events';
 import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
 import { Attendance } from './components/Attendance';
+import { Settings } from './components/Settings';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database } from 'lucide-react';
 import { 
@@ -44,7 +45,6 @@ export const App: React.FC = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
-  const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
 
   // Synchronize view with URL query/hash changes
@@ -230,18 +230,18 @@ export const App: React.FC = () => {
     if (overridePayload?.attendanceEvents) setAttendanceEvents(targetAttendanceEvents);
 
     // 3. Post to Google Sheets Apps Script
-    try {
-      const payload = {
-        members: targetMembers,
-        songs: targetSongs,
-        schedules: targetSchedules,
-        events: targetEvents,
-        styles: targetStyles,
-        notes: targetNotes,
-        announcements: targetAnnouncements,
-        attendanceEvents: targetAttendanceEvents
-      };
+    const payload = {
+      members: targetMembers,
+      songs: targetSongs,
+      schedules: targetSchedules,
+      events: targetEvents,
+      styles: targetStyles,
+      notes: targetNotes,
+      announcements: targetAnnouncements,
+      attendanceEvents: targetAttendanceEvents
+    };
 
+    try {
       await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -250,17 +250,115 @@ export const App: React.FC = () => {
       });
 
       setSyncStatus('success');
+      setHasFetchedFromCloud(true);
     } catch (error) {
       console.error('Erro ao salvar na nuvem:', error);
-      setSyncStatus('error');
+      // Retry once after 1s
+      try {
+        await new Promise(r => setTimeout(r, 1000));
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        setSyncStatus('success');
+        setHasFetchedFromCloud(true);
+      } catch (retryError) {
+        console.error('Falha na segunda tentativa de salvar na nuvem:', retryError);
+        setSyncStatus('error');
+      }
     } finally {
       setIsSyncing(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
     }
   }, [userRole]);
 
+  // Dedicated update handlers that synchronously update state, refs, localStorage, and immediately persist to Google Sheets
+  const handleSetMembers = useCallback((action: React.SetStateAction<Member[]>) => {
+    setMembers(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      membersRef.current = updated;
+      try { localStorage.setItem('louvor_members', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ members: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetSongs = useCallback((action: React.SetStateAction<Song[]>) => {
+    setSongs(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      songsRef.current = updated;
+      try { localStorage.setItem('louvor_songs', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ songs: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetSchedules = useCallback((action: React.SetStateAction<Schedule[]>) => {
+    setSchedules(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      schedulesRef.current = updated;
+      try { localStorage.setItem('louvor_schedules', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ schedules: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetEvents = useCallback((action: React.SetStateAction<ExternalEvent[]>) => {
+    setEvents(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      eventsRef.current = updated;
+      try { localStorage.setItem('louvor_events', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ events: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetStyles = useCallback((action: React.SetStateAction<LookStyleType[]>) => {
+    setStyles(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      stylesRef.current = updated;
+      try { localStorage.setItem('louvor_styles', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ styles: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetNotes = useCallback((action: React.SetStateAction<RehearsalNote[]>) => {
+    setNotes(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      notesRef.current = updated;
+      try { localStorage.setItem('louvor_notes', JSON.stringify(updated)); } catch (e) {}
+      if (userRole === 'admin') {
+        saveToCloudNow({ notes: updated });
+      }
+      return updated;
+    });
+  }, [userRole, saveToCloudNow]);
+
+  const handleSetAttendanceEvents = useCallback((action: React.SetStateAction<AttendanceEvent[]>) => {
+    setAttendanceEvents(prev => {
+      const updated = typeof action === 'function' ? action(prev) : action;
+      attendanceEventsRef.current = updated;
+      try { localStorage.setItem('louvor_attendance', JSON.stringify(updated)); } catch (e) {}
+      saveToCloudNow({ attendanceEvents: updated });
+      return updated;
+    });
+  }, [saveToCloudNow]);
+
   // SYNC FROM SHEETS:
-  // Reads cloud data and safely merges it with state and localStorage.
+  // Reads authoritative cloud data and updates state and localStorage directly so all devices match.
   const syncFromSheets = useCallback(async (isAuto = false, forceReplace = false) => {
     if (!isAuto) setIsSyncing(true);
     setSyncStatus('idle');
@@ -292,100 +390,78 @@ export const App: React.FC = () => {
       }
 
       if (data && typeof data === 'object') {
-        // Members: apply from cloud only if non-empty array
-        if (Array.isArray(data.members) && data.members.length > 0) {
+        // Members: authoritative array from Google Sheets
+        if (Array.isArray(data.members)) {
           setMembers(data.members);
+          membersRef.current = data.members;
           try {
             localStorage.setItem('louvor_members', JSON.stringify(data.members));
           } catch (e) {}
         }
 
-        // Songs: apply from cloud only if non-empty array
-        if (Array.isArray(data.songs) && data.songs.length > 0) {
+        // Songs: authoritative array from Google Sheets
+        if (Array.isArray(data.songs)) {
           const validSongs = data.songs.map((s: any) => ({
             ...s,
             status: s.status || SongStatus.READY
           }));
           setSongs(validSongs);
+          songsRef.current = validSongs;
           try {
             localStorage.setItem('louvor_songs', JSON.stringify(validSongs));
           } catch (e) {}
         }
 
-        // Schedules: merge cloud with locally created schedules so user work is never wiped
-        if (Array.isArray(data.schedules) && data.schedules.length > 0) {
-          if (forceReplace) {
-            setSchedules(data.schedules);
-            try {
-              localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
-            } catch (e) {}
-          } else {
-            setSchedules(prev => {
-              const current = prev || [];
-              const cloudIds = new Set(data.schedules.map((s: any) => s.id));
-              const localOnly = current.filter(s => s && s.id && !cloudIds.has(s.id));
-              const merged = [...localOnly, ...data.schedules].sort((a, b) => 
-                (b.date || '').localeCompare(a.date || '')
-              );
-              try {
-                localStorage.setItem('louvor_schedules', JSON.stringify(merged));
-              } catch (e) {}
-              return merged;
-            });
-          }
+        // Schedules: authoritative list from Google Sheets
+        if (Array.isArray(data.schedules)) {
+          setSchedules(data.schedules);
+          schedulesRef.current = data.schedules;
+          try {
+            localStorage.setItem('louvor_schedules', JSON.stringify(data.schedules));
+          } catch (e) {}
         }
 
-        // Attendance: merge cloud attendance events if available
+        // Attendance: authoritative attendance events from Google Sheets
         const cloudAttendance = Array.isArray(data.attendanceEvents) ? data.attendanceEvents : (Array.isArray(data.attendance) ? data.attendance : null);
-        if (cloudAttendance && cloudAttendance.length > 0) {
-          if (forceReplace) {
-            setAttendanceEvents(cloudAttendance);
-            try {
-              localStorage.setItem('louvor_attendance', JSON.stringify(cloudAttendance));
-            } catch (e) {}
-          } else {
-            setAttendanceEvents(prev => {
-              const current = prev || [];
-              const cloudIds = new Set(cloudAttendance.map((e: any) => e.id));
-              const localOnly = current.filter(e => e && e.id && !cloudIds.has(e.id));
-              const merged = [...localOnly, ...cloudAttendance].sort((a, b) => 
-                (b.date || '').localeCompare(a.date || '')
-              );
-              try {
-                localStorage.setItem('louvor_attendance', JSON.stringify(merged));
-              } catch (e) {}
-              return merged;
-            });
-          }
+        if (Array.isArray(cloudAttendance)) {
+          setAttendanceEvents(cloudAttendance);
+          attendanceEventsRef.current = cloudAttendance;
+          try {
+            localStorage.setItem('louvor_attendance', JSON.stringify(cloudAttendance));
+          } catch (e) {}
         }
 
-        // Events: apply from cloud only if non-empty array
-        if (Array.isArray(data.events) && data.events.length > 0) {
+        // Events: authoritative array from Google Sheets
+        if (Array.isArray(data.events)) {
           setEvents(data.events);
+          eventsRef.current = data.events;
           try {
             localStorage.setItem('louvor_events', JSON.stringify(data.events));
           } catch (e) {}
         }
 
-        // Notes: apply from cloud only if non-empty array
-        if (Array.isArray(data.notes) && data.notes.length > 0) {
+        // Notes: authoritative array from Google Sheets
+        if (Array.isArray(data.notes)) {
           setNotes(data.notes);
+          notesRef.current = data.notes;
           try {
             localStorage.setItem('louvor_notes', JSON.stringify(data.notes));
           } catch (e) {}
         }
 
-        // Styles: apply from cloud only if non-empty array
-        if (Array.isArray(data.styles) && data.styles.length > 0) {
+        // Styles: authoritative array from Google Sheets
+        if (Array.isArray(data.styles)) {
           setStyles(data.styles);
+          stylesRef.current = data.styles;
           try {
             localStorage.setItem('louvor_styles', JSON.stringify(data.styles));
           } catch (e) {}
         }
 
-        // Announcements: apply from cloud only if non-empty
-        if (typeof data.announcements === 'string' && data.announcements.trim()) {
+        // Announcements: authoritative announcements string from Google Sheets
+        if (typeof data.announcements === 'string') {
           setAnnouncements(data.announcements);
+          announcementsRef.current = data.announcements;
           try {
             localStorage.setItem('louvor_announcements', data.announcements);
           } catch (e) {}
@@ -409,13 +485,29 @@ export const App: React.FC = () => {
     await syncFromSheets(false);
   }, [syncFromSheets]);
 
+  // Settings sync bridge
+  const handleSettingsSync = useCallback(async (force = false) => {
+    await syncFromSheets(false, force);
+  }, [syncFromSheets]);
+
   // Initial cloud fetch from Google Sheets database immediately on initial mount
   useEffect(() => {
     syncFromSheets(true);
   }, [syncFromSheets]);
 
+  // Periodic background sync (every 45s when document is visible) so all devices reflect real-time updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && !isSyncing) {
+        syncFromSheets(true);
+      }
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [isSyncing, syncFromSheets]);
+
   const handleUpdateAnnouncements = useCallback((val: string) => {
     setAnnouncements(val);
+    announcementsRef.current = val;
     try {
       localStorage.setItem('louvor_announcements', val);
     } catch (e) {}
@@ -471,7 +563,6 @@ export const App: React.FC = () => {
           }
           setTimeout(() => {
             setRestoreFeedback(null);
-            setShowRestoreModal(false);
           }, 2500);
         }
       } catch (err) {
@@ -517,7 +608,6 @@ export const App: React.FC = () => {
     }
     setTimeout(() => {
       setRestoreFeedback(null);
-      setShowRestoreModal(false);
     }, 2200);
   };
 
@@ -541,32 +631,50 @@ export const App: React.FC = () => {
         return (
           <Attendance 
             attendanceEvents={attendanceEvents} 
-            setAttendanceEvents={setAttendanceEvents} 
+            setAttendanceEvents={handleSetAttendanceEvents} 
             members={members} 
             schedules={schedules} 
-            setSchedules={setSchedules} 
+            setSchedules={handleSetSchedules} 
             setView={setView} 
             {...syncProps} 
           />
         );
       case 'members': 
-        return <Members members={members} setMembers={setMembers} {...syncProps} />;
+        return <Members members={members} setMembers={handleSetMembers} {...syncProps} />;
       case 'songs': 
-        return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
+        return <Songs songs={songs} setSongs={handleSetSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
       case 'new-songs': 
-        return <Songs songs={songs} setSongs={setSongs} schedules={schedules} filterMode="new" {...syncProps} />;
+        return <Songs songs={songs} setSongs={handleSetSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': 
-        return <Schedules schedules={schedules} setSchedules={setSchedules} members={members} songs={songs} setSongs={setSongs} {...syncProps} />;
+        return <Schedules schedules={schedules} setSchedules={handleSetSchedules} members={members} songs={songs} setSongs={handleSetSongs} {...syncProps} />;
       case 'reports': 
         return <Reports schedules={schedules} members={members} songs={songs} events={events} />;
       case 'events': 
-        return <Events events={events} setEvents={setEvents} members={members} songs={songs} isAdmin={isAdmin} />;
+        return <Events events={events} setEvents={handleSetEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       case 'style': 
-        return <LookStyle styles={styles} setStyles={setStyles} {...syncProps} />;
+        return <LookStyle styles={styles} setStyles={handleSetStyles} {...syncProps} />;
       case 'auto-schedules': 
-        return <AutoSchedules schedules={schedules} setSchedules={setSchedules} members={members} setView={setView} attendanceEvents={attendanceEvents} {...syncProps} />;
+        return <AutoSchedules schedules={schedules} setSchedules={handleSetSchedules} members={members} setView={setView} attendanceEvents={attendanceEvents} {...syncProps} />;
       case 'notes': 
-        return <Notes notes={notes} setNotes={setNotes} songs={songs} {...syncProps} />;
+        return <Notes notes={notes} setNotes={handleSetNotes} songs={songs} {...syncProps} />;
+      case 'settings':
+        return (
+          <Settings 
+            onSync={handleSettingsSync}
+            isSyncing={isSyncing}
+            syncStatus={syncStatus}
+            hasFetchedFromCloud={hasFetchedFromCloud}
+            members={members}
+            songs={songs}
+            schedules={schedules}
+            attendanceEvents={attendanceEvents}
+            isAdmin={isAdmin}
+            onExportBackup={handleExportBackup}
+            onImportBackup={handleImportBackup}
+            onRestoreDefaults={handleResetToDefaultMinistryData}
+            restoreFeedback={restoreFeedback}
+          />
+        );
       default: 
         return null;
     }
@@ -574,7 +682,8 @@ export const App: React.FC = () => {
 
   return (
     <Layout currentView={view} setView={setView} userRole={userRole}>
-      <div className="flex flex-wrap justify-between items-center gap-3 mb-4 md:mb-6">
+      {/* Barra superior limpa: apenas o status da planilha conectada e o botão de sair */}
+      <div className="flex justify-between items-center gap-3 mb-4 md:mb-6">
         <div className="flex items-center gap-2 flex-wrap">
           <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
             <Cloud size={12} /> {hasFetchedFromCloud ? 'Conectado à Planilha' : 'Offline / Local'}
@@ -597,32 +706,10 @@ export const App: React.FC = () => {
           )}
         </div>
         
-        <div className="flex items-center gap-2 flex-wrap">
-          <button 
-            onClick={() => {
-              syncFromSheets(false);
-              setRestoreFeedback('Buscando e recarregando os dados oficiais da planilha Google...');
-              setTimeout(() => setRestoreFeedback(null), 3500);
-            }}
-            disabled={isSyncing}
-            className="flex items-center gap-1.5 text-[9px] font-black text-slate-700 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all cursor-pointer shadow-xs disabled:opacity-50"
-            title="Recarregar dados originais e oficiais da Planilha Google (descarta dados de teste temporários)"
-          >
-            <Database size={12} className={isSyncing ? 'animate-spin text-emerald-600' : 'text-emerald-600'} /> 
-            Recarregar Planilha Oficial
-          </button>
-
-          <button 
-            onClick={() => setShowRestoreModal(true)}
-            className="flex items-center gap-1.5 text-[9px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full uppercase tracking-widest transition-all cursor-pointer shadow-sm"
-            title="Recuperar dados anteriores ou restaurar versão"
-          >
-            <History size={12} /> Backup / Histórico
-          </button>
-
+        <div>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer"
+            className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer px-3 py-1.5 rounded-full hover:bg-slate-100"
           >
             Sair <LogOut size={12} />
           </button>
@@ -630,127 +717,6 @@ export const App: React.FC = () => {
       </div>
 
       {renderContent()}
-
-      {/* RESTORE / BACKUP MODAL */}
-      {showRestoreModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full p-6 md:p-8 relative border border-slate-100 max-h-[90vh] overflow-y-auto">
-            <button 
-              onClick={() => setShowRestoreModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 p-2 rounded-full hover:bg-slate-100 transition-colors"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                <FileSpreadsheet size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Recuperação e Backup de Dados</h3>
-                <p className="text-xs text-slate-500 font-medium">Restaure o histórico da planilha ou importe um backup</p>
-              </div>
-            </div>
-
-            {restoreFeedback && (
-              <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
-                <CheckCircle2 size={16} /> {restoreFeedback}
-              </div>
-            )}
-
-            <div className="space-y-6">
-              {/* Opção 1: Restaurar Histórico da Planilha Google */}
-              <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-100 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center">1</span>
-                  <h4 className="font-black text-sm text-slate-900">Restaurar pelo Histórico do Google Sheets (Recomendado)</h4>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  O Google Sheets salva automaticamente <strong>todas as versões anteriores</strong> da sua planilha. Se as informações originais foram sobrescritas:
-                </p>
-                <ol className="text-xs text-slate-600 space-y-1.5 list-decimal pl-5">
-                  <li>Abra sua planilha do Google Drive vinculada a este app.</li>
-                  <li>Clique no menu <strong>Arquivo &gt; Histórico de versões &gt; Ver histórico de versões</strong> (ou <kbd className="bg-white px-1.5 py-0.5 rounded border text-[10px] font-mono">Ctrl + Alt + Shift + H</kbd>).</li>
-                  <li>Selecione a versão anterior de hoje ou de ontem.</li>
-                  <li>Clique no botão verde <strong>"Restaurar esta versão"</strong> no topo da planilha.</li>
-                </ol>
-                <div className="pt-2">
-                  <button 
-                    onClick={() => {
-                      syncFromSheets(false);
-                      setRestoreFeedback('Buscando e recarregando os dados da planilha Google...');
-                      setTimeout(() => setRestoreFeedback(null), 3000);
-                    }}
-                    disabled={isSyncing}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-                    Recarregar Dados da Planilha Agora
-                  </button>
-                </div>
-              </div>
-
-              {/* Opção 2: Backup Local em JSON */}
-              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-black flex items-center justify-center">2</span>
-                  <h4 className="font-black text-sm text-slate-900">Backup e Restauração em Arquivo JSON</h4>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Salve uma cópia de segurança em seu computador ou envie um arquivo de backup salvo anteriormente:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <button 
-                    onClick={handleExportBackup}
-                    className="py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2"
-                  >
-                    <Download size={14} /> Baixar Backup JSON
-                  </button>
-
-                  <label className="py-2.5 px-4 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-wider rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer text-center">
-                    <Upload size={14} /> Importar Backup JSON
-                    <input 
-                      type="file" 
-                      accept=".json" 
-                      onChange={handleImportBackup} 
-                      className="hidden" 
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Opção 3: Restaurar Todos os Dados Oficiais PIBJE */}
-              <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-amber-600 text-white text-xs font-black flex items-center justify-center">3</span>
-                  <h4 className="font-black text-sm text-slate-900">Restaurar Informações Oficiais do Ministério PIBJE</h4>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Restaura instantaneamente todos os integrantes da equipe (Matheus Peres, Lucas Silva, Ana Paula e ministros), repertório completo com tons e links, e as escalas de cultos.
-                </p>
-                <div className="pt-1">
-                  <button 
-                    onClick={handleResetToDefaultMinistryData}
-                    className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <RotateCcw size={14} />
-                    Restaurar Dados Completos do Ministério Agora
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-slate-100 flex justify-end">
-              <button 
-                onClick={() => setShowRestoreModal(false)}
-                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-colors"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </Layout>
   );
 };

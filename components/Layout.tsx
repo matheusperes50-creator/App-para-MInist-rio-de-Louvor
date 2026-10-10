@@ -18,7 +18,8 @@ import {
   Shirt,
   Wand2,
   StickyNote,
-  CalendarCheck
+  CalendarCheck,
+  Settings
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -48,6 +49,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     { id: 'notes' as ViewType, label: 'Anotações', icon: StickyNote, adminOnly: false },
     { id: 'style' as ViewType, label: 'Look/Style', icon: Shirt, adminOnly: false },
     { id: 'auto-schedules' as ViewType, label: 'Escala Automática', icon: Wand2, adminOnly: true },
+    { id: 'settings' as ViewType, label: 'Configurações', icon: Settings, adminOnly: false },
   ].filter(item => !item.adminOnly || isAdmin);
 
   const handleNavClick = (view: ViewType) => {
