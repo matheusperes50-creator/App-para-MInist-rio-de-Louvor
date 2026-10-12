@@ -90,7 +90,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
   // Campos do formulário de nova data
   const [formDate, setFormDate] = useState('');
   const [formTitle, setFormTitle] = useState('Culto de Domingo - Noite');
-  const [formTime, setFormTime] = useState('19:00');
+  const [formTime, setFormTime] = useState('19:30');
   const [formDescription, setFormDescription] = useState('');
 
   // Gerador de Domingos do Mês
@@ -99,7 +99,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   });
   const [genServiceTitle, setGenServiceTitle] = useState('Culto de Domingo - Noite');
-  const [genServiceTime, setGenServiceTime] = useState('19:00');
+  const [genServiceTime, setGenServiceTime] = useState('19:30');
 
   // Feedback Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -277,7 +277,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
       id: generateId(),
       date: formDate,
       title: formTitle.trim() || 'Culto de Louvor',
-      time: formTime || '19:00',
+      time: formTime || '19:30',
       description: formDescription.trim() || undefined,
       confirmations: []
     };
@@ -1115,7 +1115,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
                 placeholder="Buscar seu nome..."
                 value={memberSearchTerm}
                 onChange={(e) => setMemberSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-9 pr-3 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
@@ -1191,7 +1191,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
 
             <form onSubmit={handleAddDateOption} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Data do Culto *
                 </label>
                 <input
@@ -1199,12 +1199,12 @@ export const Attendance: React.FC<AttendanceProps> = ({
                   required
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Título / Nome do Culto *
                 </label>
                 <input
@@ -1213,7 +1213,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Ex: Culto de Domingo - Noite"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {['Culto Domingo Noite', 'Culto Domingo Manhã', 'Culto de Quinta', 'Ceia do Senhor'].map((preset) => (
@@ -1221,7 +1221,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
                       key={preset}
                       type="button"
                       onClick={() => setFormTitle(preset)}
-                      className="text-[10px] px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 font-semibold"
+                      className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 font-bold border border-slate-700 cursor-pointer"
                     >
                       {preset}
                     </button>
@@ -1230,19 +1230,19 @@ export const Attendance: React.FC<AttendanceProps> = ({
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Horário
                 </label>
                 <input
                   type="time"
                   value={formTime}
                   onChange={(e) => setFormTime(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Observações (Opcional)
                 </label>
                 <input
@@ -1250,7 +1250,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Ex: Ensaio de som às 18h"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
@@ -1258,13 +1258,13 @@ export const Attendance: React.FC<AttendanceProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowAddDateModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md"
+                  className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md cursor-pointer"
                 >
                   Adicionar Opção
                 </button>
@@ -1289,7 +1289,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
               </div>
               <button
                 onClick={() => setShowMonthGenModal(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1297,19 +1297,19 @@ export const Attendance: React.FC<AttendanceProps> = ({
 
             <div className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Selecione o Mês e Ano
                 </label>
                 <input
                   type="month"
                   value={monthToGen}
                   onChange={(e) => setMonthToGen(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Nome do Culto Padrão
                 </label>
                 <input
@@ -1317,19 +1317,19 @@ export const Attendance: React.FC<AttendanceProps> = ({
                   value={genServiceTitle}
                   onChange={(e) => setGenServiceTitle(e.target.value)}
                   placeholder="Culto de Domingo - Noite"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                <label className="text-xs font-black text-slate-800 dark:text-slate-200 block mb-1.5">
                   Horário
                 </label>
                 <input
                   type="time"
                   value={genServiceTime}
                   onChange={(e) => setGenServiceTime(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 [color-scheme:dark]"
                 />
               </div>
 
@@ -1337,14 +1337,14 @@ export const Attendance: React.FC<AttendanceProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowMonthGenModal(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleGenerateSundays}
-                  className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md flex items-center gap-1.5"
+                  className="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer"
                 >
                   <Calendar className="w-4 h-4" />
                   Gerar Domingos na Enquete

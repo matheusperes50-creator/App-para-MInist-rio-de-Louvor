@@ -1,23 +1,31 @@
-
 {
-  "short_name": "LouvorPibje",
-  "name": "Minist. de Louvor Pibje - Gestão",
+  "short_name": "Louvor PIBJE",
+  "name": "Ministério de Louvor PIBJE",
+  "id": "/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#059669",
+  "background_color": "#0f172a",
   "icons": [
     {
-      "src": "https://img.icons8.com/ios-filled/192/059669/music-library.png",
-      "sizes": "192x192",
+      "src": "./apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://img.icons8.com/ios-filled/512/059669/music-library.png",
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#059669",
-  "background_color": "#f8fafc"
+  ]
 }
