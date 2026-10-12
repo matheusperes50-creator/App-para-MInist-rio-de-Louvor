@@ -577,7 +577,15 @@ export const App: React.FC = () => {
       try {
         const trimmed = (text || '').trim();
         if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          data = JSON.parse(trimmed);
+          const parsedInitial = JSON.parse(trimmed);
+          // Auto-detect if multi-cell chunks were returned
+          if (Array.isArray(parsedInitial) && parsedInitial.length > 0 && typeof parsedInitial[0] === 'string') {
+            data = JSON.parse(parsedInitial.join(''));
+          } else if (parsedInitial && typeof parsedInitial === 'object' && Array.isArray(parsedInitial.chunks)) {
+            data = JSON.parse(parsedInitial.chunks.join(''));
+          } else {
+            data = parsedInitial;
+          }
         }
       } catch (parseErr) {
         console.warn('Dados recebidos da planilha não são JSON válido, mantendo dados locais intactos:', parseErr);
