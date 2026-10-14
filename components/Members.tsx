@@ -1,7 +1,5 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Member, Role } from '../types';
-// Added missing 'Users' icon to the import list from lucide-react
 import { 
   UserPlus, 
   Search, 
@@ -11,15 +9,24 @@ import {
   X, 
   Power, 
   RefreshCw, 
-  UserCheck, 
-  Shield, 
   Users, 
   Camera, 
   Image as ImageIcon,
   Cake,
   LayoutGrid,
   List,
-  Calendar
+  Calendar,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RotateCcw,
+  Move,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  Sliders,
+  Crop
 } from 'lucide-react';
 
 interface MembersProps {
@@ -32,6 +39,259 @@ interface MembersProps {
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
+interface PhotoCropperProps {
+  imageSrc: string;
+  onSave: (croppedDataUrl: string) => void;
+  onClose: () => void;
+}
+
+const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onClose }) => {
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const panStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  const PREVIEW_SIZE = 256;
+
+  // Handle pointer drag (touch + mouse)
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    dragStartRef.current = { x: e.clientX, y: e.clientY };
+    panStartRef.current = { ...pan };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging) return;
+    const dx = e.clientX - dragStartRef.current.x;
+    const dy = e.clientY - dragStartRef.current.y;
+    setPan({
+      x: panStartRef.current.x + dx,
+      y: panStartRef.current.y + dy
+    });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+  };
+
+  const handleStepPan = (dx: number, dy: number) => {
+    setPan(prev => ({ x: prev.x + dx, y: prev.y + dy }));
+  };
+
+  const handleReset = () => {
+    setScale(1);
+    setPan({ x: 0, y: 0 });
+    setRotation(0);
+  };
+
+  const handleConfirmCrop = () => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = PREVIEW_SIZE;
+      canvas.height = PREVIEW_SIZE;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Base aspect ratio calculation to emulate CSS object-cover
+      const aspect = img.width / img.height;
+      let baseWidth = PREVIEW_SIZE;
+      let baseHeight = PREVIEW_SIZE;
+
+      if (aspect >= 1) {
+        baseHeight = PREVIEW_SIZE;
+        baseWidth = PREVIEW_SIZE * aspect;
+      } else {
+        baseWidth = PREVIEW_SIZE;
+        baseHeight = PREVIEW_SIZE / aspect;
+      }
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, PREVIEW_SIZE, PREVIEW_SIZE);
+
+      ctx.save();
+      // Center transform at canvas middle
+      ctx.translate(PREVIEW_SIZE / 2, PREVIEW_SIZE / 2);
+      ctx.translate(pan.x, pan.y);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(scale, scale);
+
+      ctx.drawImage(img, -baseWidth / 2, -baseHeight / 2, baseWidth, baseHeight);
+      ctx.restore();
+
+      // Export compressed JPEG under 20KB for Google Sheets
+      const finalDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+      onSave(finalDataUrl);
+    };
+    img.src = imageSrc;
+  };
+
+  return (
+    <div className="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
+      <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center">
+        <div className="w-full flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <Crop size={20} />
+            </div>
+            <div>
+              <h3 className="text-lg font-black text-slate-800 leading-tight">Ajustar Enquadramento</h3>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Arraste e ajuste o zoom</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 rounded-xl transition-colors">
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Viewport frame with drag handler */}
+        <div className="relative my-2 select-none">
+          <div 
+            className="w-56 h-56 sm:w-64 sm:h-64 rounded-[2.5rem] overflow-hidden bg-slate-900 border-4 border-emerald-500 shadow-2xl relative cursor-grab active:cursor-grabbing touch-none"
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            <img 
+              ref={imgRef}
+              src={imageSrc} 
+              alt="Ajuste"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) rotate(${rotation}deg) scale(${scale})`,
+                transformOrigin: 'center center'
+              }}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none transition-transform duration-75"
+              draggable={false}
+            />
+
+            {/* Circular guide to help align face */}
+            <div className="absolute inset-0 border-2 border-white/30 rounded-full pointer-events-none shadow-inner" />
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-white/15 pointer-events-none" />
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 border-l border-white/15 pointer-events-none" />
+          </div>
+          <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center justify-center gap-1">
+            <Move size={12} /> Toque e arraste para posicionar a foto
+          </p>
+        </div>
+
+        {/* Precision controls: Zoom & Directional buttons */}
+        <div className="w-full space-y-4 mt-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          {/* Zoom slider */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500 tracking-wider">
+              <span className="flex items-center gap-1"><ZoomIn size={12} /> Zoom</span>
+              <span className="text-emerald-700 font-bold">{Math.round(scale * 100)}%</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setScale(s => Math.max(0.8, +(s - 0.1).toFixed(2)))}
+                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100"
+                title="Diminuir Zoom"
+              >
+                <ZoomOut size={16} />
+              </button>
+              <input 
+                type="range" 
+                min="0.8" 
+                max="3.0" 
+                step="0.05" 
+                value={scale} 
+                onChange={(e) => setScale(parseFloat(e.target.value))}
+                className="flex-1 accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+              />
+              <button 
+                onClick={() => setScale(s => Math.min(3.0, +(s + 0.1).toFixed(2)))}
+                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100"
+                title="Aumentar Zoom"
+              >
+                <ZoomIn size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Precision pan buttons & rotate */}
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={() => handleStepPan(-15, 0)} 
+                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                title="Mover para esquerda"
+              >
+                <ArrowLeft size={14} />
+              </button>
+              <div className="flex flex-col gap-1">
+                <button 
+                  onClick={() => handleStepPan(0, -15)} 
+                  className="p-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                  title="Mover para cima"
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button 
+                  onClick={() => handleStepPan(0, 15)} 
+                  className="p-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                  title="Mover para baixo"
+                >
+                  <ArrowDown size={14} />
+                </button>
+              </div>
+              <button 
+                onClick={() => handleStepPan(15, 0)} 
+                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                title="Mover para direita"
+              >
+                <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setRotation(r => (r + 90) % 360)}
+                className="flex items-center gap-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600 text-xs font-bold transition-colors"
+                title="Girar 90 graus"
+              >
+                <RotateCw size={14} /> Girar
+              </button>
+              <button 
+                onClick={handleReset}
+                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-700 transition-colors"
+                title="Redefinir ajustes"
+              >
+                <RotateCcw size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action buttons */}
+        <div className="w-full flex gap-3 mt-5">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 px-4 rounded-2xl border-2 border-slate-200 text-slate-600 font-black text-xs uppercase tracking-widest hover:bg-slate-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleConfirmCrop}
+            className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 text-white font-black text-xs uppercase tracking-widest hover:bg-emerald-700 shadow-lg shadow-emerald-900/20 transition-all flex items-center justify-center gap-1.5"
+          >
+            <Check size={16} /> Salvar Foto
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSync, isSyncing, isAdmin }) => {
   const [showModal, setShowModal] = useState(false);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -43,44 +303,49 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
   const [photoUrl, setPhotoUrl] = useState<string | undefined>(undefined);
   const [birthDate, setBirthDate] = useState<string>('');
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Photo cropper modal state
+  const [cropperImageSrc, setCropperImageSrc] = useState<string | null>(null);
+  const [cropTargetMemberId, setCropTargetMemberId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handlePhotoFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 150;
-          const MAX_HEIGHT = 150;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-          } else {
-            if (height > MAX_HEIGHT) {
-              width *= MAX_HEIGHT / height;
-              height = MAX_HEIGHT;
-            }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Use low quality to keep it under Sheets character limit
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-          setPhotoUrl(dataUrl);
-        };
-        img.src = reader.result as string;
+        const rawSrc = reader.result as string;
+        setCropperImageSrc(rawSrc);
       };
       reader.readAsDataURL(file);
     }
+    // Clear input so same file can be re-selected if desired
+    e.target.value = '';
+  };
+
+  const handleOpenCropperForExistingPhoto = (src?: string, memberId?: string) => {
+    if (src) {
+      setCropperImageSrc(src);
+      setCropTargetMemberId(memberId || null);
+    } else {
+      setCropTargetMemberId(memberId || null);
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleCropperSave = (newCroppedUrl: string) => {
+    if (cropTargetMemberId) {
+      // Direct adjustment on an existing member from the list/grid
+      setMembers(prev => prev.map(m => m.id === cropTargetMemberId ? { ...m, photoUrl: newCroppedUrl } : m));
+      setCropTargetMemberId(null);
+    } else {
+      // Adjustment inside the edit/add modal
+      setPhotoUrl(newCroppedUrl);
+    }
+    setCropperImageSrc(null);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoUrl(undefined);
   };
 
   const toggleRoleSelection = (role: Role) => {
@@ -130,7 +395,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         if (isAdmin) {
           return { ...m, name: newName.trim(), roles: selectedRoles, photoUrl, birthDate };
         } else {
-          // Non-admins can only update photo and birth date
+          // Non-admins can update photo and birth date
           return { ...m, photoUrl, birthDate };
         }
       }));
@@ -165,6 +430,27 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+      {/* Hidden file input for quick photo uploads */}
+      <input 
+        ref={fileInputRef}
+        type="file" 
+        className="hidden" 
+        accept="image/*" 
+        onChange={handlePhotoFileSelected} 
+      />
+
+      {/* Interactive Photo Cropper / Adjuster Modal */}
+      {cropperImageSrc && (
+        <PhotoCropperModal 
+          imageSrc={cropperImageSrc}
+          onSave={handleCropperSave}
+          onClose={() => {
+            setCropperImageSrc(null);
+            setCropTargetMemberId(null);
+          }}
+        />
+      )}
+
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-3xl font-black text-slate-900">Membros</h2>
@@ -194,7 +480,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
       {/* Modal for Add/Edit Member */}
       {showModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                 {editingMemberId ? <Edit2 className="text-emerald-600" size={24} /> : <UserPlus className="text-emerald-600" size={24} />}
@@ -205,27 +491,56 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
               </button>
             </div>
             
-            <form onSubmit={saveMember} className="space-y-8">
-              <div className="space-y-6">
-                {/* Photo Upload Section */}
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative group">
-                    <div className="w-24 h-24 rounded-[2rem] bg-slate-50 border-2 border-slate-100 overflow-hidden flex items-center justify-center transition-all group-hover:border-emerald-500">
-                      {photoUrl ? (
-                        <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                      ) : (
-                        <Camera className="text-slate-300" size={32} />
-                      )}
-                    </div>
-                    <label className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2 rounded-xl shadow-lg cursor-pointer hover:bg-emerald-700 transition-all">
-                      <ImageIcon size={16} />
-                      <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
-                    </label>
+            <form onSubmit={saveMember} className="space-y-6">
+              {/* Photo Upload & Adjust Section */}
+              <div className="flex flex-col items-center gap-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+                <div className="relative group">
+                  <div className="w-24 h-24 rounded-[2rem] bg-white border-2 border-slate-200 overflow-hidden flex items-center justify-center shadow-md">
+                    {photoUrl ? (
+                      <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Camera className="text-slate-300" size={36} />
+                    )}
                   </div>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Foto do Integrante</p>
+                  <label 
+                    onClick={() => {
+                      setCropTargetMemberId(null);
+                    }}
+                    className="absolute -bottom-2 -right-2 bg-emerald-600 text-white p-2.5 rounded-xl shadow-lg cursor-pointer hover:bg-emerald-700 transition-all"
+                    title="Escolher Foto"
+                  >
+                    <ImageIcon size={16} />
+                    <input type="file" className="hidden" accept="image/*" onChange={handlePhotoFileSelected} />
+                  </label>
                 </div>
 
-                <div className="space-y-2">
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                  {photoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCropperForExistingPhoto(photoUrl)}
+                      className="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors"
+                    >
+                      <Sliders size={12} /> Ajustar Enquadramento
+                    </button>
+                  )}
+                  {photoUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="px-3 py-1.5 bg-slate-200 text-slate-600 hover:bg-red-100 hover:text-red-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors"
+                    >
+                      Remover Foto
+                    </button>
+                  )}
+                </div>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                  Foto do Integrante • Clique em Ajustar para dar zoom ou centralizar
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
                   <input 
                     autoFocus
@@ -233,21 +548,21 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     value={newName} 
                     onChange={(e) => setNewName(e.target.value)} 
                     disabled={!isAdmin}
-                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-base transition-all ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`} 
                     placeholder="Ex: João da Silva" 
                     required 
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Data de Nascimento</label>
                   <input 
                     type="date" 
                     value={birthDate} 
                     onChange={(e) => setBirthDate(e.target.value)} 
-                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-base transition-all" 
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Habilidades e Funções</label>
                   <div className="flex flex-wrap gap-2">
                     {Object.values(Role).map(role => (
@@ -256,7 +571,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         type="button"
                         onClick={() => isAdmin && toggleRoleSelection(role)}
                         disabled={!isAdmin}
-                        className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
+                        className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
                         {role === Role.MINISTER ? `🎤 ${role}` : role}
                       </button>
@@ -265,7 +580,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 pt-6 border-t">
+              <div className="flex flex-col gap-2 pt-4 border-t">
                 <button 
                   type="submit" 
                   className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs"
@@ -285,6 +600,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         </div>
       )}
 
+      {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-full md:w-auto">
           <button 
@@ -319,36 +635,47 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         </div>
       </div>
 
+      {/* List View */}
       {viewMode === 'list' && (
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
                 <tr>
-                  <th className="px-10 py-6">Membro</th>
-                  <th className="px-10 py-6">Habilidades</th>
-                  <th className="px-10 py-6 text-center">Gestão</th>
+                  <th className="px-6 sm:px-10 py-6">Membro</th>
+                  <th className="px-6 sm:px-10 py-6">Habilidades</th>
+                  <th className="px-6 sm:px-10 py-6 text-center">Gestão</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {filteredMembers.map((m) => (
                   <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
-                    <td className="px-10 py-6">
+                    <td className="px-6 sm:px-10 py-5">
                       <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                        <div 
+                          onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
+                          title={isAdmin ? "Clique para ajustar ou alterar a foto" : undefined}
+                          className={`w-13 h-13 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}
+                          style={{ width: '3.25rem', height: '3.25rem' }}
+                        >
                           {m.photoUrl ? (
                             <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           ) : (
                             m.name.charAt(0).toUpperCase()
                           )}
+                          {isAdmin && (
+                            <div className="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                              <Crop size={14} />
+                            </div>
+                          )}
                         </div>
                         <div>
-                          <p className={`font-black text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>
+                          <p className={`font-black text-base sm:text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>
                           <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-10 py-6">
+                    <td className="px-6 sm:px-10 py-5">
                       <div className="flex flex-wrap gap-1.5">
                         {(m.roles || []).map((r, i) => (
                           <span 
@@ -364,8 +691,17 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         ))}
                       </div>
                     </td>
-                    <td className="px-10 py-6">
-                      <div className="flex justify-center gap-3">
+                    <td className="px-6 sm:px-10 py-5">
+                      <div className="flex justify-center gap-2">
+                        {isAdmin && (
+                          <button 
+                            onClick={() => handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
+                            className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                            title="Ajustar Enquadramento da Foto"
+                          >
+                            <Crop size={18} />
+                          </button>
+                        )}
                         <button 
                           onClick={() => openEditModal(m)} 
                           className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
@@ -411,17 +747,27 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         </div>
       )}
 
+      {/* Grid View */}
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMembers.map((m) => (
             <div key={m.id} className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl border-2 transition-all overflow-hidden ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}>
+                  <div 
+                    onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
+                    title={isAdmin ? "Clique para ajustar o enquadramento" : undefined}
+                    className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}
+                  >
                     {m.photoUrl ? (
                       <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       m.name.charAt(0).toUpperCase()
+                    )}
+                    {isAdmin && (
+                      <div className="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity">
+                        <Crop size={16} />
+                      </div>
                     )}
                   </div>
                   <div>
@@ -430,8 +776,17 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 hover:text-emerald-600 transition-colors"><Edit2 size={16} /></button>
-                  {isAdmin && <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>}
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleOpenCropperForExistingPhoto(m.photoUrl, m.id)} 
+                      className="p-2 text-slate-300 hover:text-emerald-600 transition-colors"
+                      title="Ajustar Enquadramento da Foto"
+                    >
+                      <Crop size={16} />
+                    </button>
+                  )}
+                  <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 hover:text-emerald-600 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                  {isAdmin && <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors" title="Excluir"><Trash2 size={16} /></button>}
                 </div>
               </div>
               
@@ -471,6 +826,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
         </div>
       )}
 
+      {/* Birthdays View */}
       {viewMode === 'birthdays' && (
         <div className="space-y-4">
           {(() => {
@@ -495,7 +851,6 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   const [y, month, day] = (m.birthDate || '').split('-');
                   const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
                   
-                  // Calculate age
                   const calculateAge = (dateStr?: string) => {
                     if (!dateStr) return null;
                     const birthDate = new Date(dateStr);
@@ -512,7 +867,10 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   return (
                     <div key={m.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-black text-xl overflow-hidden">
+                        <div 
+                          onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
+                          className={`w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-black text-xl overflow-hidden shrink-0 ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''}`}
+                        >
                           {m.photoUrl ? <img src={m.photoUrl} alt="" className="w-full h-full object-cover" /> : m.name.charAt(0)}
                         </div>
                         <div>

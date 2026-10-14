@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Song, Schedule, SongStatus } from '../types';
-import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List } from 'lucide-react';
+import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 
 interface SongsProps {
   songs: Song[];
@@ -45,6 +45,10 @@ export const Songs: React.FC<SongsProps> = ({
   // Status manual override removed since tabs now control high-level status
   // But we still allow filtering within the tab if desired (e.g. READY vs REHEARSING in repertoire)
   const [internalFilter, setInternalFilter] = useState<string>('ALL');
+  
+  // Opção de ordenação alfabética ou padrão
+  type SortOption = 'default' | 'alpha-asc' | 'alpha-desc' | 'artist-asc';
+  const [sortOption, setSortOption] = useState<SortOption>('default');
   
   // States for song form
   const [newTitle, setNewTitle] = useState('');
@@ -151,24 +155,40 @@ export const Songs: React.FC<SongsProps> = ({
     return stats;
   }, [schedules]);
 
-  const filteredSongs = (songs || []).filter(s => {
-    const term = searchTerm.toLowerCase();
-    const title = (s.title || "").toLowerCase();
-    const artist = (s.artist || "").toLowerCase();
-    const matchesSearch = title.includes(term) || artist.includes(term);
-    
-    // Core logic: filter by tab mode first
-    let matchesMode = false;
-    if (filterMode === 'repertoire') {
-      matchesMode = s.status === SongStatus.READY || s.status === SongStatus.REHEARSING;
-      // Secondary internal filter
-      if (internalFilter !== 'ALL' && s.status !== internalFilter) matchesMode = false;
-    } else {
-      matchesMode = s.status === SongStatus.PENDING;
-    }
+  const filteredSongs = useMemo(() => {
+    return (songs || []).filter(s => {
+      const term = searchTerm.toLowerCase();
+      const title = (s.title || "").toLowerCase();
+      const artist = (s.artist || "").toLowerCase();
+      const matchesSearch = title.includes(term) || artist.includes(term);
+      
+      // Core logic: filter by tab mode first
+      let matchesMode = false;
+      if (filterMode === 'repertoire') {
+        matchesMode = s.status === SongStatus.READY || s.status === SongStatus.REHEARSING;
+        // Secondary internal filter
+        if (internalFilter !== 'ALL' && s.status !== internalFilter) matchesMode = false;
+      } else {
+        matchesMode = s.status === SongStatus.PENDING;
+      }
 
-    return matchesSearch && matchesMode;
-  });
+      return matchesSearch && matchesMode;
+    });
+  }, [songs, searchTerm, filterMode, internalFilter]);
+
+  const sortedSongs = useMemo(() => {
+    const list = [...filteredSongs];
+    if (sortOption === 'alpha-asc') {
+      return list.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR', { sensitivity: 'base' }));
+    }
+    if (sortOption === 'alpha-desc') {
+      return list.sort((a, b) => (b.title || '').localeCompare(a.title || '', 'pt-BR', { sensitivity: 'base' }));
+    }
+    if (sortOption === 'artist-asc') {
+      return list.sort((a, b) => (a.artist || '').localeCompare(b.artist || '', 'pt-BR', { sensitivity: 'base' }));
+    }
+    return list;
+  }, [filteredSongs, sortOption]);
 
   const getStatusStyle = (status: SongStatus) => {
     switch (status) {
@@ -187,9 +207,9 @@ export const Songs: React.FC<SongsProps> = ({
     }
   };
 
-  const viewTitle = filterMode === 'repertoire' ? 'Repertório' : 'Novas Músicas';
+  const viewTitle = filterMode === 'repertoire' ? 'Músicas' : 'Novas Músicas';
   const viewDesc = filterMode === 'repertoire' 
-    ? 'Músicas prontas e em fase de ensaio.' 
+    ? 'Catálogo e repertório de músicas do ministério.' 
     : 'Sugestões e músicas pendentes de avaliação.';
 
   return (
@@ -212,7 +232,7 @@ export const Songs: React.FC<SongsProps> = ({
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg text-xs uppercase tracking-widest"
           >
             <Plus size={18} />
-            {filterMode === 'repertoire' ? 'Adicionar Repertório' : 'Sugerir Música'}
+            {filterMode === 'repertoire' ? 'Cadastrar Música' : 'Sugerir Música'}
           </button>
         </div>
       </header>
@@ -298,44 +318,108 @@ export const Songs: React.FC<SongsProps> = ({
           />
         </div>
         
-        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-          <button 
-            onClick={() => setViewMode('grid')} 
-            className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-            title="Visualização em Grade"
-          >
-            <LayoutGrid size={18} />
-          </button>
-          <button 
-            onClick={() => setViewMode('list')} 
-            className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-            title="Visualização em Lista"
-          >
-            <List size={18} />
-          </button>
-        </div>
-        
-        {filterMode === 'repertoire' && (
-          <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-            <button onClick={() => setInternalFilter('ALL')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${internalFilter === 'ALL' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>TODAS</button>
-            <button onClick={() => setInternalFilter(SongStatus.READY)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.READY ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-              <CheckCircle2 size={12} /> PRONTAS
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Ordenação Alfabética */}
+          <div className="flex items-center bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+            <button 
+              type="button"
+              onClick={() => {
+                if (sortOption === 'default') setSortOption('alpha-asc');
+                else if (sortOption === 'alpha-asc') setSortOption('alpha-desc');
+                else setSortOption('default');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${
+                sortOption !== 'default' 
+                  ? 'bg-emerald-600 text-white shadow-sm' 
+                  : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+              }`}
+              title={
+                sortOption === 'alpha-asc' ? 'Ordem: A a Z (clique para Z a A)' :
+                sortOption === 'alpha-desc' ? 'Ordem: Z a A (clique para Padrão)' :
+                'Organizar por ordem alfabética'
+              }
+            >
+              {sortOption === 'alpha-desc' ? (
+                <>
+                  <ArrowUpAZ size={16} />
+                  <span>Z → A</span>
+                </>
+              ) : (
+                <>
+                  <ArrowDownAZ size={16} />
+                  <span>{sortOption === 'alpha-asc' ? 'A → Z' : 'A-Z'}</span>
+                </>
+              )}
             </button>
-            <button onClick={() => setInternalFilter(SongStatus.REHEARSING)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.REHEARSING ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-              <PlayCircle size={12} /> ENSAIANDO
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value as SortOption)}
+              className="bg-transparent text-[11px] font-black uppercase text-slate-600 px-2 py-1.5 outline-none cursor-pointer border-l border-slate-100 hover:text-slate-900"
+              title="Opção de ordenação"
+            >
+              <option value="default">Padrão</option>
+              <option value="alpha-asc">A → Z (Título)</option>
+              <option value="alpha-desc">Z → A (Título)</option>
+              <option value="artist-asc">A → Z (Artista)</option>
+            </select>
+          </div>
+
+          <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+            <button 
+              onClick={() => setViewMode('grid')} 
+              className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              title="Visualização em Grade"
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button 
+              onClick={() => setViewMode('list')} 
+              className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              title="Visualização em Lista"
+            >
+              <List size={18} />
             </button>
           </div>
-        )}
+          
+          {filterMode === 'repertoire' && (
+            <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+              <button onClick={() => setInternalFilter('ALL')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${internalFilter === 'ALL' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>TODAS</button>
+              <button onClick={() => setInternalFilter(SongStatus.READY)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.READY ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                <CheckCircle2 size={12} /> PRONTAS
+              </button>
+              <button onClick={() => setInternalFilter(SongStatus.REHEARSING)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.REHEARSING ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+                <PlayCircle size={12} /> ENSAIANDO
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       <section>
-        <div className="flex items-center gap-2 mb-6 text-slate-400">
-          {filterMode === 'repertoire' ? <Library size={20} /> : <Sparkles size={20} />}
-          <h3 className="font-black uppercase tracking-widest text-[10px]">{viewTitle} ({filteredSongs.length})</h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-6 text-slate-400">
+          <div className="flex items-center gap-2">
+            {filterMode === 'repertoire' ? <Library size={20} /> : <Sparkles size={20} />}
+            <h3 className="font-black uppercase tracking-widest text-[10px]">{viewTitle} ({sortedSongs.length})</h3>
+          </div>
+
+          {sortOption !== 'default' && (
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+              <span>
+                {sortOption === 'alpha-asc' ? 'Ordem Alfabética (A-Z)' : sortOption === 'alpha-desc' ? 'Ordem Alfabética (Z-A)' : 'Artista (A-Z)'}
+              </span>
+              <button 
+                onClick={() => setSortOption('default')}
+                className="hover:text-red-500 ml-0.5 text-xs font-black"
+                title="Restaurar ordem padrão"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
 
         <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20" : "flex flex-col gap-3 pb-20"}>
-          {filteredSongs.map((song) => {
+          {sortedSongs.map((song) => {
             const stat = songsStats[song.id] || { last30Days: 0, allKeys: new Set() };
             const thumbUrl = getYoutubeThumbnail(song.youtubeUrl);
             
@@ -525,7 +609,7 @@ export const Songs: React.FC<SongsProps> = ({
             );
           })}
           
-          {filteredSongs.length === 0 && (
+          {sortedSongs.length === 0 && (
             <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 shadow-inner">
               <Library size={48} className="mx-auto text-slate-200 mb-4" />
               <p className="text-slate-400 font-black uppercase text-xs tracking-[0.2em]">Nenhuma música encontrada</p>

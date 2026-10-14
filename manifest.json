@@ -1,7 +1,7 @@
 {
   "short_name": "Louvor PIBJE",
   "name": "Ministério de Louvor PIBJE",
-  "id": "/",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

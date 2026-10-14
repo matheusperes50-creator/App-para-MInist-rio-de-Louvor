@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ViewType, UserRoleType } from '../types';
 import { 
   LayoutDashboard, 
@@ -12,14 +12,16 @@ import {
   Key,
   Check,
   Sparkles,
-  Library,
   BarChart3,
   Calendar,
   Shirt,
   Wand2,
   StickyNote,
   CalendarCheck,
-  Settings
+  Settings,
+  GripVertical,
+  RotateCcw,
+  LucideIcon
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -29,6 +31,30 @@ interface LayoutProps {
   userRole: UserRoleType;
 }
 
+interface NavItemDef {
+  id: ViewType;
+  label: string;
+  icon: LucideIcon;
+  adminOnly: boolean;
+}
+
+const DEFAULT_NAV_ITEMS: NavItemDef[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+  { id: 'attendance', label: 'Presença', icon: CalendarCheck, adminOnly: false },
+  { id: 'schedules', label: 'Escalas', icon: CalendarDays, adminOnly: false },
+  { id: 'songs', label: 'Músicas', icon: Music, adminOnly: false },
+  { id: 'members', label: 'Membros', icon: Users, adminOnly: true },
+  { id: 'new-songs', label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
+  { id: 'reports', label: 'Relatórios', icon: BarChart3, adminOnly: true },
+  { id: 'events', label: 'Eventos', icon: Calendar, adminOnly: false },
+  { id: 'notes', label: 'Anotações', icon: StickyNote, adminOnly: false },
+  { id: 'style', label: 'Look/Style', icon: Shirt, adminOnly: false },
+  { id: 'auto-schedules', label: 'Escala Automática', icon: Wand2, adminOnly: true },
+  { id: 'settings', label: 'Configurações', icon: Settings, adminOnly: false },
+];
+
+const STORAGE_NAV_ORDER_KEY = 'louvor_nav_order';
+
 export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, userRole }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -37,22 +63,84 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
 
   const isAdmin = userRole === 'admin';
 
-  const navItems = [
-    { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
-    { id: 'attendance' as ViewType, label: 'Presença', icon: CalendarCheck, adminOnly: false },
-    { id: 'schedules' as ViewType, label: 'Escalas', icon: CalendarDays, adminOnly: false },
-    { id: 'songs' as ViewType, label: 'Repertório', icon: Library, adminOnly: false },
-    { id: 'members' as ViewType, label: 'Membros', icon: Users, adminOnly: true },
-    { id: 'new-songs' as ViewType, label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
-    { id: 'reports' as ViewType, label: 'Relatórios', icon: BarChart3, adminOnly: true },
-    { id: 'events' as ViewType, label: 'Eventos', icon: Calendar, adminOnly: false },
-    { id: 'notes' as ViewType, label: 'Anotações', icon: StickyNote, adminOnly: false },
-    { id: 'style' as ViewType, label: 'Look/Style', icon: Shirt, adminOnly: false },
-    { id: 'auto-schedules' as ViewType, label: 'Escala Automática', icon: Wand2, adminOnly: true },
-    { id: 'settings' as ViewType, label: 'Configurações', icon: Settings, adminOnly: false },
-  ].filter(item => !item.adminOnly || isAdmin);
+  // State to hold custom order of tab IDs
+  const [navOrder, setNavOrder] = useState<ViewType[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_NAV_ORDER_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Verify that all IDs exist
+          const validIds = new Set(DEFAULT_NAV_ITEMS.map(i => i.id));
+          const filtered = parsed.filter(id => validIds.has(id));
+          // Append any missing items
+          DEFAULT_NAV_ITEMS.forEach(i => {
+            if (!filtered.includes(i.id)) filtered.push(i.id);
+          });
+          return filtered;
+        }
+      }
+    } catch {}
+    return DEFAULT_NAV_ITEMS.map(i => i.id);
+  });
+
+  // Dragging state
+  const [draggedId, setDraggedId] = useState<ViewType | null>(null);
+  const [isHolding, setIsHolding] = useState<boolean>(false);
+  const [dragOverId, setDragOverId] = useState<ViewType | null>(null);
+  
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const startPosRef = useRef<{ x: number; y: number } | null>(null);
+  const didDragRef = useRef<boolean>(false);
+
+  // Compute sorted items based on current order and permissions
+  const sortedNavItems = React.useMemo(() => {
+    const itemMap = new Map<ViewType, NavItemDef>();
+    DEFAULT_NAV_ITEMS.forEach(item => itemMap.set(item.id, item));
+
+    const ordered: NavItemDef[] = [];
+    navOrder.forEach(id => {
+      const item = itemMap.get(id);
+      if (item && (!item.adminOnly || isAdmin)) {
+        ordered.push(item);
+      }
+    });
+
+    // Add any items not yet in ordered (e.g. newly added)
+    DEFAULT_NAV_ITEMS.forEach(item => {
+      if ((!item.adminOnly || isAdmin) && !ordered.some(o => o.id === item.id)) {
+        ordered.push(item);
+      }
+    });
+
+    return ordered;
+  }, [navOrder, isAdmin]);
+
+  const saveOrder = (newOrder: ViewType[]) => {
+    setNavOrder(newOrder);
+    try {
+      localStorage.setItem(STORAGE_NAV_ORDER_KEY, JSON.stringify(newOrder));
+    } catch {}
+  };
+
+  const handleResetOrder = () => {
+    const defaultIds = DEFAULT_NAV_ITEMS.map(i => i.id);
+    saveOrder(defaultIds);
+    try {
+      localStorage.removeItem(STORAGE_NAV_ORDER_KEY);
+    } catch {}
+  };
+
+  const isCustomOrder = React.useMemo(() => {
+    const defaultIds = DEFAULT_NAV_ITEMS.map(i => i.id);
+    return JSON.stringify(navOrder) !== JSON.stringify(defaultIds);
+  }, [navOrder]);
 
   const handleNavClick = (view: ViewType) => {
+    if (didDragRef.current) {
+      didDragRef.current = false;
+      return;
+    }
     setView(view);
     setIsMobileMenuOpen(false);
   };
@@ -69,8 +157,123 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
     }
   };
 
+  // Drag and drop / Press and hold logic
+  const reorderItems = (sourceId: ViewType, targetId: ViewType) => {
+    if (sourceId === targetId) return;
+    const currentList = [...navOrder];
+    const sourceIndex = currentList.indexOf(sourceId);
+    const targetIndex = currentList.indexOf(targetId);
+
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    currentList.splice(sourceIndex, 1);
+    currentList.splice(targetIndex, 0, sourceId);
+    saveOrder(currentList);
+  };
+
+  // Pointer down (mouse or touch)
+  const handlePointerDown = (e: React.PointerEvent, id: ViewType) => {
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    didDragRef.current = false;
+
+    // Start press and hold timer (200ms)
+    holdTimerRef.current = setTimeout(() => {
+      setIsHolding(true);
+      setDraggedId(id);
+      didDragRef.current = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try {
+          navigator.vibrate(40);
+        } catch {}
+      }
+    }, 200);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!startPosRef.current) return;
+
+    const dx = Math.abs(e.clientX - startPosRef.current.x);
+    const dy = Math.abs(e.clientY - startPosRef.current.y);
+
+    // If moving significantly before 200ms hold, cancel hold (user is scrolling)
+    if (!isHolding && (dx > 10 || dy > 10)) {
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
+      return;
+    }
+
+    if (isHolding && draggedId) {
+      // Find element underneath the finger / pointer
+      const elem = document.elementFromPoint(e.clientX, e.clientY);
+      const targetNavElem = elem?.closest('[data-nav-id]') as HTMLElement | null;
+      if (targetNavElem) {
+        const targetId = targetNavElem.dataset.navId as ViewType;
+        if (targetId && targetId !== draggedId) {
+          setDragOverId(targetId);
+          reorderItems(draggedId, targetId);
+        }
+      }
+    }
+  };
+
+  const handlePointerUp = () => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    startPosRef.current = null;
+    setIsHolding(false);
+    setDraggedId(null);
+    setDragOverId(null);
+
+    // Reset didDrag flag after a brief tick to prevent click event
+    if (didDragRef.current) {
+      setTimeout(() => {
+        didDragRef.current = false;
+      }, 50);
+    }
+  };
+
+  // HTML5 Drag support for desktop
+  const handleDragStart = (e: React.DragEvent, id: ViewType) => {
+    setDraggedId(id);
+    setIsHolding(true);
+    didDragRef.current = true;
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: ViewType) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedId && draggedId !== id) {
+      setDragOverId(id);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: ViewType) => {
+    e.preventDefault();
+    if (draggedId && draggedId !== targetId) {
+      reorderItems(draggedId, targetId);
+    }
+    setDraggedId(null);
+    setDragOverId(null);
+    setIsHolding(false);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedId(null);
+    setDragOverId(null);
+    setIsHolding(false);
+    setTimeout(() => {
+      didDragRef.current = false;
+    }, 50);
+  };
+
   return (
-    <div className="h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden">
+    <div className="h-screen flex flex-col md:flex-row bg-slate-50 overflow-hidden select-none">
       <header className="md:hidden bg-emerald-700 text-white p-4 flex justify-between items-center z-50 shadow-md h-16 shrink-0">
         <div className="flex flex-col">
           <h1 className="font-black text-base tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
@@ -97,7 +300,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         ${isMobileMenuOpen ? 'translate-x-0 w-72' : '-translate-x-full md:translate-x-0'}
       `}>
         <div className="flex flex-col h-full p-6">
-          <div className="hidden md:block mb-10">
+          <div className="hidden md:block mb-6">
             <h1 className="text-xl font-black tracking-tight text-white leading-tight uppercase">
               Minist. Louvor Pibje
             </h1>
@@ -106,30 +309,76 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
             </p>
           </div>
 
-          <div className="space-y-1 md:space-y-2 overflow-y-auto flex-1 no-scrollbar">
-            {navItems.map((item) => {
+          {/* Restaurar ordem se personalizada */}
+          {isCustomOrder && (
+            <div className="flex items-center justify-end mb-2 px-1">
+              <button
+                onClick={handleResetOrder}
+                className="text-[9px] font-black uppercase tracking-widest text-emerald-300 hover:text-white flex items-center gap-1 transition-colors py-1 px-2 rounded-lg bg-emerald-800/40 hover:bg-emerald-800"
+                title="Restaurar ordem original das abas"
+              >
+                <RotateCcw size={10} /> Resetar Ordem
+              </button>
+            </div>
+          )}
+
+          <div 
+            className="space-y-1 md:space-y-1.5 overflow-y-auto flex-1 no-scrollbar touch-pan-y"
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+          >
+            {sortedNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentView === item.id;
+              const isBeingDragged = draggedId === item.id;
+              const isDropTarget = dragOverId === item.id && !isBeingDragged;
+
               return (
-                <button
+                <div
                   key={item.id}
-                  onClick={() => handleNavClick(item.id)}
+                  data-nav-id={item.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, item.id)}
+                  onDragOver={(e) => handleDragOver(e, item.id)}
+                  onDrop={(e) => handleDrop(e, item.id)}
+                  onDragEnd={handleDragEnd}
+                  onPointerDown={(e) => handlePointerDown(e, item.id)}
                   className={`
-                    w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold transition-all
-                    ${isActive 
-                      ? 'bg-emerald-600 text-white shadow-lg' 
-                      : 'text-emerald-200 hover:bg-emerald-800 hover:text-white'}
+                    relative rounded-xl transition-all duration-150 select-none
+                    ${isBeingDragged ? 'scale-[1.03] z-50 ring-2 ring-emerald-300 shadow-2xl bg-emerald-700 opacity-95' : ''}
+                    ${isDropTarget ? 'border-t-2 border-emerald-300 pt-1' : ''}
                   `}
                 >
-                  <Icon size={20} className={isActive ? 'scale-110' : ''} />
-                  <span className="tracking-tight">{item.label}</span>
-                </button>
+                  <button
+                    onClick={() => handleNavClick(item.id)}
+                    className={`
+                      w-full flex items-center justify-between gap-2.5 px-3.5 py-3 rounded-xl font-bold transition-all text-left
+                      ${isActive 
+                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-950/20' 
+                        : 'text-emerald-200 hover:bg-emerald-800 hover:text-white'}
+                      ${isBeingDragged ? 'cursor-grabbing' : 'cursor-pointer'}
+                    `}
+                  >
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <Icon size={19} className={`shrink-0 ${isActive ? 'scale-110 text-white' : 'text-emerald-300'}`} />
+                      <span className="tracking-tight text-sm font-bold truncate">{item.label}</span>
+                    </div>
+
+                    <div 
+                      className="text-emerald-400/50 hover:text-white transition-opacity p-0.5 cursor-grab active:cursor-grabbing shrink-0" 
+                      title="Segure e arraste para reordenar"
+                    >
+                      <GripVertical size={14} />
+                    </div>
+                  </button>
+                </div>
               );
             })}
           </div>
 
-          <div className="mt-auto pt-6 border-t border-emerald-800 shrink-0">
-            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-3">Sessão Atual</p>
+          <div className="mt-auto pt-4 border-t border-emerald-800 shrink-0">
+            <p className="text-[10px] text-emerald-400 font-black uppercase tracking-widest mb-2.5">Sessão Atual</p>
             <div className="flex items-center gap-3 bg-emerald-800/50 p-3 rounded-2xl border border-emerald-700">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shrink-0 ${isAdmin ? 'bg-emerald-500' : 'bg-slate-600'}`}>
                 {isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
@@ -148,7 +397,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         </div>
       </nav>
 
-      <main className="flex-1 overflow-y-auto bg-slate-50 relative">
+      <main className="flex-1 overflow-y-auto bg-slate-50 relative select-auto">
         <div className="max-w-6xl mx-auto p-4 md:p-8 pb-24 md:pb-8">
           {children}
         </div>
