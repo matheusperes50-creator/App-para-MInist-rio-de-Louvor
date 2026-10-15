@@ -119,13 +119,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     <div className="space-y-8 animate-in fade-in duration-500">
       <header className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-black text-slate-900">Dashboard</h2>
-          <p className="text-slate-500 font-medium">Visão geral do ministério.</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Dashboard</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Visão geral do ministério.</p>
         </div>
         <button 
           onClick={onSync}
           disabled={isSyncing}
-          className="p-3 bg-white border border-slate-200 rounded-2xl text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+          className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm cursor-pointer"
           title="Sincronizar dados"
         >
           <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
@@ -135,7 +135,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Próxima Escala e Busca */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Card de Próxima Escala */}
-        <div className="lg:col-span-2 bg-emerald-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden">
+        <div className="lg:col-span-2 bg-emerald-600 dark:bg-emerald-800/80 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-600/20 relative overflow-hidden border border-emerald-500/30">
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-6">
               <CalendarDays size={20} className="text-emerald-200" />
@@ -201,7 +201,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Busca de Integrante */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col relative">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col relative transition-colors">
           <div className="flex items-center gap-2 mb-6">
             <Search size={20} className="text-slate-400" />
             <h3 className="font-black uppercase text-xs tracking-widest text-slate-400">Minha Escala</h3>
@@ -218,12 +218,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setShowSuggestions(true);
                 }}
                 onFocus={() => setShowSuggestions(true)}
-                className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl py-4 px-6 outline-none font-bold transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 rounded-2xl py-4 px-6 outline-none font-bold transition-all"
               />
               
               {/* Sugestões */}
               {suggestions.length > 0 && (
-                <div className="absolute z-20 left-0 right-0 top-full mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute z-20 left-0 right-0 top-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                   {suggestions.map(m => (
                     <button
                       key={m.id}
@@ -231,7 +231,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         setSearchInputValue(m.name);
                         setShowSuggestions(false);
                       }}
-                      className="w-full text-left px-6 py-3 hover:bg-emerald-50 transition-colors font-bold text-slate-700 text-sm border-b border-slate-50 last:border-0"
+                      className="w-full text-left px-6 py-3 hover:bg-emerald-50 dark:hover:bg-slate-700 transition-colors font-bold text-slate-700 dark:text-slate-200 text-sm border-b border-slate-50 dark:border-slate-700/60 last:border-0 cursor-pointer"
                     >
                       {m.name}
                     </button>
@@ -260,24 +260,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   const member = members.find(m => m.id === memberAssignment?.memberId);
                   
                   return (
-                    <div key={s.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 overflow-hidden flex items-center justify-center shrink-0">
+                    <div key={s.id} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60 group hover:border-emerald-200 dark:hover:border-emerald-600 transition-all flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 overflow-hidden flex items-center justify-center shrink-0">
                         {member?.photoUrl ? (
                           <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
-                          <Users size={16} className="text-emerald-300" />
+                          <Users size={16} className="text-emerald-500 dark:text-emerald-400" />
                         )}
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-1">
-                          <p className="text-xs font-black text-slate-800 uppercase tracking-tight">
+                          <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-tight">
                             {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                           </p>
-                          <span className="text-[9px] font-black bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase">
+                          <span className="text-[9px] font-black bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-full uppercase">
                             {s.serviceType.split(' ')[0]}
                           </span>
                         </div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">
+                        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase">
                           {memberAssignment?.role || 'Integrante'}
                         </p>
                       </div>
@@ -295,71 +295,71 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex justify-between items-start mb-4">
-            <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
+            <div className="bg-emerald-50 dark:bg-emerald-950/60 p-3 rounded-xl text-emerald-600 dark:text-emerald-400">
               <Users size={24} />
             </div>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Membros</p>
-          <h4 className="text-3xl font-black text-slate-800">{totalMembers}</h4>
-          <p className="text-[10px] text-emerald-600 font-bold mt-1">{activeMembers} ativos</p>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Total de Membros</p>
+          <h4 className="text-3xl font-black text-slate-800 dark:text-white">{totalMembers}</h4>
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">{activeMembers} ativos</p>
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex justify-between items-start mb-4">
-            <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
+            <div className="bg-blue-50 dark:bg-blue-950/60 p-3 rounded-xl text-blue-600 dark:text-blue-400">
               <Music size={24} />
             </div>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Músicas no Repertório</p>
-          <h4 className="text-3xl font-black text-slate-800">{totalSongs}</h4>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Músicas no Repertório</p>
+          <h4 className="text-3xl font-black text-slate-800 dark:text-white">{totalSongs}</h4>
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex justify-between items-start mb-4">
-            <div className="bg-amber-50 p-3 rounded-xl text-amber-600">
+            <div className="bg-amber-50 dark:bg-amber-950/60 p-3 rounded-xl text-amber-600 dark:text-amber-400">
               <Calendar size={24} />
             </div>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total de Escalas</p>
-          <h4 className="text-3xl font-black text-slate-800">{totalSchedules}</h4>
-          <p className="text-[10px] text-emerald-600 font-bold mt-1">{confirmedSchedules} realizadas</p>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Total de Escalas</p>
+          <h4 className="text-3xl font-black text-slate-800 dark:text-white">{totalSchedules}</h4>
+          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-1">{confirmedSchedules} realizadas</p>
         </div>
 
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex justify-between items-start mb-4">
-            <div className="bg-purple-50 p-3 rounded-xl text-purple-600">
+            <div className="bg-purple-50 dark:bg-purple-950/60 p-3 rounded-xl text-purple-600 dark:text-purple-400">
               <Trophy size={24} />
             </div>
           </div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Música +Tocada</p>
-          <h4 className="text-xl font-black text-slate-800 truncate">{songStats[0]?.name || '-'}</h4>
+          <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Música +Tocada</p>
+          <h4 className="text-xl font-black text-slate-800 dark:text-white truncate">{songStats[0]?.name || '-'}</h4>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-slate-50 p-2 rounded-lg"><TrendingUp size={18} className="text-slate-400" /></div>
-            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Músicas mais executadas</h3>
+            <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg"><TrendingUp size={18} className="text-slate-400" /></div>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Músicas mais executadas</h3>
           </div>
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={songStats} layout="vertical" margin={{ left: 10, right: 30, top: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#334155" opacity={0.3} />
                 <XAxis type="number" hide />
                 <YAxis 
                   dataKey="name" 
                   type="category" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }}
+                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
                   width={120}
                 />
                 <Tooltip 
                   cursor={{ fill: 'transparent' }}
-                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                  contentStyle={{ borderRadius: '1rem', border: 'none', backgroundColor: '#0f172a', color: '#fff', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.3)', padding: '12px' }}
                 />
                 <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={20}>
                   {songStats.map((entry, index) => (
@@ -371,7 +371,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className="bg-emerald-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-emerald-900/20 flex flex-col">
+        <div className="bg-emerald-900 dark:bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-xl shadow-emerald-900/20 flex flex-col border border-emerald-800 dark:border-slate-800 transition-colors">
           <div className="relative z-10 flex-1 flex flex-col">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-3">

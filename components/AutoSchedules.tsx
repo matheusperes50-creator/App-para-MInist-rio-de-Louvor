@@ -502,63 +502,63 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
         <div>
-          <h2 className="text-2xl font-black text-emerald-800 uppercase tracking-tighter">Gerador de Escalas</h2>
-          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Escalamento automatizado e equilibrado</p>
+          <h2 className="text-2xl font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-tighter">Gerador de Escalas</h2>
+          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">Escalamento automatizado e equilibrado</p>
         </div>
       </header>
 
       {/* STEP 1: Monthly config */}
-      <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-          <Sliders className="text-emerald-600" size={18} /> Configure a escala do mês
+      <div className="bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6 transition-colors">
+        <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
+          <Sliders className="text-emerald-600 dark:text-emerald-400" size={18} /> Configure a escala do mês
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="space-y-3">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">1. MÊS DE AGENDAMENTO</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400">1. MÊS DE AGENDAMENTO</label>
             <div className="flex gap-2">
               <input 
                 type="month" 
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold"
+                className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold"
               />
               <button 
                 onClick={handleGenerateMonthDrafts}
-                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-md shrink-0"
+                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-md shrink-0 cursor-pointer"
               >
                 Gerar Datas
               </button>
             </div>
 
-            <div className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
+            <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input 
                   type="checkbox" 
                   checked={onlySundays} 
                   onChange={(e) => setOnlySundays(e.target.checked)} 
-                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 cursor-pointer"
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300 dark:border-slate-600 cursor-pointer"
                 />
-                <span className="text-xs font-black text-slate-700">Somente Domingos do mês</span>
+                <span className="text-xs font-black text-slate-700 dark:text-slate-300">Somente Domingos do mês</span>
               </label>
-              <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl uppercase ${onlySundays ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>
+              <span className={`text-[9px] font-black px-2.5 py-1 rounded-xl uppercase ${onlySundays ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}`}>
                 {onlySundays ? 'Só Domingos' : 'Domingos + Quartas'}
               </span>
             </div>
           </div>
 
           <div className="space-y-2 flex flex-col justify-end">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Ou crie manualmente / importe</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400">Ou crie manualmente / importe</span>
             <button 
               onClick={handleAddCustomDraft}
-              className="w-full px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+              className="w-full px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-black rounded-2xl text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <Plus size={16} /> Adicionar Data Avulsa
             </button>
             {attendanceEvents && attendanceEvents.length > 0 && (
               <button 
                 onClick={handleImportFromAttendance}
-                className="w-full px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-black rounded-2xl text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-2xs"
+                className="w-full px-4 py-2.5 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-black rounded-2xl text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
                 title="Carregar datas e integrantes confirmados da aba Presença"
               >
                 <UserCheck size={14} /> Carregar das Presenças ({attendanceEvents.length} datas)
@@ -568,14 +568,14 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">2. Requisitos da Equipe</label>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400">2. Requisitos da Equipe</label>
               <button
                 type="button"
                 onClick={() => setRequirements(r => ({ ...r, minister: true, vocalsCount: 4 }))}
                 className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase transition-all border ${
                   requirements.minister && requirements.vocalsCount === 4
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
-                    : 'bg-slate-100 text-slate-600 border-slate-200 hover:border-emerald-300'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-300'
                 }`}
                 title="Ativar predefinição: 4 Vocais e 1 Ministro"
               >
@@ -583,28 +583,28 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <label className="flex items-center gap-1.5 font-bold text-slate-700 cursor-pointer col-span-2 pb-2 border-b border-slate-200/60">
+            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+              <label className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300 cursor-pointer col-span-2 pb-2 border-b border-slate-200/60 dark:border-slate-700">
                 <input 
                   type="checkbox" 
                   checked={requirements.minister} 
                   onChange={(e) => setRequirements(r => ({ ...r, minister: e.target.checked }))} 
-                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" 
+                  className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" 
                 />
                 <Mic size={14} className="text-amber-500 shrink-0" />
-                <span className="font-extrabold text-slate-800">1 Ministro</span>
-                <span className="text-[9px] text-slate-400 font-medium ml-auto">(escolhido automático)</span>
+                <span className="font-extrabold text-slate-800 dark:text-slate-100">1 Ministro</span>
+                <span className="text-[9px] text-slate-400 dark:text-slate-400 font-medium ml-auto">(escolhido automático)</span>
               </label>
 
-              <div className="flex items-center justify-between col-span-2 py-2 border-b border-slate-200/60">
-                <span className="flex items-center gap-1.5 font-bold text-slate-700">
+              <div className="flex items-center justify-between col-span-2 py-2 border-b border-slate-200/60 dark:border-slate-700">
+                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
                   <Mic2 size={14} className="text-emerald-500 shrink-0" />
                   <span>Vocais:</span>
                 </span>
                 <select 
                   value={requirements.vocalsCount}
                   onChange={(e) => setRequirements(r => ({ ...r, vocalsCount: parseInt(e.target.value) }))}
-                  className="bg-white border border-slate-200 px-2.5 py-1 rounded-xl text-xs font-black text-emerald-700 focus:ring-emerald-500 outline-none shadow-xs"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-black text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 outline-none shadow-xs"
                 >
                   <option value={0}>0 Vocais</option>
                   <option value={1}>1 Vocal</option>
@@ -615,24 +615,24 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 </select>
               </div>
 
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" checked={requirements.keys} onChange={(e) => setRequirements(r => ({ ...r, keys: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={requirements.keys} onChange={(e) => setRequirements(r => ({ ...r, keys: e.target.checked }))} className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" />
                 Teclado
               </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" checked={requirements.guitar} onChange={(e) => setRequirements(r => ({ ...r, guitar: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={requirements.guitar} onChange={(e) => setRequirements(r => ({ ...r, guitar: e.target.checked }))} className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" />
                 Violão
               </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" checked={requirements.electricGuitar} onChange={(e) => setRequirements(r => ({ ...r, electricGuitar: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={requirements.electricGuitar} onChange={(e) => setRequirements(r => ({ ...r, electricGuitar: e.target.checked }))} className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" />
                 Guitarra
               </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" checked={requirements.bass} onChange={(e) => setRequirements(r => ({ ...r, bass: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300 cursor-pointer">
+                <input type="checkbox" checked={requirements.bass} onChange={(e) => setRequirements(r => ({ ...r, bass: e.target.checked }))} className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" />
                 Baixo
               </label>
-              <label className="flex items-center gap-1.5 font-bold text-slate-600 cursor-pointer col-span-2">
-                <input type="checkbox" checked={requirements.drums} onChange={(e) => setRequirements(r => ({ ...r, drums: e.target.checked }))} className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+              <label className="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-300 cursor-pointer col-span-2">
+                <input type="checkbox" checked={requirements.drums} onChange={(e) => setRequirements(r => ({ ...r, drums: e.target.checked }))} className="rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" />
                 Bateria
               </label>
             </div>
@@ -662,7 +662,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 return (
                   <div 
                     key={draft.id} 
-                    className={`bg-white rounded-2xl border transition-all ${isOpen ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/15' : 'border-slate-100 hover:border-slate-300 shadow-sm'}`}
+                    className={`bg-white dark:bg-slate-900 rounded-2xl border transition-all ${isOpen ? 'border-emerald-500 shadow-md ring-1 ring-emerald-500/15' : 'border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'}`}
                   >
                     {/* Header trigger */}
                     <div 
@@ -670,28 +670,28 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                       onClick={() => setExpandedDraftId(isOpen ? null : draft.id)}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="bg-emerald-50 text-emerald-700 p-2.5 rounded-xl">
+                        <div className="bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 p-2.5 rounded-xl">
                           <CalendarIcon size={18} />
                         </div>
                         <div>
-                          <p className="font-extrabold text-slate-800 text-sm">{formatLatinDate(draft.date) || 'Sem data'}</p>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">{draft.serviceType}</p>
+                          <p className="font-extrabold text-slate-800 dark:text-white text-sm">{formatLatinDate(draft.date) || 'Sem data'}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wide">{draft.serviceType}</p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
-                        <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2 py-0.5 rounded-lg">
+                        <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-black px-2 py-0.5 rounded-lg">
                           {draft.availableMemberIds.length} Disponíveis
                         </span>
                         <button 
                           onClick={() => handleRemoveDraft(draft.id)}
-                          className="p-1.5 text-slate-300 hover:text-red-500 rounded-lg hover:bg-slate-50 transition-colors"
+                          className="p-1.5 text-slate-300 hover:text-red-500 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                         >
                           <Trash2 size={14} />
                         </button>
                         <button 
                           onClick={() => setExpandedDraftId(isOpen ? null : draft.id)}
-                          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg cursor-pointer"
                         >
                           {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                         </button>
@@ -700,23 +700,23 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
                     {/* Expandable Availability selector panel */}
                     {isOpen && (
-                      <div className="p-5 border-t border-slate-50 space-y-4 animate-in fade-in duration-200">
+                      <div className="p-5 border-t border-slate-50 dark:border-slate-800 space-y-4 animate-in fade-in duration-200">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="space-y-1">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ajustar Data</label>
+                            <label className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Ajustar Data</label>
                             <input 
                               type="date" 
                               value={draft.date}
                               onChange={(e) => handleUpdateDraft(draft.id, 'date', e.target.value)}
-                              className="w-full px-4 py-2 text-sm rounded-xl bg-slate-50 border border-slate-200 outline-none font-bold"
+                              className="w-full px-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none font-bold"
                             />
                           </div>
                           <div className="space-y-1">
-                            <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ajustar Tipo/Período</label>
+                            <label className="text-[9px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Ajustar Tipo/Período</label>
                             <select 
                               value={draft.serviceType}
                               onChange={(e) => handleUpdateDraft(draft.id, 'serviceType', e.target.value)}
-                              className="w-full px-4 py-2 text-sm rounded-xl bg-slate-50 border border-slate-200 outline-none font-bold"
+                              className="w-full px-4 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none font-bold"
                             >
                               <option>Domingo/semana</option>
                               <option>Domingo (Noite)</option>
@@ -728,23 +728,23 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                         </div>
 
                         <div className="space-y-2">
-                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-50 pb-2">
-                            <label className="text-[9px] font-black text-emerald-800 uppercase tracking-widest">
+                          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-slate-50 dark:border-slate-800 pb-2">
+                            <label className="text-[9px] font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-widest">
                               Selecione Disponibilidade para o dia
                             </label>
                             <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400">Grupo filtrado:</span>
+                              <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-400">Grupo filtrado:</span>
                               <div className="flex gap-2">
                                 <button 
                                   onClick={() => handleSetAllAvailability(draft.id, true)}
-                                  className="text-[10px] font-black text-emerald-600 hover:underline uppercase tracking-tight"
+                                  className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 hover:underline uppercase tracking-tight cursor-pointer"
                                 >
                                   Marcar Todos
                                 </button>
-                                <span className="text-[9px] text-slate-300">|</span>
+                                <span className="text-[9px] text-slate-300 dark:text-slate-600">|</span>
                                 <button 
                                   onClick={() => handleSetAllAvailability(draft.id, false)}
-                                  className="text-[10px] font-black text-red-500 hover:underline uppercase tracking-tight"
+                                  className="text-[10px] font-black text-red-500 hover:underline uppercase tracking-tight cursor-pointer"
                                 >
                                   Desmarcar Todos
                                 </button>
@@ -753,7 +753,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                           </div>
 
                           {/* Quick Role Select Filters */}
-                          <div className="flex flex-wrap gap-1.5 py-1 border-b border-slate-50">
+                          <div className="flex flex-wrap gap-1.5 py-1 border-b border-slate-50 dark:border-slate-800">
                             {[
                               { label: 'Todos', value: 'all' },
                               { label: '🎤 Ministro', value: Role.MINISTER },
@@ -770,10 +770,10 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                                   key={roleOpt.value}
                                   type="button"
                                   onClick={() => setAvailabilityRoleFilter(roleOpt.value)}
-                                  className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all border ${
+                                  className={`px-3 py-1 text-[9px] font-black uppercase rounded-lg transition-all border cursor-pointer ${
                                     isSel 
                                       ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm' 
-                                      : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 hover:border-slate-300'
+                                      : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300'
                                   }`}
                                 >
                                   {roleOpt.label}
@@ -798,7 +798,11 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                                     key={m.id}
                                     type="button"
                                     onClick={() => handleToggleMemberAvailability(draft.id, m.id)}
-                                    className={`px-3 py-2 rounded-xl text-left border-2 transition-all flex flex-col justify-center select-none ${isChecked ? 'bg-emerald-50/50 border-emerald-500 text-emerald-900 shadow-sm' : 'bg-slate-50/50 border-slate-100 text-slate-400 hover:border-slate-300'}`}
+                                    className={`px-3 py-2 rounded-xl text-left border-2 transition-all flex flex-col justify-center select-none cursor-pointer ${
+                                      isChecked 
+                                        ? 'bg-emerald-50/50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-sm' 
+                                        : 'bg-slate-50/50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600'
+                                    }`}
                                   >
                                     <span className="text-xs font-bold leading-tight">{m.name}</span>
                                     <span className="text-[9px] opacity-85 mt-0.5">{getMemberRolesLabel(m) || 'Outro'}</span>
@@ -812,7 +816,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                               }
                               return m.roles.includes(availabilityRoleFilter as Role);
                             }).length === 0 && (
-                              <div className="col-span-full py-8 text-center text-[10px] uppercase font-black text-slate-300 tracking-wider">
+                              <div className="col-span-full py-8 text-center text-[10px] uppercase font-black text-slate-300 dark:text-slate-600 tracking-wider">
                                 Nenhum integrante ativo com esta função.
                               </div>
                             )}
@@ -828,7 +832,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
             <div className="pt-4 flex justify-center">
               <button
                 onClick={handleRunAutoScheduler}
-                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-3xl text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/10 flex items-center gap-3 hover:scale-105"
+                className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-3xl text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/10 flex items-center gap-3 hover:scale-105 cursor-pointer"
               >
                 <Wand2 size={18} /> Criar Escalas Automáticas
               </button>
@@ -837,21 +841,21 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
 
           {/* RIGHT: Production outcome / Adjust generated scales */}
           <div className="lg:col-span-5 space-y-4">
-            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Preview das Escalas Geradas</h4>
+            <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest px-2">Preview das Escalas Geradas</h4>
             
             {generated.length > 0 ? (
               <div className="space-y-4">
-                <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-3xl flex justify-between items-center shadow-sm">
+                <div className="bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-100 dark:border-emerald-800 p-4 rounded-3xl flex justify-between items-center shadow-sm">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="text-emerald-600" size={20} />
+                    <CheckCircle2 className="text-emerald-600 dark:text-emerald-400" size={20} />
                     <div>
-                      <p className="text-xs font-black text-emerald-800 uppercase tracking-tight">Equilíbrio Concluido</p>
-                      <p className="text-[9px] text-emerald-600 font-bold uppercase tracking-wider">{generated.length} Escalas preparadas</p>
+                      <p className="text-xs font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-tight">Equilíbrio Concluido</p>
+                      <p className="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold uppercase tracking-wider">{generated.length} Escalas preparadas</p>
                     </div>
                   </div>
                   <button
                     onClick={handleExportToMainSchedules}
-                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-md animate-bounce"
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all flex items-center gap-2 shadow-md animate-bounce cursor-pointer"
                   >
                     Exportar <ArrowRight size={14} />
                   </button>
@@ -860,15 +864,15 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 <div className="space-y-4 max-h-[550px] overflow-y-auto pr-2 no-scrollbar">
                   {generated.map((gen, gIdx) => {
                     return (
-                      <div key={gen.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-4 relative overflow-hidden">
+                      <div key={gen.id} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm space-y-4 relative overflow-hidden transition-colors">
                         <div className="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500/70" />
                         
-                        <div className="flex justify-between items-center pb-2 border-b border-slate-50">
+                        <div className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-slate-800">
                           <div>
-                            <p className="font-extrabold text-slate-800 text-xs">{formatLatinDate(gen.date)}</p>
-                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{gen.serviceType}</p>
+                            <p className="font-extrabold text-slate-800 dark:text-white text-xs">{formatLatinDate(gen.date)}</p>
+                            <p className="text-[9px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider">{gen.serviceType}</p>
                           </div>
-                          <span className="text-[9px] font-black text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">
+                          <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
                             Escala #{gIdx + 1}
                           </span>
                         </div>
@@ -897,19 +901,19 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                             );
 
                             return (
-                              <div key={role} className="flex items-center justify-between text-xs py-1 hover:bg-slate-50/50 rounded-xl px-2">
+                              <div key={role} className="flex items-center justify-between text-xs py-1 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 rounded-xl px-2">
                                 <div className="flex items-center gap-2">
                                   {getRoleIcon(role)}
-                                  <span className="font-bold text-slate-500 uppercase text-[10px] tracking-tight">{role}</span>
+                                  <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-tight">{role}</span>
                                 </div>
                                 <select
                                   value={currentMemberId}
                                   onChange={(e) => handleUpdateAssignmentPrv(gen.id, role, e.target.value)}
-                                  className="text-xs font-extrabold text-slate-800 border-0 bg-transparent py-0 outline-none focus:ring-0 max-w-[150px] text-right"
+                                  className="text-xs font-extrabold text-slate-800 dark:text-white border-0 bg-transparent py-0 outline-none focus:ring-0 max-w-[150px] text-right cursor-pointer"
                                 >
-                                  <option value="">-- A definir --</option>
+                                  <option value="" className="dark:bg-slate-900">-- A definir --</option>
                                   {candidates.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                    <option key={c.id} value={c.id} className="dark:bg-slate-900">{c.name}</option>
                                   ))}
                                 </select>
                               </div>
@@ -930,21 +934,18 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                             );
 
                             return (
-                              <div key={`backing-${index}`} className="flex items-center justify-between text-xs py-1 hover:bg-slate-50/50 rounded-xl px-2">
+                              <div key={`backing-${index}`} className="flex items-center justify-between text-xs py-1 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 rounded-xl px-2">
                                 <div className="flex items-center gap-2">
                                   {getRoleIcon('Vocal')}
-                                  <span className="font-bold text-slate-500 uppercase text-[10px] tracking-tight">{`Backing Vocal ${index + 1}`}</span>
+                                  <span className="font-bold text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-tight">{`Backing Vocal ${index + 1}`}</span>
                                 </div>
                                 <select
                                   value={currentMemberId}
                                   onChange={(e) => {
-                                    // Manually update backup position
-                                    // Remove old position, map or add as needed
                                     const oldVocId = assigned ? assigned.memberId : null;
                                     let newAssigns = [...gen.assignments];
                                     
                                     if (oldVocId) {
-                                      // Find specific item and update
                                       let foundCount = 0;
                                       newAssigns = newAssigns.map(as => {
                                         if (as.role === 'Vocal') {
@@ -960,14 +961,14 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                                       newAssigns.push({ role: 'Vocal', memberId: e.target.value });
                                     }
                                     
-                                    handleUpdateAssignmentPrv(gen.id, 'Vocal-Rebuild', 'trigger-re-map'); // trigger update helper
+                                    handleUpdateAssignmentPrv(gen.id, 'Vocal-Rebuild', 'trigger-re-map');
                                     setGenerated(prev => prev.map(s => s.id === gen.id ? { ...s, assignments: newAssigns.filter(a => a.memberId !== '') } : s));
                                   }}
-                                  className="text-xs font-extrabold text-slate-800 border-0 bg-transparent py-0 outline-none focus:ring-0 max-w-[150px] text-right"
+                                  className="text-xs font-extrabold text-slate-800 dark:text-white border-0 bg-transparent py-0 outline-none focus:ring-0 max-w-[150px] text-right cursor-pointer"
                                 >
-                                  <option value="">-- A definir --</option>
+                                  <option value="" className="dark:bg-slate-900">-- A definir --</option>
                                   {candidates.map(c => (
-                                    <option key={c.id} value={c.id}>{c.name}</option>
+                                    <option key={c.id} value={c.id} className="dark:bg-slate-900">{c.name}</option>
                                   ))}
                                 </select>
                               </div>
@@ -980,8 +981,8 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-[2.5rem] border border-dashed border-slate-200 p-12 text-center text-slate-400 font-bold uppercase tracking-widest text-xs">
-                <Wand2 size={36} className="mx-auto mb-4 text-emerald-100 animate-pulse" />
+              <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest text-xs">
+                <Wand2 size={36} className="mx-auto mb-4 text-emerald-100 dark:text-emerald-950 animate-pulse" />
                 Configure as datas e disponibilidades ao lado, depois clique em "Criar Escalas Automáticas" para ver o resultado equilibrado aqui.
               </div>
             )}
@@ -991,10 +992,10 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
       )}
 
       {drafts.length === 0 && (
-        <div className="bg-white rounded-[2.5rem] border-2 border-dashed border-slate-100 p-16 text-center">
-          <CalendarIcon size={48} className="text-slate-200 mx-auto mb-4" />
-          <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum rascunho de data configurado</p>
-          <p className="text-xs text-slate-300 uppercase tracking-widest mt-2">Escolha uma opção no painel de configuração para começar</p>
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border-2 border-dashed border-slate-100 dark:border-slate-800 p-16 text-center">
+          <CalendarIcon size={48} className="text-slate-200 dark:text-slate-700 mx-auto mb-4" />
+          <p className="text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum rascunho de data configurado</p>
+          <p className="text-xs text-slate-300 dark:text-slate-600 uppercase tracking-widest mt-2">Escolha uma opção no painel de configuração para começar</p>
         </div>
       )}
 

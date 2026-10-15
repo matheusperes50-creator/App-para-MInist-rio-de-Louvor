@@ -19,9 +19,12 @@ import {
   CalendarCheck,
   Users,
   Music,
-  CalendarDays
+  CalendarDays,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Member, Song, Schedule, AttendanceEvent } from '../types';
+import { useTheme } from '../themeContext';
 
 interface SettingsProps {
   onSync: (forceReplace?: boolean) => Promise<void>;
@@ -110,6 +113,8 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
+  const { isDark, toggleTheme, setTheme } = useTheme();
+
   return (
     <div className="space-y-8 pb-16 max-w-4xl mx-auto animate-in fade-in duration-300">
       {/* Toast Feedback */}
@@ -121,17 +126,17 @@ export const Settings: React.FC<SettingsProps> = ({
       )}
 
       {/* Cabeçalho */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 md:p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-xs transition-colors">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-sm border border-emerald-200/50 dark:border-emerald-800/50">
             <SettingsIcon size={28} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Configurações do Sistema
             </h1>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Gestão de dados, sincronização com a planilha Google e cópias de segurança
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Aparência do aplicativo, gestão de dados, sincronização com a planilha Google e cópias de segurança
             </p>
           </div>
         </div>
@@ -139,8 +144,8 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className="flex items-center gap-2 self-start sm:self-auto">
           <span className={`px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border flex items-center gap-2 ${
             hasFetchedFromCloud 
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-              : 'bg-amber-50 text-amber-700 border-amber-200'
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800' 
+              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
           }`}>
             <Cloud size={14} />
             {hasFetchedFromCloud ? 'Planilha Conectada' : 'Modo Offline'}
@@ -149,46 +154,129 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {restoreFeedback && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 shadow-xs">
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center gap-2 shadow-xs">
           <CheckCircle2 size={16} /> {restoreFeedback}
         </div>
       )}
 
+      {/* SEÇÃO 0: APARÊNCIA E MODO NOTURNO (TELA ESCURA) */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+              isDark ? 'bg-amber-400/20 text-amber-400' : 'bg-amber-50 text-amber-600'
+            }`}>
+              {isDark ? <Moon size={20} /> : <Sun size={20} />}
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 dark:text-white">
+                Aparência & Modo Noturno (Tela Escura)
+              </h2>
+              <p className="text-xs text-slate-400 dark:text-slate-400">
+                Alterne entre o tema claro e o tema escuro confortável para os cultos e ensaios
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={toggleTheme}
+            className={`px-4 py-2.5 rounded-2xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 border transition-all cursor-pointer shadow-xs self-start sm:self-auto ${
+              isDark 
+                ? 'bg-slate-800 text-amber-300 border-slate-700 hover:bg-slate-700' 
+                : 'bg-slate-900 text-white border-slate-800 hover:bg-black'
+            }`}
+          >
+            {isDark ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-300" />}
+            <span>{isDark ? 'Alternar p/ Claro' : 'Alternar p/ Noturno'}</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div 
+            onClick={() => setTheme('light')}
+            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between gap-3 ${
+              !isDark 
+                ? 'border-emerald-500 bg-emerald-50/50 ring-2 ring-emerald-500/20 shadow-xs' 
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700 shrink-0 shadow-xs">
+                <Sun size={20} className="text-amber-500" />
+              </div>
+              <div>
+                <span className="font-black text-sm text-slate-900 dark:text-white block">Modo Claro</span>
+                <span className="text-xs text-slate-400">Fundo claro padrão</span>
+              </div>
+            </div>
+            {!isDark && (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <Check size={12} /> Ativo
+              </span>
+            )}
+          </div>
+
+          <div 
+            onClick={() => setTheme('dark')}
+            className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between gap-3 ${
+              isDark 
+                ? 'border-emerald-500 bg-slate-800/80 ring-2 ring-emerald-500/20 shadow-xs' 
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:border-slate-300 dark:hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-amber-300 shrink-0 shadow-xs">
+                <Moon size={20} className="text-amber-300" />
+              </div>
+              <div>
+                <span className="font-black text-sm text-slate-900 dark:text-white block">Modo Noturno (Escuro)</span>
+                <span className="text-xs text-slate-400">Tela escura e descansada</span>
+              </div>
+            </div>
+            {isDark && (
+              <span className="px-2.5 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                <Check size={12} /> Ativo
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* SEÇÃO 1: BANCO DE DADOS & PLANILHA GOOGLE */}
-      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
             <FileSpreadsheet size={20} />
           </div>
           <div>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-slate-900 dark:text-white">
               Banco de Dados Google Sheets
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 dark:text-slate-400">
               Sincronização em tempo real com a planilha mestre do ministério
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-            <Users size={16} className="mx-auto text-emerald-600 mb-1" />
-            <span className="text-xl font-black text-slate-900 block">{members.length}</span>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <Users size={16} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
+            <span className="text-xl font-black text-slate-900 dark:text-white block">{members.length}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Integrantes</span>
           </div>
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-            <Music size={16} className="mx-auto text-emerald-600 mb-1" />
-            <span className="text-xl font-black text-slate-900 block">{songs.length}</span>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <Music size={16} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
+            <span className="text-xl font-black text-slate-900 dark:text-white block">{songs.length}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Músicas</span>
           </div>
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-            <CalendarDays size={16} className="mx-auto text-emerald-600 mb-1" />
-            <span className="text-xl font-black text-slate-900 block">{schedules.length}</span>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <CalendarDays size={16} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
+            <span className="text-xl font-black text-slate-900 dark:text-white block">{schedules.length}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Escalas</span>
           </div>
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-center">
-            <CalendarCheck size={16} className="mx-auto text-emerald-600 mb-1" />
-            <span className="text-xl font-black text-slate-900 block">{attendanceEvents.length}</span>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 text-center">
+            <CalendarCheck size={16} className="mx-auto text-emerald-600 dark:text-emerald-400 mb-1" />
+            <span className="text-xl font-black text-slate-900 dark:text-white block">{attendanceEvents.length}</span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Enquetes</span>
           </div>
         </div>
@@ -210,32 +298,32 @@ export const Settings: React.FC<SettingsProps> = ({
               }
             }}
             disabled={isSyncing}
-            className="py-3.5 px-5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="py-3.5 px-5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <Database size={16} className="text-slate-500" />
+            <Database size={16} className="text-slate-500 dark:text-slate-400" />
             Forçar Restauração da Planilha
           </button>
         </div>
 
-        <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 text-xs text-slate-600 leading-relaxed space-y-1">
-          <p className="font-bold text-emerald-900 flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-emerald-600" />
+        <div className="p-4 bg-emerald-50/50 dark:bg-emerald-950/30 rounded-2xl border border-emerald-100 dark:border-emerald-800 text-xs text-slate-600 dark:text-slate-300 leading-relaxed space-y-1">
+          <p className="font-bold text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+            <ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
             Histórico Automático do Google Sheets
           </p>
           <p>
-            O Google Sheets salva o histórico completo de todas as alterações feitas. Se você precisar reverter alterações antigas na planilha, basta abrir sua planilha no Google Drive e clicar em <strong>Arquivo &gt; Histórico de versões</strong> (<kbd className="bg-white px-1.5 py-0.5 rounded border text-[10px]">Ctrl + Alt + Shift + H</kbd>).
+            O Google Sheets salva o histórico completo de todas as alterações feitas. Se você precisar reverter alterações antigas na planilha, basta abrir sua planilha no Google Drive e clicar em <strong>Arquivo &gt; Histórico de versões</strong> (<kbd className="bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[10px]">Ctrl + Alt + Shift + H</kbd>).
           </p>
         </div>
       </div>
 
       {/* SEÇÃO 2: BACKUP E RESTAURAÇÃO EM ARQUIVO (JSON) */}
-      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-6 transition-colors">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 flex items-center justify-center">
             <Download size={20} />
           </div>
           <div>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-slate-900 dark:text-white">
               Cópias de Segurança (Backup Local)
             </h2>
             <p className="text-xs text-slate-400">
@@ -245,26 +333,26 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between space-y-4">
+          <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-4">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 mb-1">Exportar Backup</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">Exportar Backup</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Baixa um arquivo com todos os integrantes, repertório, escalas e presenças salvas.
               </p>
             </div>
             <button
               onClick={onExportBackup}
-              className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 bg-slate-900 hover:bg-black dark:bg-slate-800 dark:hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Download size={14} />
               Baixar Arquivo JSON
             </button>
           </div>
 
-          <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col justify-between space-y-4">
+          <div className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col justify-between space-y-4">
             <div>
-              <h3 className="font-bold text-sm text-slate-900 mb-1">Restaurar Backup</h3>
-              <p className="text-xs text-slate-500">
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">Restaurar Backup</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Envie um arquivo JSON salvo anteriormente para restaurar todas as informações no aplicativo.
               </p>
             </div>
@@ -278,9 +366,9 @@ export const Settings: React.FC<SettingsProps> = ({
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 px-4 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Upload size={14} className="text-emerald-600" />
+                <Upload size={14} className="text-emerald-600 dark:text-emerald-400" />
                 Carregar Arquivo JSON
               </button>
             </div>
@@ -289,13 +377,13 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       {/* SEÇÃO 3: LINK DIRETO DA ENQUETE DE PRESENÇA */}
-      <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-xs space-y-4">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+        <div className="flex items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-400 flex items-center justify-center">
             <Link2 size={20} />
           </div>
           <div>
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-black text-slate-900 dark:text-white">
               Link Direto da Presença para os Participantes
             </h2>
             <p className="text-xs text-slate-400">
@@ -304,8 +392,8 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="font-mono text-xs text-slate-600 truncate bg-white px-3 py-2 rounded-xl border border-slate-200 flex-1">
+        <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="font-mono text-xs text-slate-600 dark:text-slate-300 truncate bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex-1">
             {getDirectAttendanceUrl()}
           </div>
 
@@ -318,7 +406,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </button>
             <button
               onClick={handleShareDirectLink}
-              className="p-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl transition-all shadow-xs cursor-pointer"
+              className="p-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl transition-all shadow-xs cursor-pointer"
               title="Compartilhar"
             >
               <Share2 size={16} />
@@ -329,14 +417,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* SEÇÃO 4: SENHA DE ADMINISTRADOR */}
       {isAdmin && (
-        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 flex items-center justify-center">
                 <Key size={20} />
               </div>
               <div>
-                <h2 className="text-base font-black text-slate-900">
+                <h2 className="text-base font-black text-slate-900 dark:text-white">
                   Senha do Administrador
                 </h2>
                 <p className="text-xs text-slate-400">
@@ -347,7 +435,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
             <button
               onClick={() => setShowPassChange(!showPassChange)}
-              className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              className="text-xs font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
             >
               {showPassChange ? 'Fechar' : 'Alterar Senha'}
             </button>
@@ -363,7 +451,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   value={newAdminPass}
                   onChange={(e) => setNewAdminPass(e.target.value.replace(/\D/g, ''))}
                   placeholder="Nova senha (4 dígitos)"
-                  className="bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-xl py-3 px-4 font-bold text-sm tracking-widest outline-none flex-1"
+                  className="bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 focus:border-emerald-500 rounded-xl py-3 px-4 font-bold text-sm tracking-widest text-slate-900 dark:text-white outline-none flex-1"
                 />
                 <button
                   type="submit"
@@ -374,7 +462,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 </button>
               </div>
               {passFeedback && (
-                <p className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                   <Check size={14} /> {passFeedback}
                 </p>
               )}
@@ -385,10 +473,10 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* SEÇÃO 5: RESTAURAÇÃO DE EMERGÊNCIA */}
       {isAdmin && (
-        <div className="bg-white rounded-[2.5rem] p-6 md:p-8 border border-slate-100 shadow-xs space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <RotateCcw size={18} className="text-rose-500" />
                 Restauração de Emergência (Dados Padrão PIBJE)
               </h2>
@@ -403,7 +491,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   onRestoreDefaults();
                 }
               }}
-              className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold uppercase tracking-wider transition-all self-start sm:self-auto cursor-pointer"
+              className="px-4 py-2.5 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all self-start sm:self-auto cursor-pointer"
             >
               Restaurar Padrão PIBJE
             </button>

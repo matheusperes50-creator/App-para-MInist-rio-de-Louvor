@@ -171,14 +171,14 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-900">Look & Style</h2>
-          <p className="text-slate-500 font-medium">Definição visual para as escalas.</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Look & Style</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Definição visual para as escalas.</p>
         </div>
         <div className="flex gap-2">
           <button 
             onClick={onSync}
             disabled={isSyncing}
-            className="p-3 bg-white border border-slate-200 rounded-2xl text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm"
             title="Sincronizar dados"
           >
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
@@ -186,7 +186,7 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
           {isAdmin && (
             <button 
               onClick={openAddModal}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs uppercase tracking-widest"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 transition-all shadow-lg text-xs uppercase tracking-widest cursor-pointer"
             >
               <Plus size={18} />
               Novo Look
@@ -196,33 +196,33 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
       </header>
 
       <div className="relative group max-w-md">
-        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
+        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500 group-focus-within:text-emerald-500 transition-colors" size={20} />
         <input 
           type="text" 
           placeholder="Buscar por título, cor ou descrição..." 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
-          className="w-full pl-16 pr-8 py-4 rounded-2xl bg-white border border-slate-100 focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg" 
+          className="w-full pl-16 pr-8 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg placeholder-slate-400" 
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {filteredStyles.map((style) => (
-          <div key={style.id} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group overflow-hidden flex flex-col">
-            <div className="aspect-video w-full bg-slate-100 relative overflow-hidden">
+          <div key={style.id} className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all group overflow-hidden flex flex-col">
+            <div className="aspect-video w-full bg-slate-100 dark:bg-slate-800 relative overflow-hidden">
               {style.imageUrl ? (
                 <img src={style.imageUrl} alt={style.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-slate-300">
+                <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600">
                   <Shirt size={48} />
                 </div>
               )}
               {isAdmin && (
                 <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => openEditModal(style)} className="p-2 bg-white/90 backdrop-blur-sm text-slate-600 rounded-xl shadow-lg hover:text-emerald-600 transition-colors">
+                  <button onClick={() => openEditModal(style)} className="p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-slate-600 dark:text-slate-300 rounded-xl shadow-lg hover:text-emerald-600 transition-colors cursor-pointer">
                     <Edit2 size={16} />
                   </button>
-                  <button onClick={() => removeStyle(style.id)} className="p-2 bg-white/90 backdrop-blur-sm text-slate-600 rounded-xl shadow-lg hover:text-red-600 transition-colors">
+                  <button onClick={() => removeStyle(style.id)} className="p-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-slate-600 dark:text-slate-300 rounded-xl shadow-lg hover:text-red-600 transition-colors cursor-pointer">
                     <Trash2 size={16} />
                   </button>
                 </div>
@@ -232,9 +232,9 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
             <div className="p-6 flex-1 flex flex-col gap-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h4 className="font-black text-xl text-slate-800 leading-tight">{style.title}</h4>
+                  <h4 className="font-black text-xl text-slate-800 dark:text-white leading-tight">{style.title}</h4>
                   {style.date && (
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1 mt-1">
+                    <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1 mt-1">
                       <Calendar size={10} /> {new Date(style.date + 'T00:00:00').toLocaleDateString('pt-BR')}
                     </p>
                   )}
@@ -248,13 +248,13 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
                     const hexColor = foundColor ? foundColor.hex : (color.startsWith('#') ? color : undefined);
                     
                     return (
-                      <div key={i} className="flex items-center gap-1.5 bg-slate-50 border border-slate-100 pl-1.5 pr-3 py-1 rounded-full shadow-sm">
+                      <div key={i} className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 pl-1.5 pr-3 py-1 rounded-full shadow-sm">
                         {hexColor ? (
-                          <div className="w-4 h-4 rounded-full border border-white shadow-sm" style={{ backgroundColor: hexColor }} />
+                          <div className="w-4 h-4 rounded-full border border-white/50 shadow-sm" style={{ backgroundColor: hexColor }} />
                         ) : (
                           <Palette size={12} className="text-emerald-500" />
                         )}
-                        <span className="text-[10px] font-black uppercase text-slate-600 tracking-tight">{color}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 tracking-tight">{color}</span>
                       </div>
                     );
                   })}
@@ -262,7 +262,7 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
               )}
 
               {style.description && (
-                <p className="text-sm text-slate-500 font-medium line-clamp-3 italic">
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-3 italic">
                   "{style.description}"
                 </p>
               )}
@@ -271,8 +271,8 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
         ))}
 
         {filteredStyles.length === 0 && (
-          <div className="col-span-full py-24 text-center bg-white rounded-[2.5rem] border border-slate-100">
-            <div className="flex flex-col items-center gap-3 text-slate-200">
+          <div className="col-span-full py-24 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+            <div className="flex flex-col items-center gap-3 text-slate-200 dark:text-slate-700">
               <Shirt size={64} />
               <p className="font-bold uppercase tracking-widest text-xs">Nenhum look cadastrado</p>
             </div>
@@ -282,13 +282,13 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
 
       {showModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                <Palette className="text-emerald-600" size={24} />
+              <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                <Palette className="text-emerald-600 dark:text-emerald-400" size={24} />
                 {editingId ? 'Editar Look' : 'Novo Look'}
               </h3>
-              <button onClick={closeModal} className="p-2 text-slate-300 hover:text-slate-600">
+              <button onClick={closeModal} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <X size={24} />
               </button>
             </div>
@@ -296,7 +296,7 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
             <form onSubmit={saveStyle} className="space-y-6">
               <div className="flex flex-col items-center gap-4">
                 <div className="relative group w-full aspect-video">
-                  <div className="w-full h-full rounded-2xl bg-slate-50 border-2 border-slate-100 overflow-hidden flex items-center justify-center transition-all group-hover:border-emerald-500">
+                  <div className="w-full h-full rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 overflow-hidden flex items-center justify-center transition-all group-hover:border-emerald-500">
                     {imageUrl ? (
                       <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
@@ -312,42 +312,42 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Título do Look</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Título do Look</label>
                 <input 
                   type="text" 
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)} 
-                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
                   placeholder="Ex: Culto de Celebração - Tons Pastéis" 
                   required 
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Data Prevista (Opcional)</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Data Prevista (Opcional)</label>
                 <input 
                   type="date" 
                   value={date} 
                   onChange={(e) => setDate(e.target.value)} 
-                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-lg transition-all" 
                 />
               </div>
 
               <div className="space-y-3">
                 <div className="flex justify-between items-center ml-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paleta de Cores</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">Paleta de Cores</label>
                   {colors.length > 0 && (
                     <button 
                       type="button" 
                       onClick={() => setColors([])}
-                      className="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors flex items-center gap-1"
+                      className="text-[9px] font-black text-red-400 hover:text-red-600 uppercase tracking-widest transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 size={10} /> Limpar Paleta
                     </button>
                   )}
                 </div>
                 
-                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3 p-4 bg-slate-50 rounded-3xl border-2 border-slate-100">
+                <div className="grid grid-cols-5 sm:grid-cols-6 gap-3 p-4 bg-slate-50 dark:bg-slate-800/80 rounded-3xl border-2 border-slate-100 dark:border-slate-700">
                   {PREDEFINED_COLORS.map((c) => (
                     <button
                       key={c.name}
@@ -359,10 +359,10 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
                           removeColor(c.name);
                         }
                       }}
-                      className={`flex flex-col items-center gap-1.5 transition-all hover:scale-110`}
+                      className={`flex flex-col items-center gap-1.5 transition-all hover:scale-110 cursor-pointer`}
                     >
                       <div 
-                        className={`w-10 h-10 rounded-full border-2 shadow-sm relative flex items-center justify-center ${colors.includes(c.name) ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-white'}`}
+                        className={`w-10 h-10 rounded-full border-2 shadow-sm relative flex items-center justify-center ${colors.includes(c.name) ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-white/50'}`}
                         style={{ backgroundColor: c.hex }}
                       >
                         {colors.includes(c.name) && (
@@ -371,7 +371,7 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
                           </div>
                         )}
                       </div>
-                      <span className={`text-[8px] font-black uppercase tracking-tighter ${colors.includes(c.name) ? 'text-emerald-600' : 'text-slate-400'}`}>
+                      <span className={`text-[8px] font-black uppercase tracking-tighter ${colors.includes(c.name) ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
                         {c.name}
                       </span>
                     </button>
@@ -379,38 +379,38 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Outra Cor</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Outra Cor</label>
                   <div className="flex gap-2">
                     <input 
                       type="text" 
                       value={colorInput} 
                       onChange={(e) => setColorInput(e.target.value)} 
                       onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
-                      className="flex-1 px-6 py-3 rounded-xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-sm transition-all" 
+                      className="flex-1 px-6 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-sm transition-all" 
                       placeholder="Ex: Marsala, Ouro..." 
                     />
-                    <button type="button" onClick={addColor} className="bg-emerald-600 text-white p-3 rounded-xl hover:bg-emerald-700 transition-all shadow-md">
+                    <button type="button" onClick={addColor} className="bg-emerald-600 text-white p-3 rounded-xl hover:bg-emerald-700 transition-all shadow-md cursor-pointer">
                       <Plus size={20} />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mt-2 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 min-h-[50px]">
+                <div className="flex flex-wrap gap-2 mt-2 p-4 bg-emerald-50/50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-100 dark:border-emerald-800 min-h-[50px]">
                   {colors.length > 0 ? colors.map((color, i) => {
                     const foundColor = PREDEFINED_COLORS.find(c => c.name.toLowerCase() === color.toLowerCase());
                     const hexColor = foundColor ? foundColor.hex : (color.startsWith('#') ? color : undefined);
 
                     return (
-                      <span key={i} className="px-3 py-1.5 bg-white shadow-sm border border-emerald-200 text-emerald-700 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 animate-in zoom-in duration-200">
+                      <span key={i} className="px-3 py-1.5 bg-white dark:bg-slate-800 shadow-sm border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 rounded-lg text-[10px] font-black uppercase flex items-center gap-2 animate-in zoom-in duration-200">
                         {hexColor && (
-                          <div className="w-2.5 h-2.5 rounded-full border border-slate-200" style={{ backgroundColor: hexColor }} />
+                          <div className="w-2.5 h-2.5 rounded-full border border-slate-200 dark:border-slate-600" style={{ backgroundColor: hexColor }} />
                         )}
                         {color}
-                        <button type="button" onClick={() => removeColor(color)} className="hover:text-red-500"><X size={12} /></button>
+                        <button type="button" onClick={() => removeColor(color)} className="hover:text-red-500 cursor-pointer"><X size={12} /></button>
                       </span>
                     );
                   }) : (
-                    <div className="flex items-center justify-center w-full text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em] italic">
+                    <div className="flex items-center justify-center w-full text-[10px] font-black text-emerald-300 dark:text-emerald-500 uppercase tracking-[0.2em] italic">
                       Monte sua paleta acima
                     </div>
                   )}
@@ -418,26 +418,26 @@ export const LookStyle: React.FC<LookStyleProps> = ({ styles = [], setStyles, is
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Descrição / Detalhes</label>
+                <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Descrição / Detalhes</label>
                 <textarea 
                   value={description} 
                   onChange={(e) => setDescription(e.target.value)} 
-                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-sm transition-all min-h-[100px] resize-none" 
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-sm transition-all min-h-[100px] resize-none" 
                   placeholder="Ex: Camisa branca, calça jeans escura..." 
                 />
               </div>
 
-              <div className="flex flex-col gap-2 pt-6 border-t">
+              <div className="flex flex-col gap-2 pt-6 border-t border-slate-100 dark:border-slate-800">
                 <button 
                   type="submit" 
-                  className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs"
+                  className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs cursor-pointer"
                 >
                   {editingId ? 'Atualizar Look' : 'Salvar Look'}
                 </button>
                 <button 
                   type="button" 
                   onClick={closeModal} 
-                  className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest py-2 hover:text-red-500 transition-colors"
+                  className="w-full text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest py-2 hover:text-red-500 transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

@@ -2,6 +2,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { ThemeProvider } from './themeContext';
 import './index.css';
 
 interface Props {
@@ -84,7 +85,9 @@ const root = createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <RootErrorBoundary>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </RootErrorBoundary>
   </React.StrictMode>
 );

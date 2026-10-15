@@ -13,7 +13,8 @@ import { Notes } from './components/Notes';
 import { Attendance } from './components/Attendance';
 import { Settings } from './components/Settings';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
-import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database } from 'lucide-react';
+import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database, Sun, Moon } from 'lucide-react';
+import { useTheme } from './themeContext';
 import { 
   DEFAULT_MEMBERS, 
   DEFAULT_SONGS, 
@@ -946,36 +947,57 @@ export const App: React.FC = () => {
     }
   };
 
+  const { isDark, toggleTheme } = useTheme();
+
   return (
     <Layout currentView={view} setView={setView} userRole={userRole}>
-      {/* Barra superior limpa: apenas o status da planilha conectada e o botão de sair */}
-      <div className="flex justify-between items-center gap-3 mb-4 md:mb-6">
+      {/* Barra superior limpa: status da planilha conectada, alternador de modo noturno e botão de sair */}
+      <div className="flex justify-between items-center gap-3 mb-4 md:mb-6 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${hasFetchedFromCloud ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
+          <div className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border flex items-center gap-2 transition-all ${
+            hasFetchedFromCloud 
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800' 
+              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+          }`}>
             <Cloud size={12} /> {hasFetchedFromCloud ? 'Conectado à Planilha' : 'Offline / Local'}
           </div>
 
           {isSyncing && (
-            <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+            <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
               <RefreshCw size={12} className="animate-spin" /> Sincronizando...
             </div>
           )}
           {syncStatus === 'success' && !isSyncing && (
-            <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+            <div className="flex items-center gap-1.5 text-[9px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-800">
               <CheckCircle2 size={12} /> Salvo e Sincronizado {lastSavedTimestamp ? `(${lastSavedTimestamp})` : ''}
             </div>
           )}
           {syncStatus === 'error' && !isSyncing && (
-            <div className="flex items-center gap-1.5 text-[9px] font-bold text-red-700 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+            <div className="flex items-center gap-1.5 text-[9px] font-bold text-red-700 bg-red-50 dark:bg-red-950/60 dark:text-red-300 px-2.5 py-1 rounded-full border border-red-100 dark:border-red-800">
               <AlertCircle size={12} /> Erro de conexão
             </div>
           )}
         </div>
         
-        <div>
+        <div className="flex items-center gap-2">
+          {/* Botão de Alternar Modo Noturno / Tela Escura */}
+          <button
+            onClick={toggleTheme}
+            className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-full border transition-all cursor-pointer shadow-xs ${
+              isDark 
+                ? 'bg-slate-900 border-slate-700 text-amber-300 hover:bg-slate-800 hover:border-slate-600' 
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+            title={isDark ? "Mudar para Modo Claro" : "Mudar para Modo Noturno (Tela Escura)"}
+            aria-label="Alternar modo noturno"
+          >
+            {isDark ? <Sun size={13} className="text-amber-400" /> : <Moon size={13} className="text-slate-600" />}
+            <span>{isDark ? 'Modo Claro' : 'Modo Noturno'}</span>
+          </button>
+
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 text-[9px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer px-3 py-1.5 rounded-full hover:bg-slate-100"
+            className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 dark:text-slate-500 hover:text-red-500 uppercase tracking-widest transition-colors cursor-pointer px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-900"
           >
             Sair <LogOut size={12} />
           </button>

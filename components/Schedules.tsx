@@ -705,22 +705,22 @@ export const Schedules: React.FC<SchedulesProps> = ({
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-900">Escalas</h2>
-          <p className="text-slate-500 font-medium">Gestão de louvor da igreja.</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Escalas</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Gestão de louvor da igreja.</p>
         </div>
         <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {isSelectionMode ? (
             <div className="flex gap-2 w-full md:w-auto">
                <button 
                 onClick={handleCopyMonthReport}
-                className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all"
+                className="flex-1 md:flex-none px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest hover:bg-emerald-700 transition-all cursor-pointer"
               >
                 {monthCopyFeedback ? <Check size={18} /> : <MessageCircle size={18} />}
                 COPIAR {selectedIds.size} SELECIONADAS
               </button>
               <button 
                 onClick={() => { setIsSelectionMode(false); setSelectedIds(new Set()); }}
-                className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
               >
                 CANCELAR
               </button>
@@ -728,7 +728,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
           ) : (
             <button 
               onClick={() => setIsSelectionMode(true)}
-              className="flex-1 md:flex-none p-3 bg-white text-emerald-600 border border-slate-200 rounded-2xl hover:bg-emerald-50 transition-all shadow-sm font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2"
+              className="flex-1 md:flex-none p-3 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 rounded-2xl hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer"
               title="Selecionar escalas específicas para relatório"
             >
               <CheckSquare size={18} /> Selecionar Escalas
@@ -740,14 +740,14 @@ export const Schedules: React.FC<SchedulesProps> = ({
               <button 
                 onClick={handleCopyMonthReport}
                 disabled={filteredSchedules.length === 0}
-                className={`flex-1 md:flex-none p-3 rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest border ${monthCopyFeedback ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white text-emerald-600 border-slate-200 hover:bg-emerald-50'}`}
+                className={`flex-1 md:flex-none p-3 rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest border cursor-pointer ${monthCopyFeedback ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border-slate-200 dark:border-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-800'}`}
                 title="Copiar todas as escalas visíveis para WhatsApp"
               >
                 <MessageCircle size={18} /> Relatório Completo
               </button>
               <button 
                 onClick={() => setShowExportModal(true)}
-                className="p-3 text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 rounded-2xl transition-all shadow-sm"
+                className="p-3 text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-2xl transition-all shadow-sm cursor-pointer"
                 title="Exportar para Excel"
               >
                 <FileSpreadsheet size={20} />
@@ -755,7 +755,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
               <button 
                 onClick={onSync}
                 disabled={isSyncing}
-                className="p-3 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-2xl transition-all disabled:opacity-50"
+                className="p-3 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-2xl transition-all disabled:opacity-50 cursor-pointer"
                 title="Atualizar dados da nuvem"
               >
                 <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
@@ -766,7 +766,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                     if (isAdding) resetForm();
                     setIsAdding(!isAdding);
                   }}
-                  className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg text-[10px] uppercase tracking-widest"
+                  className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center justify-center gap-2 transition-all shadow-lg text-[10px] uppercase tracking-widest cursor-pointer"
                 >
                   {isAdding ? <X size={20} /> : <Plus size={20} />}
                   {isAdding ? 'CANCELAR' : 'NOVA ESCALA'}
@@ -778,32 +778,32 @@ export const Schedules: React.FC<SchedulesProps> = ({
       </header>
 
       {saveFeedback && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-xs animate-in fade-in">
-          <Check size={16} className="text-emerald-600 shrink-0" />
+        <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold rounded-2xl flex items-center gap-2 shadow-xs animate-in fade-in">
+          <Check size={16} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
           <span>{saveFeedback}</span>
         </div>
       )}
 
-      {/* Export Modal (remains same) */}
+      {/* Export Modal */}
       {showExportModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-xl font-black text-slate-800 mb-2 uppercase tracking-tight flex items-center gap-2">
-              <FileSpreadsheet className="text-emerald-600" /> Exportar Excel
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-xl font-black text-slate-800 dark:text-white mb-2 uppercase tracking-tight flex items-center gap-2">
+              <FileSpreadsheet className="text-emerald-600 dark:text-emerald-400" /> Exportar Excel
             </h3>
-            <p className="text-xs text-slate-500 mb-6 font-medium">Escolha o período para gerar o relatório lado a lado conforme referência.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Escolha o período para gerar o relatório lado a lado conforme referência.</p>
             <div className="space-y-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Selecione o Período</label>
                 <select 
                   value={exportMonth}
                   onChange={(e) => setExportMonth(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl py-4 px-6 outline-none font-bold"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 rounded-2xl py-4 px-6 outline-none font-bold cursor-pointer"
                 >
-                  <option value="">Escolha um período...</option>
-                  <option value="all">TODAS AS ESCALAS (GERAL)</option>
+                  <option value="" className="dark:bg-slate-900">Escolha um período...</option>
+                  <option value="all" className="dark:bg-slate-900">TODAS AS ESCALAS (GERAL)</option>
                   {availableMonths.map(month => (
-                    <option key={month} value={month}>{formatMonthLabel(month).toUpperCase()}</option>
+                    <option key={month} value={month} className="dark:bg-slate-900">{formatMonthLabel(month).toUpperCase()}</option>
                   ))}
                 </select>
               </div>
@@ -811,28 +811,28 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 <button 
                   onClick={handleExportExcel}
                   disabled={!exportMonth}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download size={20} /> GERAR EXCEL
                 </button>
-                <button onClick={() => setShowExportModal(false)} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest py-2">Cancelar</button>
+                <button onClick={() => setShowExportModal(false)} className="w-full text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest py-2 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">Cancelar</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Filters (remains same) */}
+      {/* Filters */}
       {!isAdding && schedules.length > 0 && (
-        <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in duration-300 overflow-x-auto no-scrollbar">
+        <div className="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-4 animate-in fade-in duration-300 overflow-x-auto no-scrollbar transition-colors">
           <div className="flex items-center gap-2 text-slate-400 shrink-0">
             <Filter size={18} />
             <span className="text-[10px] font-black uppercase tracking-widest">Filtrar por Mês</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>TODAS</button>
+            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-emerald-200'}`}>TODAS</button>
             {availableMonths.map(month => (
-              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
+              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
             ))}
           </div>
         </div>
@@ -840,9 +840,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
       {/* Member Appearance Counts */}
       {isAdmin && schedules.length > 0 && (
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500 transition-colors">
           <div className="flex items-center gap-3 mb-4">
-            <div className="bg-emerald-100 p-2 rounded-lg text-emerald-600">
+            <div className="bg-emerald-100 dark:bg-emerald-950/60 p-2 rounded-lg text-emerald-600 dark:text-emerald-400">
               <Users size={20} />
             </div>
             <div>
@@ -871,39 +871,39 @@ export const Schedules: React.FC<SchedulesProps> = ({
         </div>
       )}
 
-      {/* Add/Edit Form (remains same) */}
+      {/* Add/Edit Form */}
       {isAdding && isAdmin && (
-        <form onSubmit={saveSchedule} className="bg-white p-8 rounded-[2.5rem] border-2 border-emerald-100 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200">
-          <h3 className="text-xl font-black text-emerald-800 uppercase tracking-tighter">{editingId ? 'Editar Escala' : 'Criar Nova Escala'}</h3>
+        <form onSubmit={saveSchedule} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border-2 border-emerald-100 dark:border-slate-800 shadow-2xl space-y-8 animate-in zoom-in-95 duration-200 transition-colors">
+          <h3 className="text-xl font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-tighter">{editingId ? 'Editar Escala' : 'Criar Nova Escala'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">DATA DO EVENTO</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold" required />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold" required />
             </div>
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">PERÍODO / TIPO</label>
-              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold">
-                <option>Domingo/semana</option>
-                <option>Domingo (Noite)</option>
-                <option>Domingo (Manhã)</option>
-                <option>Quarta-feira</option>
-                <option>Evento Especial</option>
+              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold">
+                <option className="dark:bg-slate-900">Domingo/semana</option>
+                <option className="dark:bg-slate-900">Domingo (Noite)</option>
+                <option className="dark:bg-slate-900">Domingo (Manhã)</option>
+                <option className="dark:bg-slate-900">Quarta-feira</option>
+                <option className="dark:bg-slate-900">Evento Especial</option>
               </select>
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="space-y-6">
-              <h4 className="font-black text-slate-800 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest"><Mic2 size={16} className="text-emerald-600" /> Equipe Ministerial</h4>
+              <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase text-xs tracking-widest"><Mic2 size={16} className="text-emerald-600 dark:text-emerald-400" /> Equipe Ministerial</h4>
               <div className="space-y-4">
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <label className="block text-[10px] font-black text-emerald-700 mb-2 uppercase">🎤 LÍDER(ES) / MINISTRO(S)</label>
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <label className="block text-[10px] font-black text-emerald-700 dark:text-emerald-400 mb-2 uppercase">🎤 LÍDER(ES) / MINISTRO(S)</label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
                     {(members || []).filter(m => m.isActive).map(m => (
                       <button
                         key={m.id}
                         type="button"
                         onClick={() => toggleLeader(m.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${leaderIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 cursor-pointer ${leaderIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'}`}
                       >
                         {m.name}
                       </button>

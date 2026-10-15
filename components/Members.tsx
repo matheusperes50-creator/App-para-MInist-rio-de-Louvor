@@ -136,18 +136,18 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
 
   return (
     <div className="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-md w-full shadow-2xl flex flex-col items-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 flex flex-col items-center">
         <div className="w-full flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <Crop size={20} />
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-800 leading-tight">Ajustar Enquadramento</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Arraste e ajuste o zoom</p>
+              <h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight">Ajustar Enquadramento</h3>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest">Arraste e ajuste o zoom</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 rounded-xl transition-colors">
+          <button onClick={onClose} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 rounded-xl transition-colors">
             <X size={20} />
           </button>
         </div>
@@ -178,23 +178,23 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
             <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t border-white/15 pointer-events-none" />
             <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 border-l border-white/15 pointer-events-none" />
           </div>
-          <p className="text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-2 flex items-center justify-center gap-1">
+          <p className="text-center text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest mt-2 flex items-center justify-center gap-1">
             <Move size={12} /> Toque e arraste para posicionar a foto
           </p>
         </div>
 
         {/* Precision controls: Zoom & Directional buttons */}
-        <div className="w-full space-y-4 mt-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+        <div className="w-full space-y-4 mt-3 bg-slate-50 dark:bg-slate-800/70 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/60">
           {/* Zoom slider */}
           <div className="space-y-1.5">
-            <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500 tracking-wider">
+            <div className="flex justify-between items-center text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-wider">
               <span className="flex items-center gap-1"><ZoomIn size={12} /> Zoom</span>
-              <span className="text-emerald-700 font-bold">{Math.round(scale * 100)}%</span>
+              <span className="text-emerald-700 dark:text-emerald-400 font-bold">{Math.round(scale * 100)}%</span>
             </div>
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setScale(s => Math.max(0.8, +(s - 0.1).toFixed(2)))}
-                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100"
+                className="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"
                 title="Diminuir Zoom"
               >
                 <ZoomOut size={16} />
@@ -206,11 +206,11 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
                 step="0.05" 
                 value={scale} 
                 onChange={(e) => setScale(parseFloat(e.target.value))}
-                className="flex-1 accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                className="flex-1 accent-emerald-600 h-2 bg-slate-200 dark:bg-slate-600 rounded-lg cursor-pointer"
               />
               <button 
                 onClick={() => setScale(s => Math.min(3.0, +(s + 0.1).toFixed(2)))}
-                className="p-1.5 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-100"
+                className="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600"
                 title="Aumentar Zoom"
               >
                 <ZoomIn size={16} />
@@ -219,11 +219,11 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
           </div>
 
           {/* Precision pan buttons & rotate */}
-          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60">
+          <div className="flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700">
             <div className="flex items-center gap-1">
               <button 
                 onClick={() => handleStepPan(-15, 0)} 
-                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600"
                 title="Mover para esquerda"
               >
                 <ArrowLeft size={14} />
@@ -231,14 +231,14 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
               <div className="flex flex-col gap-1">
                 <button 
                   onClick={() => handleStepPan(0, -15)} 
-                  className="p-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                  className="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600"
                   title="Mover para cima"
                 >
                   <ArrowUp size={14} />
                 </button>
                 <button 
                   onClick={() => handleStepPan(0, 15)} 
-                  className="p-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                  className="p-1.5 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600"
                   title="Mover para baixo"
                 >
                   <ArrowDown size={14} />
@@ -246,7 +246,7 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
               </div>
               <button 
                 onClick={() => handleStepPan(15, 0)} 
-                className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600"
+                className="p-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600"
                 title="Mover para direita"
               >
                 <ArrowRight size={14} />
@@ -256,7 +256,7 @@ const PhotoCropperModal: React.FC<PhotoCropperProps> = ({ imageSrc, onSave, onCl
             <div className="flex items-center gap-2">
               <button 
                 onClick={() => setRotation(r => (r + 90) % 360)}
-                className="flex items-center gap-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-600 text-xs font-bold transition-colors"
+                className="flex items-center gap-1 px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-600 dark:text-slate-300 hover:text-emerald-600 text-xs font-bold transition-colors"
                 title="Girar 90 graus"
               >
                 <RotateCw size={14} /> Girar
@@ -453,14 +453,14 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-3xl font-black text-slate-900">Membros</h2>
-          <p className="text-slate-500 font-medium">Equipe cadastrada: {members.length}</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Membros</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Equipe cadastrada: {members.length}</p>
         </div>
         <div className="flex gap-2">
           <button 
             onClick={onSync}
             disabled={isSyncing}
-            className="p-3 bg-white border border-slate-200 rounded-2xl text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm"
             title="Sincronizar dados"
           >
             <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
@@ -480,26 +480,26 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
       {/* Modal for Add/Edit Member */}
       {showModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-6 sm:p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-6 sm:p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                {editingMemberId ? <Edit2 className="text-emerald-600" size={24} /> : <UserPlus className="text-emerald-600" size={24} />}
+              <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                {editingMemberId ? <Edit2 className="text-emerald-600 dark:text-emerald-400" size={24} /> : <UserPlus className="text-emerald-600 dark:text-emerald-400" size={24} />}
                 {editingMemberId ? 'Editar Cadastro' : 'Novo Integrante'}
               </h3>
-              <button onClick={closeModal} className="p-2 text-slate-300 hover:text-slate-600">
+              <button onClick={closeModal} className="p-2 text-slate-300 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={saveMember} className="space-y-6">
               {/* Photo Upload & Adjust Section */}
-              <div className="flex flex-col items-center gap-3 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+              <div className="flex flex-col items-center gap-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-3xl border border-slate-100 dark:border-slate-700/60">
                 <div className="relative group">
-                  <div className="w-24 h-24 rounded-[2rem] bg-white border-2 border-slate-200 overflow-hidden flex items-center justify-center shadow-md">
+                  <div className="w-24 h-24 rounded-[2rem] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 overflow-hidden flex items-center justify-center shadow-md">
                     {photoUrl ? (
                       <img src={photoUrl} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
-                      <Camera className="text-slate-300" size={36} />
+                      <Camera className="text-slate-300 dark:text-slate-600" size={36} />
                     )}
                   </div>
                   <label 
@@ -519,7 +519,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     <button
                       type="button"
                       onClick={() => handleOpenCropperForExistingPhoto(photoUrl)}
-                      className="px-3 py-1.5 bg-emerald-100 text-emerald-800 hover:bg-emerald-200 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors"
+                      className="px-3 py-1.5 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/60 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-colors"
                     >
                       <Sliders size={12} /> Ajustar Enquadramento
                     </button>
@@ -528,42 +528,42 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     <button
                       type="button"
                       onClick={handleRemovePhoto}
-                      className="px-3 py-1.5 bg-slate-200 text-slate-600 hover:bg-red-100 hover:text-red-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors"
+                      className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-red-100 dark:hover:bg-red-950/40 hover:text-red-700 dark:hover:text-red-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-colors"
                     >
                       Remover Foto
                     </button>
                   )}
                 </div>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
+                <p className="text-[9px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest text-center">
                   Foto do Integrante • Clique em Ajustar para dar zoom ou centralizar
                 </p>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
                   <input 
                     autoFocus
                     type="text" 
                     value={newName} 
                     onChange={(e) => setNewName(e.target.value)} 
                     disabled={!isAdmin}
-                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-base transition-all ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-base transition-all ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`} 
                     placeholder="Ex: João da Silva" 
                     required 
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Data de Nascimento</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Data de Nascimento</label>
                   <input 
                     type="date" 
                     value={birthDate} 
                     onChange={(e) => setBirthDate(e.target.value)} 
-                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-base transition-all" 
+                    className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-base transition-all" 
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Habilidades e Funções</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest ml-2">Habilidades e Funções</label>
                   <div className="flex flex-wrap gap-2">
                     {Object.values(Role).map(role => (
                       <button
@@ -571,7 +571,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         type="button"
                         onClick={() => isAdmin && toggleRoleSelection(role)}
                         disabled={!isAdmin}
-                        className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
+                        className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all border-2 uppercase tracking-tight ${selectedRoles.includes(role) ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-emerald-200'} ${!isAdmin ? 'cursor-not-allowed opacity-80' : ''}`}
                       >
                         {role === Role.MINISTER ? `🎤 ${role}` : role}
                       </button>
@@ -580,7 +580,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 pt-4 border-t">
+              <div className="flex flex-col gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button 
                   type="submit" 
                   className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs"
@@ -590,7 +590,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 <button 
                   type="button" 
                   onClick={closeModal} 
-                  className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest py-2 hover:text-red-500 transition-colors"
+                  className="w-full text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest py-2 hover:text-red-500 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -602,60 +602,60 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
 
       {/* Toolbar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-        <div className="flex bg-white p-1.5 rounded-2xl border border-slate-100 shadow-sm w-full md:w-auto">
+        <div className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm w-full md:w-auto">
           <button 
             onClick={() => setViewMode('list')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'list' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
           >
             <List size={14} /> Lista
           </button>
           <button 
             onClick={() => setViewMode('grid')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'grid' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
           >
             <LayoutGrid size={14} /> Grid
           </button>
           <button 
             onClick={() => setViewMode('birthdays')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'birthdays' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${viewMode === 'birthdays' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
           >
             <Cake size={14} /> Aniversariantes
           </button>
         </div>
 
         <div className="relative group flex-1 w-full max-w-md">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-emerald-500 transition-colors" size={20} />
+          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500 group-focus-within:text-emerald-500 transition-colors" size={20} />
           <input 
             type="text" 
             placeholder="Buscar integrante por nome..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            className="w-full pl-16 pr-8 py-4 rounded-2xl bg-white border border-slate-100 focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg" 
+            className="w-full pl-16 pr-8 py-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white focus:border-emerald-500 shadow-sm outline-none transition-all font-medium text-lg placeholder-slate-400" 
           />
         </div>
       </div>
 
       {/* List View */}
       {viewMode === 'list' && (
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
-              <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+              <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest">
                 <tr>
                   <th className="px-6 sm:px-10 py-6">Membro</th>
                   <th className="px-6 sm:px-10 py-6">Habilidades</th>
                   <th className="px-6 sm:px-10 py-6 text-center">Gestão</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50">
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                 {filteredMembers.map((m) => (
-                  <tr key={m.id} className="hover:bg-slate-50/50 transition-all group">
+                  <tr key={m.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-all group">
                     <td className="px-6 sm:px-10 py-5">
                       <div className="flex items-center gap-4">
                         <div 
                           onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
                           title={isAdmin ? "Clique para ajustar ou alterar a foto" : undefined}
-                          className={`w-13 h-13 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}
+                          className={`w-13 h-13 rounded-2xl flex items-center justify-center font-black text-xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 border-slate-100 dark:border-slate-700'}`}
                           style={{ width: '3.25rem', height: '3.25rem' }}
                         >
                           {m.photoUrl ? (
@@ -670,8 +670,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                           )}
                         </div>
                         <div>
-                          <p className={`font-black text-base sm:text-lg ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</p>
-                          <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
+                          <p className={`font-black text-base sm:text-lg ${m.isActive ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600 line-through'}`}>{m.name}</p>
+                          <p className="text-[9px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest">ID: {m.id}</p>
                         </div>
                       </div>
                     </td>
@@ -682,8 +682,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                             key={i} 
                             className={`px-2 py-1 border text-[9px] font-black uppercase rounded-lg inline-flex items-center gap-1 ${
                               r === Role.MINISTER 
-                                ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-xs' 
-                                : 'bg-slate-50 border-slate-100 text-slate-500'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 shadow-xs' 
+                                : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400'
                             }`}
                           >
                             {r === Role.MINISTER && '🎤'} {r}
@@ -696,7 +696,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         {isAdmin && (
                           <button 
                             onClick={() => handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
-                            className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                            className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-xl transition-all"
                             title="Ajustar Enquadramento da Foto"
                           >
                             <Crop size={18} />
@@ -704,7 +704,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                         )}
                         <button 
                           onClick={() => openEditModal(m)} 
-                          className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                          className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-xl transition-all"
                           title="Editar Cadastro"
                         >
                           <Edit2 size={18} />
@@ -713,14 +713,14 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                           <>
                             <button 
                               onClick={() => toggleStatus(m.id)} 
-                              className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 hover:text-orange-500 hover:bg-orange-50' : 'text-emerald-500 bg-emerald-50'}`}
+                              className={`p-2.5 transition-all rounded-xl ${m.isActive ? 'text-slate-400 dark:text-slate-500 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-950/40' : 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/60'}`}
                               title={m.isActive ? "Desativar Membro" : "Ativar Membro"}
                             >
                               <Power size={18} />
                             </button>
                             <button 
                               onClick={() => removeMember(m.id)} 
-                              className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                              className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all"
                               title="Excluir Permanentemente"
                             >
                               <Trash2 size={18} />
@@ -734,7 +734,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                 {filteredMembers.length === 0 && !isSyncing && (
                   <tr>
                     <td colSpan={3} className="py-24 text-center">
-                      <div className="flex flex-col items-center gap-3 text-slate-200">
+                      <div className="flex flex-col items-center gap-3 text-slate-200 dark:text-slate-700">
                         <Users size={48} />
                         <p className="font-bold uppercase tracking-widest text-xs">Nenhum membro encontrado</p>
                       </div>
@@ -751,13 +751,13 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMembers.map((m) => (
-            <div key={m.id} className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
+            <div key={m.id} className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div 
                     onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
                     title={isAdmin ? "Clique para ajustar o enquadramento" : undefined}
-                    className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-300 border-slate-100'}`}
+                    className={`w-16 h-16 rounded-[1.5rem] flex items-center justify-center font-black text-2xl border-2 transition-all overflow-hidden shrink-0 relative ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''} ${m.isActive ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 border-slate-100 dark:border-slate-700'}`}
                   >
                     {m.photoUrl ? (
                       <img src={m.photoUrl} alt={m.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -771,22 +771,22 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     )}
                   </div>
                   <div>
-                    <h4 className={`font-black text-xl leading-tight ${m.isActive ? 'text-slate-800' : 'text-slate-300 line-through'}`}>{m.name}</h4>
-                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">ID: {m.id}</p>
+                    <h4 className={`font-black text-xl leading-tight ${m.isActive ? 'text-slate-800 dark:text-white' : 'text-slate-300 dark:text-slate-600 line-through'}`}>{m.name}</h4>
+                    <p className="text-[10px] font-bold text-slate-300 dark:text-slate-500 uppercase tracking-widest">ID: {m.id}</p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
                   {isAdmin && (
                     <button 
                       onClick={() => handleOpenCropperForExistingPhoto(m.photoUrl, m.id)} 
-                      className="p-2 text-slate-300 hover:text-emerald-600 transition-colors"
+                      className="p-2 text-slate-300 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                       title="Ajustar Enquadramento da Foto"
                     >
                       <Crop size={16} />
                     </button>
                   )}
-                  <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 hover:text-emerald-600 transition-colors" title="Editar"><Edit2 size={16} /></button>
-                  {isAdmin && <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 hover:text-red-500 transition-colors" title="Excluir"><Trash2 size={16} /></button>}
+                  <button onClick={() => openEditModal(m)} className="p-2 text-slate-300 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors" title="Editar"><Edit2 size={16} /></button>
+                  {isAdmin && <button onClick={() => removeMember(m.id)} className="p-2 text-slate-300 dark:text-slate-500 hover:text-red-500 transition-colors" title="Excluir"><Trash2 size={16} /></button>}
                 </div>
               </div>
               
@@ -796,8 +796,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                     key={i} 
                     className={`px-2.5 py-1 border text-[9px] font-black uppercase rounded-lg inline-flex items-center gap-1 ${
                       r === Role.MINISTER 
-                        ? 'bg-amber-50 border-amber-200 text-amber-700 shadow-xs' 
-                        : 'bg-slate-50 border-slate-100 text-slate-500'
+                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 shadow-xs' 
+                        : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {r === Role.MINISTER && '🎤'} {r}
@@ -808,7 +808,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
               {isAdmin && (
                 <button 
                   onClick={() => toggleStatus(m.id)}
-                  className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${m.isActive ? 'bg-slate-50 text-slate-400 hover:bg-orange-50 hover:text-orange-500' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}
+                  className={`w-full py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${m.isActive ? 'bg-slate-50 dark:bg-slate-800 text-slate-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 hover:text-orange-500' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/60'}`}
                 >
                   <Power size={14} /> {m.isActive ? 'Desativar' : 'Ativar'}
                 </button>
@@ -816,8 +816,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
             </div>
           ))}
           {filteredMembers.length === 0 && !isSyncing && (
-            <div className="col-span-full py-24 text-center bg-white rounded-[2.5rem] border border-slate-100">
-              <div className="flex flex-col items-center gap-3 text-slate-200">
+            <div className="col-span-full py-24 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+              <div className="flex flex-col items-center gap-3 text-slate-200 dark:text-slate-700">
                 <Users size={48} />
                 <p className="font-bold uppercase tracking-widest text-xs">Nenhum membro encontrado</p>
               </div>
@@ -865,22 +865,22 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   const age = calculateAge(m.birthDate);
                   
                   return (
-                    <div key={m.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                    <div key={m.id} className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                       <div className="flex items-center gap-4">
                         <div 
                           onClick={() => isAdmin && handleOpenCropperForExistingPhoto(m.photoUrl, m.id)}
-                          className={`w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 font-black text-xl overflow-hidden shrink-0 ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''}`}
+                          className={`w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400 font-black text-xl overflow-hidden shrink-0 ${isAdmin ? 'cursor-pointer hover:border-emerald-500' : ''}`}
                         >
                           {m.photoUrl ? <img src={m.photoUrl} alt="" className="w-full h-full object-cover" /> : m.name.charAt(0)}
                         </div>
                         <div>
-                          <h4 className="font-black text-slate-800">{m.name}</h4>
+                          <h4 className="font-black text-slate-800 dark:text-white">{m.name}</h4>
                           <div className="flex items-center gap-2">
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest flex items-center gap-1">
                               <Calendar size={10} /> {day}/{months[Number(month)-1]}
                             </p>
                             {age !== null && (
-                              <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                              <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-lg uppercase tracking-widest">
                                 {age} anos
                               </span>
                             )}
@@ -893,7 +893,7 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                             <Cake size={12} /> É HOJE!
                           </span>
                         ) : (
-                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                          <span className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">
                             Em {days} {days === 1 ? 'dia' : 'dias'}
                           </span>
                         )}
@@ -902,8 +902,8 @@ export const Members: React.FC<MembersProps> = ({ members = [], setMembers, onSy
                   );
                 })}
                 {sorted.length === 0 && (
-                  <div className="col-span-full py-24 text-center bg-white rounded-[2.5rem] border border-slate-100">
-                    <div className="flex flex-col items-center gap-3 text-slate-200">
+                  <div className="col-span-full py-24 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-col items-center gap-3 text-slate-200 dark:text-slate-700">
                       <Cake size={48} />
                       <p className="font-bold uppercase tracking-widest text-xs">Nenhuma data de nascimento cadastrada</p>
                     </div>

@@ -216,20 +216,21 @@ export const Songs: React.FC<SongsProps> = ({
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-black text-slate-900">{viewTitle}</h2>
-          <p className="text-slate-500 font-medium">{viewDesc}</p>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white">{viewTitle}</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">{viewDesc}</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <button 
             onClick={onSync}
             disabled={isSyncing}
-            className="p-3 bg-white border border-slate-200 rounded-2xl text-emerald-600 hover:bg-emerald-50 transition-all shadow-sm"
+            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm cursor-pointer"
+            title="Sincronizar dados"
           >
             <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={20} />
           </button>
           <button 
             onClick={() => { resetForm(); setShowAddModal(true); }}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg text-xs uppercase tracking-widest"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg text-xs uppercase tracking-widest cursor-pointer"
           >
             <Plus size={18} />
             {filterMode === 'repertoire' ? 'Cadastrar Música' : 'Sugerir Música'}
@@ -240,13 +241,13 @@ export const Songs: React.FC<SongsProps> = ({
       {/* Modal Adicionar/Editar */}
       {showAddModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 max-w-lg w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                {filterMode === 'new' ? <Sparkles className="text-emerald-600" /> : <Music className="text-emerald-600" />}
+              <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                {filterMode === 'new' ? <Sparkles className="text-emerald-500" /> : <Music className="text-emerald-500" />}
                 {editingId ? 'Editar Música' : filterMode === 'new' ? 'Nova Sugestão' : 'Cadastrar Música'}
               </h3>
-              <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-300 hover:text-slate-600">
+              <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
                 <X size={24} />
               </button>
             </div>
@@ -255,27 +256,27 @@ export const Songs: React.FC<SongsProps> = ({
               <div className="space-y-4">
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Título da Música</label>
-                  <input autoFocus type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hosana" required />
+                  <input autoFocus type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hosana" required />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Artista / Ministério</label>
-                  <input type="text" value={newArtist} onChange={(e) => setNewArtist(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hillsong United" />
+                  <input type="text" value={newArtist} onChange={(e) => setNewArtist(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hillsong United" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Link do YouTube (Opcional)</label>
                   <div className="relative">
-                    <Youtube className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
-                    <input type="url" value={newYoutubeUrl} onChange={(e) => setNewYoutubeUrl(e.target.value)} className="w-full px-12 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-medium transition-all text-sm" placeholder="https://youtube.com/..." />
+                    <Youtube className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <input type="url" value={newYoutubeUrl} onChange={(e) => setNewYoutubeUrl(e.target.value)} className="w-full px-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-medium transition-all text-sm" placeholder="https://youtube.com/..." />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tom</label>
-                    <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-black text-center uppercase" placeholder="G#" />
+                    <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-black text-center uppercase" placeholder="G#" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">BPM</label>
-                    <input type="number" value={newBpm} onChange={(e) => setNewBpm(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 outline-none font-bold text-center" placeholder="128" />
+                    <input type="number" value={newBpm} onChange={(e) => setNewBpm(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-center" placeholder="128" />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -286,7 +287,7 @@ export const Songs: React.FC<SongsProps> = ({
                         key={s}
                         type="button"
                         onClick={() => setNewStatus(s)}
-                        className={`px-3 py-3 rounded-xl text-[10px] font-black transition-all border-2 uppercase ${newStatus === s ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 border-slate-100 text-slate-400'}`}
+                        className={`px-3 py-3 rounded-xl text-[10px] font-black transition-all border-2 uppercase cursor-pointer ${newStatus === s ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400'}`}
                       >
                         {s}
                       </button>
@@ -295,11 +296,11 @@ export const Songs: React.FC<SongsProps> = ({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2 pt-6 border-t">
-                <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs">
+              <div className="flex flex-col gap-2 pt-6 border-t border-slate-100 dark:border-slate-800">
+                <button type="submit" className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black shadow-xl hover:bg-emerald-700 transition-all uppercase tracking-widest text-xs cursor-pointer">
                   {editingId ? 'Salvar Alterações' : 'Confirmar'}
                 </button>
-                <button type="button" onClick={() => setShowAddModal(false)} className="w-full text-[10px] font-black text-slate-400 uppercase tracking-widest py-2">Cancelar</button>
+                <button type="button" onClick={() => setShowAddModal(false)} className="w-full text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest py-2 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">Cancelar</button>
               </div>
             </form>
           </div>
@@ -314,13 +315,13 @@ export const Songs: React.FC<SongsProps> = ({
             placeholder={`Buscar em ${viewTitle.toLowerCase()}...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 rounded-3xl bg-white border border-slate-200 shadow-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all text-lg font-medium"
+            className="w-full pl-14 pr-6 py-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 shadow-sm focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all text-lg font-medium"
           />
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
           {/* Ordenação Alfabética */}
-          <div className="flex items-center bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex items-center bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
             <button 
               type="button"
               onClick={() => {
@@ -328,10 +329,10 @@ export const Songs: React.FC<SongsProps> = ({
                 else if (sortOption === 'alpha-asc') setSortOption('alpha-desc');
                 else setSortOption('default');
               }}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 sortOption !== 'default' 
                   ? 'bg-emerald-600 text-white shadow-sm' 
-                  : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-50'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:bg-slate-50 dark:hover:bg-slate-800'
               }`}
               title={
                 sortOption === 'alpha-asc' ? 'Ordem: A a Z (clique para Z a A)' :
@@ -354,27 +355,27 @@ export const Songs: React.FC<SongsProps> = ({
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value as SortOption)}
-              className="bg-transparent text-[11px] font-black uppercase text-slate-600 px-2 py-1.5 outline-none cursor-pointer border-l border-slate-100 hover:text-slate-900"
+              className="bg-transparent text-[11px] font-black uppercase text-slate-600 dark:text-slate-300 px-2 py-1.5 outline-none cursor-pointer border-l border-slate-100 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white"
               title="Opção de ordenação"
             >
-              <option value="default">Padrão</option>
-              <option value="alpha-asc">A → Z (Título)</option>
-              <option value="alpha-desc">Z → A (Título)</option>
-              <option value="artist-asc">A → Z (Artista)</option>
+              <option value="default" className="dark:bg-slate-900">Padrão</option>
+              <option value="alpha-asc" className="dark:bg-slate-900">A → Z (Título)</option>
+              <option value="alpha-desc" className="dark:bg-slate-900">Z → A (Título)</option>
+              <option value="artist-asc" className="dark:bg-slate-900">A → Z (Artista)</option>
             </select>
           </div>
 
-          <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
             <button 
               onClick={() => setViewMode('grid')} 
-              className={`p-2 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === 'grid' ? 'bg-slate-800 dark:bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
               title="Visualização em Grade"
             >
               <LayoutGrid size={18} />
             </button>
             <button 
               onClick={() => setViewMode('list')} 
-              className={`p-2 rounded-xl transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`p-2 rounded-xl transition-all cursor-pointer ${viewMode === 'list' ? 'bg-slate-800 dark:bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
               title="Visualização em Lista"
             >
               <List size={18} />
@@ -382,12 +383,12 @@ export const Songs: React.FC<SongsProps> = ({
           </div>
           
           {filterMode === 'repertoire' && (
-            <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-              <button onClick={() => setInternalFilter('ALL')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${internalFilter === 'ALL' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>TODAS</button>
-              <button onClick={() => setInternalFilter(SongStatus.READY)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.READY ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+            <div className="flex bg-white dark:bg-slate-900 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+              <button onClick={() => setInternalFilter('ALL')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all cursor-pointer ${internalFilter === 'ALL' ? 'bg-slate-800 dark:bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}>TODAS</button>
+              <button onClick={() => setInternalFilter(SongStatus.READY)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 cursor-pointer ${internalFilter === SongStatus.READY ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}>
                 <CheckCircle2 size={12} /> PRONTAS
               </button>
-              <button onClick={() => setInternalFilter(SongStatus.REHEARSING)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 ${internalFilter === SongStatus.REHEARSING ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
+              <button onClick={() => setInternalFilter(SongStatus.REHEARSING)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all flex items-center gap-2 cursor-pointer ${internalFilter === SongStatus.REHEARSING ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}>
                 <PlayCircle size={12} /> ENSAIANDO
               </button>
             </div>
@@ -425,13 +426,13 @@ export const Songs: React.FC<SongsProps> = ({
             
             if (viewMode === 'list') {
               return (
-                <div key={song.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group flex items-center gap-4">
+                <div key={song.id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all group flex items-center gap-4">
                   {thumbUrl ? (
                     <a
                       href={song.youtubeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-16 h-12 rounded-xl overflow-hidden relative group/thumb shrink-0 border border-slate-100 shadow-xs block bg-slate-900"
+                      className="w-16 h-12 rounded-xl overflow-hidden relative group/thumb shrink-0 border border-slate-100 dark:border-slate-800 shadow-xs block bg-slate-900"
                       title="Assistir no YouTube"
                     >
                       <img src={thumbUrl} alt={song.title} className="w-full h-full object-cover group-hover/thumb:scale-105 transition-transform" />
@@ -446,22 +447,22 @@ export const Songs: React.FC<SongsProps> = ({
                   )}
                   
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-black text-slate-800 text-sm truncate">{song.title}</h4>
+                    <h4 className="font-black text-slate-800 dark:text-white text-sm truncate">{song.title}</h4>
                     <p className="text-[10px] font-bold text-slate-400 uppercase truncate">{song.artist}</p>
                   </div>
 
-                  <div className="hidden sm:flex items-center gap-6 px-4 border-x border-slate-50">
+                  <div className="hidden sm:flex items-center gap-6 px-4 border-x border-slate-50 dark:border-slate-800">
                     <div className="text-center min-w-[40px]">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tom</p>
-                      <p className="text-xs font-black text-emerald-600">{song.key || '-'}</p>
+                      <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">{song.key || '-'}</p>
                     </div>
                     <div className="text-center min-w-[40px]">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">BPM</p>
-                      <p className="text-xs font-black text-slate-800">{song.bpm || '-'}</p>
+                      <p className="text-xs font-black text-slate-800 dark:text-slate-200">{song.bpm || '-'}</p>
                     </div>
                     <div className="text-center min-w-[40px]">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">30d</p>
-                      <p className="text-xs font-black text-emerald-600">{stat.last30Days}x</p>
+                      <p className="text-xs font-black text-emerald-600 dark:text-emerald-400">{stat.last30Days}x</p>
                     </div>
                   </div>
 
@@ -471,7 +472,7 @@ export const Songs: React.FC<SongsProps> = ({
                         href={song.youtubeUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all"
                         title="Ver no YouTube"
                       >
                         <Youtube size={18} />
@@ -479,8 +480,8 @@ export const Songs: React.FC<SongsProps> = ({
                     )}
                     {isAdmin && (
                       <div className="flex gap-1">
-                        <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                        <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                        <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-xl transition-all cursor-pointer"><Edit3 size={16} /></button>
+                        <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"><Trash2 size={16} /></button>
                       </div>
                     )}
                   </div>
@@ -489,7 +490,7 @@ export const Songs: React.FC<SongsProps> = ({
             }
 
             return (
-              <div key={song.id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full relative overflow-hidden">
+              <div key={song.id} className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all group flex flex-col h-full relative overflow-hidden">
                 {thumbUrl ? (
                   <div className="relative -mx-6 -mt-6 mb-4 aspect-video bg-slate-900 overflow-hidden group/thumb shadow-xs">
                     <img 
@@ -508,7 +509,7 @@ export const Songs: React.FC<SongsProps> = ({
                             href={song.youtubeUrl} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-transform hover:scale-110 flex items-center justify-center"
+                            className="p-2 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-lg transition-transform hover:scale-110 flex items-center justify-center cursor-pointer"
                             title="Abrir no YouTube"
                           >
                             <Youtube size={14} />
@@ -521,14 +522,14 @@ export const Songs: React.FC<SongsProps> = ({
                           href={song.youtubeUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest backdrop-blur-sm transition-all shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-black/60 hover:bg-black/80 text-white rounded-xl text-[10px] font-black uppercase tracking-widest backdrop-blur-sm transition-all shadow-sm cursor-pointer"
                         >
                           <Play size={10} fill="currentColor" /> Reproduzir Capa
                         </a>
                         {isAdmin && (
                           <div className="flex gap-1 bg-black/50 backdrop-blur-sm p-1 rounded-xl">
-                            <button onClick={() => handleEdit(song)} className="p-1.5 text-white/80 hover:text-white transition-colors" title="Editar"><Edit3 size={14} /></button>
-                            <button onClick={() => removeSong(song.id)} className="p-1.5 text-white/80 hover:text-red-400 transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                            <button onClick={() => handleEdit(song)} className="p-1.5 text-white/80 hover:text-white transition-colors cursor-pointer" title="Editar"><Edit3 size={14} /></button>
+                            <button onClick={() => removeSong(song.id)} className="p-1.5 text-white/80 hover:text-red-400 transition-colors cursor-pointer" title="Excluir"><Trash2 size={14} /></button>
                           </div>
                         )}
                       </div>
@@ -542,8 +543,8 @@ export const Songs: React.FC<SongsProps> = ({
                     <div className="flex gap-1">
                       {isAdmin && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"><Edit3 size={16} /></button>
-                          <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={16} /></button>
+                          <button onClick={() => handleEdit(song)} className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"><Edit3 size={16} /></button>
+                          <button onClick={() => removeSong(song.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"><Trash2 size={16} /></button>
                         </div>
                       )}
                     </div>
@@ -551,19 +552,19 @@ export const Songs: React.FC<SongsProps> = ({
                 )}
 
                 <div className="flex-1 mt-1">
-                  <h4 className="font-black text-slate-800 text-xl leading-tight line-clamp-2">{song.title}</h4>
+                  <h4 className="font-black text-slate-800 dark:text-white text-xl leading-tight line-clamp-2">{song.title}</h4>
                   <p className="text-slate-400 text-sm font-bold uppercase tracking-tight mt-1">{song.artist}</p>
                 </div>
 
-                <div className="mt-5 space-y-4 pt-4 border-t border-slate-50">
+                <div className="mt-5 space-y-4 pt-4 border-t border-slate-50 dark:border-slate-800">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Tom Base</p>
-                      <p className="font-black text-emerald-600">{song.key || '-'}</p>
+                      <p className="font-black text-emerald-600 dark:text-emerald-400">{song.key || '-'}</p>
                     </div>
                     <div className="space-y-1">
                       <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">BPM</p>
-                      <p className="font-black text-slate-800">{song.bpm || '-'}</p>
+                      <p className="font-black text-slate-800 dark:text-slate-200">{song.bpm || '-'}</p>
                     </div>
                   </div>
 
@@ -572,7 +573,7 @@ export const Songs: React.FC<SongsProps> = ({
                       <Calendar size={12} />
                       <span className="text-[9px] font-black uppercase tracking-widest">30 dias</span>
                     </div>
-                    <span className={`text-base font-black ${stat.last30Days > 0 ? 'text-emerald-600' : 'text-slate-300'}`}>
+                    <span className={`text-base font-black ${stat.last30Days > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-300 dark:text-slate-600'}`}>
                       {stat.last30Days}x
                     </span>
                   </div>
@@ -582,9 +583,9 @@ export const Songs: React.FC<SongsProps> = ({
                       href={song.youtubeUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="w-full py-2.5 bg-red-50 hover:bg-red-100 border border-red-100/80 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition-all shadow-xs"
+                      className="w-full py-2.5 bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-900/50 border border-red-100/80 dark:border-red-900/50 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-red-600 dark:text-red-400 transition-all shadow-xs"
                     >
-                      <Youtube size={14} className="text-red-600" /> Assistir Vídeo no YouTube
+                      <Youtube size={14} className="text-red-600 dark:text-red-400" /> Assistir Vídeo no YouTube
                     </a>
                   )}
 
@@ -596,7 +597,7 @@ export const Songs: React.FC<SongsProps> = ({
                            <button 
                              key={s} 
                              onClick={() => updateStatus(song.id, s)} 
-                             className={`flex-1 py-1 rounded-lg text-[8px] font-black uppercase transition-all border ${song.status === s ? 'bg-slate-800 text-white border-slate-800' : 'bg-slate-50 text-slate-400 border-slate-100 hover:bg-slate-100'}`}
+                             className={`flex-1 py-1 rounded-lg text-[8px] font-black uppercase transition-all border cursor-pointer ${song.status === s ? 'bg-slate-800 dark:bg-emerald-600 text-white border-slate-800 dark:border-emerald-600' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                            >
                              {s}
                            </button>
@@ -610,10 +611,10 @@ export const Songs: React.FC<SongsProps> = ({
           })}
           
           {sortedSongs.length === 0 && (
-            <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100 shadow-inner">
-              <Library size={48} className="mx-auto text-slate-200 mb-4" />
+            <div className="col-span-full py-20 text-center bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800 shadow-inner">
+              <Library size={48} className="mx-auto text-slate-200 dark:text-slate-700 mb-4" />
               <p className="text-slate-400 font-black uppercase text-xs tracking-[0.2em]">Nenhuma música encontrada</p>
-              <p className="text-[10px] text-slate-300 mt-2 font-medium">Não há músicas nesta categoria no momento.</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2 font-medium">Não há músicas nesta categoria no momento.</p>
             </div>
           )}
         </div>

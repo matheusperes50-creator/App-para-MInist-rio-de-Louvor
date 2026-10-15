@@ -147,30 +147,30 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <header>
-        <h2 className="text-3xl font-black text-slate-900">Relatórios</h2>
-        <p className="text-slate-500 font-medium">Análise de presença e liderança.</p>
+        <h2 className="text-3xl font-black text-slate-900 dark:text-white">Relatórios</h2>
+        <p className="text-slate-500 dark:text-slate-400 font-medium">Análise de presença e liderança.</p>
       </header>
 
       {/* Busca por Integrante */}
-      <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
         <div className="flex items-center gap-3 mb-6">
-          <div className="bg-emerald-50 p-2 rounded-lg"><Search size={18} className="text-emerald-600" /></div>
-          <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Busca por Integrante</h3>
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2 rounded-lg"><Search size={18} className="text-emerald-600 dark:text-emerald-400" /></div>
+          <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Busca por Integrante</h3>
         </div>
         
         <div className="relative max-w-md mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500" size={18} />
           <input 
             type="text"
             placeholder="Digite o nome do integrante..."
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-emerald-500 outline-none font-bold transition-all"
+            className="w-full pl-12 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all placeholder-slate-400"
           />
           {memberSearch && (
             <button 
               onClick={() => setMemberSearch('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-300 cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -189,7 +189,7 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
                     setSelectedMemberId(m.id);
                     setMemberSearch('');
                   }}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${selectedMemberId === m.id ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 border-slate-100 text-slate-700 hover:border-emerald-200'}`}
+                  className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left cursor-pointer ${selectedMemberId === m.id ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-200 dark:hover:border-slate-600'}`}
                 >
                   <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-black text-xs overflow-hidden">
                     {m.photoUrl ? <img src={m.photoUrl} alt="" className="w-full h-full object-cover" /> : m.name.charAt(0)}
@@ -205,17 +205,17 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
           <div className="mt-8 animate-in slide-in-from-top-4 duration-300">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center overflow-hidden">
-                  {selectedMember?.photoUrl ? <img src={selectedMember.photoUrl} alt="" className="w-full h-full object-cover" /> : <Users className="text-emerald-600" />}
+                <div className="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center overflow-hidden">
+                  {selectedMember?.photoUrl ? <img src={selectedMember.photoUrl} alt="" className="w-full h-full object-cover" /> : <Users className="text-emerald-600 dark:text-emerald-400" />}
                 </div>
                 <div>
-                  <h4 className="font-black text-slate-800 uppercase tracking-tight">{selectedMember?.name}</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Histórico de Escalas</p>
+                  <h4 className="font-black text-slate-800 dark:text-white uppercase tracking-tight">{selectedMember?.name}</h4>
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-widest">Histórico de Escalas</p>
                 </div>
               </div>
               <button 
                 onClick={() => setSelectedMemberId(null)}
-                className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest"
+                className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest cursor-pointer"
               >
                 Limpar
               </button>
@@ -226,20 +226,20 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
                 memberSchedules.map(s => {
                   const assignment = s.assignments.find(a => a.memberId === selectedMemberId);
                   return (
-                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div key={s.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
                       <div className="flex items-center gap-4">
-                        <div className="bg-white p-2 rounded-lg text-emerald-600 border border-slate-100">
+                        <div className="bg-white dark:bg-slate-700 p-2 rounded-lg text-emerald-600 dark:text-emerald-400 border border-slate-100 dark:border-slate-600">
                           <Calendar size={16} />
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 text-sm">
+                          <p className="font-black text-slate-800 dark:text-white text-sm">
                             {new Date(s.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                           </p>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{s.serviceType}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-lg inline-block">
+                        <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-950/60 px-2 py-1 rounded-lg inline-block">
                           {assignment?.role || 'Integrante'}
                         </p>
                         {assignment?.present && (
@@ -261,25 +261,25 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Relatório de Ministros */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-emerald-50 p-2 rounded-lg"><Mic size={18} className="text-emerald-600" /></div>
-            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Ranking de Ministros</h3>
+            <div className="bg-emerald-50 dark:bg-emerald-950/60 p-2 rounded-lg"><Mic size={18} className="text-emerald-600 dark:text-emerald-400" /></div>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Ranking de Ministros</h3>
           </div>
           
           <div className="flex-1 space-y-4">
             {ministerStats.length > 0 ? (
               ministerStats.map((stat, index) => (
-                <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-emerald-200 transition-all">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-lg ${index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-orange-400' : 'bg-slate-200 text-slate-500'}`}>
+                <div key={index} className="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 group hover:border-emerald-200 dark:hover:border-slate-600 transition-all">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-white shadow-lg ${index === 0 ? 'bg-amber-400' : index === 1 ? 'bg-slate-400' : index === 2 ? 'bg-orange-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300'}`}>
                     {index + 1}
                   </div>
                   <div className="flex-1">
-                    <p className="font-black text-slate-800">{stat.name}</p>
+                    <p className="font-black text-slate-800 dark:text-white">{stat.name}</p>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{stat.count} ministrações</p>
                   </div>
                   <div className="text-right">
-                    <div className="h-2 w-24 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-2 w-24 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-emerald-500" 
                         style={{ width: `${(stat.count / ministerStats[0].count) * 100}%` }}
@@ -295,25 +295,25 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
         </div>
 
         {/* Gráfico de Presença */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-blue-50 p-2 rounded-lg"><UserCheck size={18} className="text-blue-600" /></div>
-            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Frequência de Presença (%)</h3>
+            <div className="bg-blue-50 dark:bg-blue-950/60 p-2 rounded-lg"><UserCheck size={18} className="text-blue-600 dark:text-blue-400" /></div>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Frequência de Presença (%)</h3>
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={attendanceData.slice(0, 8)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }}
+                  tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }}
                 />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: '#94a3b8' }} />
                 <Tooltip 
-                  cursor={{ fill: '#f8fafc' }}
-                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                  cursor={{ fill: '#334155', opacity: 0.1 }}
+                  contentStyle={{ borderRadius: '1rem', border: 'none', backgroundColor: '#0f172a', color: '#fff', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                 />
                 <Bar dataKey="percentage" radius={[8, 8, 0, 0]} barSize={40}>
                   {attendanceData.map((entry, index) => (
@@ -326,10 +326,10 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
         </div>
 
         {/* Distribuição de Tons */}
-        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm transition-colors">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-purple-50 p-2 rounded-lg"><Music size={18} className="text-purple-600" /></div>
-            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Distribuição de Tons</h3>
+            <div className="bg-purple-50 dark:bg-purple-950/60 p-2 rounded-lg"><Music size={18} className="text-purple-600 dark:text-purple-400" /></div>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Distribuição de Tons</h3>
           </div>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -349,7 +349,7 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                  contentStyle={{ borderRadius: '1rem', border: 'none', backgroundColor: '#0f172a', color: '#fff', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px' }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -358,16 +358,16 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
       </div>
 
       {/* Tabela Detalhada de Presença */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
+        <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="bg-slate-50 p-2 rounded-lg"><FileText size={18} className="text-slate-400" /></div>
-            <h3 className="font-black text-slate-800 uppercase text-xs tracking-widest">Relatório Detalhado de Presença</h3>
+            <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-lg"><FileText size={18} className="text-slate-400" /></div>
+            <h3 className="font-black text-slate-800 dark:text-white uppercase text-xs tracking-widest">Relatório Detalhado de Presença</h3>
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
-            <thead className="bg-slate-50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 dark:text-slate-400 text-[10px] uppercase font-black tracking-widest">
               <tr>
                 <th className="px-10 py-6">Integrante</th>
                 <th className="px-10 py-6 text-center">Presenças</th>
@@ -375,14 +375,14 @@ export const Reports: React.FC<ReportsProps> = ({ schedules = [], members = [], 
                 <th className="px-10 py-6 text-right">Frequência</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
               {attendanceData.map((m, i) => (
-                <tr key={i} className="hover:bg-slate-50/50 transition-all">
-                  <td className="px-10 py-6 font-black text-slate-800">{m.name}</td>
-                  <td className="px-10 py-6 text-center font-bold text-emerald-600">{m.present}</td>
-                  <td className="px-10 py-6 text-center font-bold text-slate-500">{m.total}</td>
+                <tr key={i} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-all">
+                  <td className="px-10 py-6 font-black text-slate-800 dark:text-white">{m.name}</td>
+                  <td className="px-10 py-6 text-center font-bold text-emerald-600 dark:text-emerald-400">{m.present}</td>
+                  <td className="px-10 py-6 text-center font-bold text-slate-500 dark:text-slate-400">{m.total}</td>
                   <td className="px-10 py-6 text-right">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${m.percentage >= 75 ? 'bg-emerald-100 text-emerald-700' : m.percentage >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black ${m.percentage >= 75 ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400' : m.percentage >= 50 ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400' : 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400'}`}>
                       {m.percentage}%
                     </span>
                   </td>

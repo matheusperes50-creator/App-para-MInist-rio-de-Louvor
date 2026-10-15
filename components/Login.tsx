@@ -51,35 +51,35 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-emerald-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-emerald-900 dark:bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden transition-colors">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-white rounded-full blur-3xl"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-emerald-400 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-700">
+      <div className="max-w-md w-full bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden relative z-10 animate-in fade-in zoom-in duration-700 border border-transparent dark:border-slate-800 transition-colors">
         <div className="p-10 text-center">
-          <div className="w-20 h-20 bg-emerald-100 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3">
-            <Music size={40} className="text-emerald-700 -rotate-3" />
+          <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/60 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 border border-emerald-200/50 dark:border-emerald-800/50">
+            <Music size={40} className="text-emerald-700 dark:text-emerald-400 -rotate-3" />
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter mb-1">Minist. de Louvor Pibje</h1>
-          <p className="text-slate-500 font-medium mb-10 uppercase text-[10px] tracking-[0.2em]">Gestão Ministerial</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter mb-1">Minist. de Louvor Pibje</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium mb-10 uppercase text-[10px] tracking-[0.2em]">Gestão Ministerial</p>
 
           {mode === 'selection' && (
             <div className="space-y-4">
               <button 
                 onClick={() => onLogin('member')}
-                className="w-full group bg-slate-50 hover:bg-emerald-50 border-2 border-slate-100 hover:border-emerald-200 p-6 rounded-3xl flex items-center gap-4 transition-all"
+                className="w-full group bg-slate-50 dark:bg-slate-800/70 hover:bg-emerald-50 dark:hover:bg-slate-800 border-2 border-slate-100 dark:border-slate-700/60 hover:border-emerald-200 dark:hover:border-emerald-600/50 p-6 rounded-3xl flex items-center gap-4 transition-all"
               >
-                <div className="bg-white p-3 rounded-2xl shadow-sm text-emerald-600 group-hover:scale-110 transition-transform">
+                <div className="bg-white dark:bg-slate-700 p-3 rounded-2xl shadow-sm text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                   <Users size={24} />
                 </div>
                 <div className="text-left">
-                  <p className="font-black text-slate-800 text-base">Acesso Integrantes</p>
-                  <p className="text-xs text-slate-400">Visualização de escalas e repertório</p>
+                  <p className="font-black text-slate-800 dark:text-white text-base">Acesso Integrantes</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-400">Visualização de escalas e repertório</p>
                 </div>
-                <ChevronRight className="ml-auto text-slate-300 group-hover:translate-x-1 transition-transform" />
+                <ChevronRight className="ml-auto text-slate-300 dark:text-slate-500 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button 
@@ -104,13 +104,13 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button 
                   type="button"
                   onClick={() => setMode('selection')}
-                  className="text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-4 flex items-center gap-1 hover:underline"
+                  className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-widest mb-4 flex items-center gap-1 hover:underline"
                 >
                   Voltar
                 </button>
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-2">Senha de Acesso (4 dígitos)</label>
                 <div className="relative">
-                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500" size={18} />
                   <input 
                     autoFocus
                     type="password"
@@ -119,17 +119,17 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value.replace(/\D/g, ''))}
                     placeholder="****"
-                    className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl py-4 pl-14 pr-6 outline-none font-bold text-xl tracking-[0.5em] transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 rounded-2xl py-4 pl-14 pr-6 outline-none font-bold text-xl tracking-[0.5em] transition-all"
                   />
                 </div>
                 {error && <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 animate-bounce">{error}</p>}
-                {success && <p className="text-emerald-600 text-[10px] font-bold mt-2 ml-2">{success}</p>}
+                {success && <p className="text-emerald-600 dark:text-emerald-400 text-[10px] font-bold mt-2 ml-2">{success}</p>}
               </div>
 
               <button 
                 type="submit"
                 disabled={password.length < 4}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-900/20 transition-all active:scale-95"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-900/20 transition-all active:scale-95 cursor-pointer"
               >
                 ENTRAR NO SISTEMA
               </button>
@@ -137,7 +137,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <button 
                 type="button"
                 onClick={() => setMode('recovery')}
-                className="block mx-auto text-[10px] font-bold text-slate-400 hover:text-emerald-600 uppercase tracking-widest transition-colors"
+                className="block mx-auto text-[10px] font-bold text-slate-400 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 uppercase tracking-widest transition-colors cursor-pointer"
               >
                 Esqueci a senha
               </button>
@@ -150,23 +150,23 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <button 
                   type="button"
                   onClick={() => setMode('password')}
-                  className="text-emerald-600 font-black text-[10px] uppercase tracking-widest mb-4 flex items-center gap-1 hover:underline"
+                  className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-widest mb-4 flex items-center gap-1 hover:underline"
                 >
                   Voltar
                 </button>
-                <h3 className="text-sm font-black text-slate-800 mb-2 uppercase tracking-tight">Recuperar Acesso</h3>
-                <p className="text-xs text-slate-500 mb-6 font-medium">Insira o e-mail mestre para resetar a senha para o padrão.</p>
+                <h3 className="text-sm font-black text-slate-800 dark:text-white mb-2 uppercase tracking-tight">Recuperar Acesso</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">Insira o e-mail mestre para resetar a senha para o padrão.</p>
                 
                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 ml-2">E-mail Mestre</label>
                 <div className="relative">
-                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+                  <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-500" size={18} />
                   <input 
                     autoFocus
                     type="email"
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)}
                     placeholder="email@exemplo.com"
-                    className="w-full bg-slate-50 border-2 border-slate-100 focus:border-emerald-500 rounded-2xl py-4 pl-14 pr-6 outline-none font-bold transition-all"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 rounded-2xl py-4 pl-14 pr-6 outline-none font-bold transition-all"
                   />
                 </div>
                 {error && <p className="text-red-500 text-[10px] font-bold mt-2 ml-2 animate-bounce">{error}</p>}
@@ -174,7 +174,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
               <button 
                 type="submit"
-                className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                className="w-full bg-slate-800 dark:bg-emerald-600 hover:bg-slate-900 dark:hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RefreshCw size={18} /> RESETAR SENHA
               </button>
@@ -182,8 +182,8 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
           )}
         </div>
 
-        <div className="bg-slate-50 p-6 text-center border-t border-slate-100">
-          <p className="text-[8px] font-bold text-slate-400 flex items-center justify-center gap-1 uppercase tracking-widest">
+        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 text-center border-t border-slate-100 dark:border-slate-800">
+          <p className="text-[8px] font-bold text-slate-400 dark:text-slate-500 flex items-center justify-center gap-1 uppercase tracking-widest">
             Criado por Matheus Peres
           </p>
         </div>
