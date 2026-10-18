@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Song, Schedule, SongStatus } from '../types';
-import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
+import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List, ArrowDownAZ, ArrowUpAZ, AlertCircle } from 'lucide-react';
+import { detectSongKeyAndBpmFromYoutube, extractYoutubeVideoId } from '../services/songDetector';
 
 interface SongsProps {
   songs: Song[];
@@ -16,11 +17,7 @@ const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpper
 
 // Helper to extract YouTube video ID from various link formats
 export const getYoutubeVideoId = (url?: string): string | null => {
-  if (!url) return null;
-  const clean = url.trim();
-  const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
-  const match = clean.match(regExp);
-  return match ? match[1] : null;
+  return extractYoutubeVideoId(url);
 };
 
 // Helper to retrieve the official video cover thumbnail from YouTube
@@ -59,6 +56,13 @@ export const Songs: React.FC<SongsProps> = ({
   const [newStatus, setNewStatus] = useState<SongStatus>(filterMode === 'new' ? SongStatus.PENDING : SongStatus.READY);
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // States for automatic Key and BPM detection from YouTube
+  const [isDetectingKeyBpm, setIsDetectingKeyBpm] = useState(false);
+  const [detectFeedback, setDetectFeedback] = useState<{ type: 'success' | 'loading' | 'info'; message: string } | null>(null);
+  const [autoUpdatedBadges, setAutoUpdatedBadges] = useState<{ key: boolean; bpm: boolean }>({ key: false, bpm: false });
+  const lastDetectedUrlRef = useRef<string>('');
+  const debounceTimerRef = useRef<any>(null);
+
   const resetForm = () => {
     setNewTitle('');
     setNewArtist('');
@@ -67,6 +71,108 @@ export const Songs: React.FC<SongsProps> = ({
     setNewYoutubeUrl('');
     setNewStatus(filterMode === 'new' ? SongStatus.PENDING : SongStatus.READY);
     setEditingId(null);
+    setDetectFeedback(null);
+    setAutoUpdatedBadges({ key: false, bpm: false });
+    lastDetectedUrlRef.current = '';
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+  };
+
+  const handleDetectKeyAndBpm = async (url: string, isManual = false) => {
+    const cleanUrl = url.trim();
+    const videoId = extractYoutubeVideoId(cleanUrl);
+    if (!videoId) {
+      if (isManual) {
+        setDetectFeedback({ type: 'info', message: 'Insira um link válido do YouTube para detectar.' });
+      }
+      return;
+    }
+
+    if (!isManual && lastDetectedUrlRef.current === cleanUrl) {
+      return;
+    }
+    lastDetectedUrlRef.current = cleanUrl;
+
+    setIsDetectingKeyBpm(true);
+    setDetectFeedback({ type: 'loading', message: 'Analisando vídeo no YouTube e identificando Tom e BPM...' });
+
+    try {
+      const result = await detectSongKeyAndBpmFromYoutube(cleanUrl, {
+        currentTitle: newTitle,
+        currentArtist: newArtist
+      });
+
+      if (result && (result.key || result.bpm)) {
+        const parts: string[] = [];
+        const badgeState: { key: boolean; bpm: boolean } = { key: false, bpm: false };
+
+        if (result.key) {
+          setNewKey(result.key);
+          parts.push(`Tom: ${result.key}`);
+          badgeState.key = true;
+        }
+
+        if (result.bpm) {
+          setNewBpm(result.bpm.toString());
+          parts.push(`BPM: ${result.bpm}`);
+          badgeState.bpm = true;
+        }
+
+        // Suggest clean title and artist if fields are empty
+        if (!newTitle.trim() && result.title) {
+          setNewTitle(result.title);
+        }
+        if (!newArtist.trim() && result.artist) {
+          setNewArtist(result.artist);
+        }
+
+        setAutoUpdatedBadges(badgeState);
+        setDetectFeedback({
+          type: 'success',
+          message: `✓ Atualizado automaticamente com sucesso (${parts.join(' • ')})!`
+        });
+      } else {
+        setDetectFeedback({
+          type: 'info',
+          message: 'Vídeo encontrado. Tom e BPM não detectados automaticamente; informe se desejar.'
+        });
+      }
+    } catch (err) {
+      console.warn('Erro ao detectar tom e bpm:', err);
+      setDetectFeedback({
+        type: 'info',
+        message: 'Não foi possível analisar o Tom e BPM deste link automaticamente.'
+      });
+    } finally {
+      setIsDetectingKeyBpm(false);
+    }
+  };
+
+  // Trigger detection automatically when the YouTube link changes or is pasted
+  const handleYoutubeChange = (val: string) => {
+    setNewYoutubeUrl(val);
+    const clean = val.trim();
+    const videoId = extractYoutubeVideoId(clean);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (videoId && clean !== lastDetectedUrlRef.current) {
+      debounceTimerRef.current = setTimeout(() => {
+        handleDetectKeyAndBpm(clean, false);
+      }, 650);
+    }
+  };
+
+  const handleYoutubePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData('text');
+    if (pastedText && extractYoutubeVideoId(pastedText.trim())) {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      // Run immediately on paste
+      setTimeout(() => {
+        handleDetectKeyAndBpm(pastedText.trim(), false);
+      }, 50);
+    }
   };
 
   const handleSaveSong = (e: React.FormEvent) => {
@@ -108,6 +214,9 @@ export const Songs: React.FC<SongsProps> = ({
     setNewBpm(song.bpm?.toString() || '');
     setNewYoutubeUrl(song.youtubeUrl || '');
     setNewStatus(song.status);
+    setDetectFeedback(null);
+    setAutoUpdatedBadges({ key: false, bpm: false });
+    lastDetectedUrlRef.current = song.youtubeUrl || '';
     setShowAddModal(true);
   };
 
@@ -262,21 +371,106 @@ export const Songs: React.FC<SongsProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Artista / Ministério</label>
                   <input type="text" value={newArtist} onChange={(e) => setNewArtist(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hillsong United" />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Link do YouTube (Opcional)</label>
-                  <div className="relative">
-                    <Youtube className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input type="url" value={newYoutubeUrl} onChange={(e) => setNewYoutubeUrl(e.target.value)} className="w-full px-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-medium transition-all text-sm" placeholder="https://youtube.com/..." />
+                {/* Link do YouTube com detecção automática de Tom e BPM */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Link do YouTube (Opcional)</label>
+                    {newYoutubeUrl && extractYoutubeVideoId(newYoutubeUrl) && (
+                      <button
+                        type="button"
+                        onClick={() => handleDetectKeyAndBpm(newYoutubeUrl, true)}
+                        disabled={isDetectingKeyBpm}
+                        className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Identificar Tom e BPM a partir do link do YouTube"
+                      >
+                        <Sparkles size={11} className={isDetectingKeyBpm ? "animate-spin" : ""} />
+                        <span>{isDetectingKeyBpm ? 'Identificando...' : 'Re-identificar Tom/BPM'}</span>
+                      </button>
+                    )}
                   </div>
+                  <div className="relative">
+                    <Youtube className="absolute left-5 top-1/2 -translate-y-1/2 text-red-500" size={18} />
+                    <input 
+                      type="url" 
+                      value={newYoutubeUrl} 
+                      onChange={(e) => handleYoutubeChange(e.target.value)}
+                      onPaste={handleYoutubePaste}
+                      onBlur={() => {
+                        if (newYoutubeUrl.trim() && extractYoutubeVideoId(newYoutubeUrl.trim()) && (!newKey || !newBpm)) {
+                          handleDetectKeyAndBpm(newYoutubeUrl.trim(), false);
+                        }
+                      }}
+                      className="w-full pl-12 pr-12 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-medium transition-all text-sm" 
+                      placeholder="Cole o link do YouTube (ex: https://youtu.be/...)" 
+                    />
+                    {isDetectingKeyBpm && (
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                        <RefreshCw size={16} className="text-emerald-500 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Feedback dinâmico de detecção */}
+                  {detectFeedback && (
+                    <div className={`text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2 transition-all animate-in fade-in ${
+                      detectFeedback.type === 'success' 
+                        ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800' 
+                        : detectFeedback.type === 'loading'
+                        ? 'bg-blue-50 text-blue-800 dark:bg-blue-950/70 dark:text-blue-200 border border-blue-200 dark:border-blue-800'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                    }`}>
+                      {detectFeedback.type === 'success' && <CheckCircle2 size={14} className="shrink-0 text-emerald-600 dark:text-emerald-400" />}
+                      {detectFeedback.type === 'loading' && <RefreshCw size={14} className="shrink-0 animate-spin text-blue-600 dark:text-blue-400" />}
+                      {detectFeedback.type === 'info' && <Sparkles size={14} className="shrink-0 text-amber-500" />}
+                      <span className="leading-tight">{detectFeedback.message}</span>
+                    </div>
+                  )}
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Tom</label>
-                    <input type="text" value={newKey} onChange={(e) => setNewKey(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-black text-center uppercase" placeholder="G#" />
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tom Base</label>
+                      {autoUpdatedBadges.key && (
+                        <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md flex items-center gap-0.5 animate-in zoom-in-95">
+                          <CheckCircle2 size={9} /> Auto
+                        </span>
+                      )}
+                    </div>
+                    <input 
+                      type="text" 
+                      value={newKey} 
+                      onChange={(e) => {
+                        setNewKey(e.target.value);
+                        setAutoUpdatedBadges(prev => ({ ...prev, key: false }));
+                      }} 
+                      className={`w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-black text-center uppercase transition-all ${
+                        autoUpdatedBadges.key ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-slate-100 dark:border-slate-700'
+                      }`} 
+                      placeholder="G#" 
+                    />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">BPM</label>
-                    <input type="number" value={newBpm} onChange={(e) => setNewBpm(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-center" placeholder="128" />
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">BPM</label>
+                      {autoUpdatedBadges.bpm && (
+                        <span className="text-[9px] font-black uppercase text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md flex items-center gap-0.5 animate-in zoom-in-95">
+                          <CheckCircle2 size={9} /> Auto
+                        </span>
+                      )}
+                    </div>
+                    <input 
+                      type="number" 
+                      value={newBpm} 
+                      onChange={(e) => {
+                        setNewBpm(e.target.value);
+                        setAutoUpdatedBadges(prev => ({ ...prev, bpm: false }));
+                      }} 
+                      className={`w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold text-center transition-all ${
+                        autoUpdatedBadges.bpm ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-slate-100 dark:border-slate-700'
+                      }`} 
+                      placeholder="128" 
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">

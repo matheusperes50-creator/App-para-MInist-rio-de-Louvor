@@ -12,6 +12,8 @@ import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
 import { Attendance } from './components/Attendance';
 import { Settings } from './components/Settings';
+import { Studio } from './components/Studio';
+import { Pads } from './components/Pads';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database, Sun, Moon } from 'lucide-react';
 import { useTheme } from './themeContext';
@@ -912,6 +914,10 @@ export const App: React.FC = () => {
         return <Members members={members} setMembers={handleSetMembers} {...syncProps} />;
       case 'songs': 
         return <Songs songs={songs} setSongs={handleSetSongs} schedules={schedules} filterMode="repertoire" {...syncProps} />;
+      case 'studio':
+        return <Studio songs={songs} />;
+      case 'pads':
+        return <Pads />;
       case 'new-songs': 
         return <Songs songs={songs} setSongs={handleSetSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': 

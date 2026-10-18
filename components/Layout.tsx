@@ -21,6 +21,8 @@ import {
   Settings,
   Sun,
   Moon,
+  Headphones,
+  Disc,
   LucideIcon
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
@@ -45,6 +47,8 @@ const DEFAULT_NAV_ITEMS: NavItemDef[] = [
   { id: 'attendance', label: 'Presença', icon: CalendarCheck, adminOnly: false },
   { id: 'schedules', label: 'Escalas', icon: CalendarDays, adminOnly: false },
   { id: 'songs', label: 'Músicas', icon: Music, adminOnly: false },
+  { id: 'studio', label: 'Estúdio', icon: Headphones, adminOnly: false },
+  { id: 'pads', label: 'Pads', icon: Disc, adminOnly: false },
   { id: 'members', label: 'Membros', icon: Users, adminOnly: true },
   { id: 'new-songs', label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
   { id: 'reports', label: 'Relatórios', icon: BarChart3, adminOnly: true },
