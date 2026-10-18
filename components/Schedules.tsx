@@ -846,8 +846,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
               <Users size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-tighter">Participações no Mês</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-tighter">Participações no Mês</h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest">
                 {selectedMonthFilter === 'all' ? 'Total Geral' : formatMonthLabel(selectedMonthFilter)}
               </p>
             </div>
@@ -857,15 +857,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
               .filter(m => m.isActive && (memberCounts[m.id] || 0) > 0)
               .sort((a, b) => (memberCounts[b.id] || 0) - (memberCounts[a.id] || 0))
               .map(m => (
-                <div key={m.id} className="bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-2 group transition-all hover:border-emerald-200">
-                  <span className="text-xs font-bold text-slate-600">{m.name}</span>
+                <div key={m.id} className="bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-3 py-1.5 rounded-xl flex items-center gap-2 group transition-all hover:border-emerald-200 dark:hover:border-slate-600">
+                  <span className="text-xs font-bold text-slate-600 dark:text-slate-200">{m.name}</span>
                   <span className="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm">
                     {memberCounts[m.id] || 0}
                   </span>
                 </div>
               ))}
             {Object.keys(memberCounts).length === 0 && (
-              <p className="text-xs text-slate-400 italic">Nenhum membro escalado neste período.</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 italic">Nenhum membro escalado neste período.</p>
             )}
           </div>
         </div>
