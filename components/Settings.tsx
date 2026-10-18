@@ -21,10 +21,12 @@ import {
   Music,
   CalendarDays,
   Sun,
-  Moon
+  Moon,
+  Smartphone
 } from 'lucide-react';
 import { Member, Song, Schedule, AttendanceEvent } from '../types';
 import { useTheme } from '../themeContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface SettingsProps {
   onSync: (forceReplace?: boolean) => Promise<void>;
@@ -238,6 +240,29 @@ export const Settings: React.FC<SettingsProps> = ({
                 <Check size={12} /> Ativo
               </span>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* SEÇÃO 0.5: ATALHO NO CELULAR & INSTALAÇÃO (PWA) */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Smartphone size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 dark:text-white">
+                Atalho na Tela de Início (iPhone & Android)
+              </h2>
+              <p className="text-xs text-slate-400 dark:text-slate-400">
+                Abra o Louvor PIBJE em tela cheia como um aplicativo nativo, sem barras do navegador.
+              </p>
+            </div>
+          </div>
+
+          <div className="self-start sm:self-auto">
+            <PWAInstallButton />
           </div>
         </div>
       </div>

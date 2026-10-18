@@ -24,6 +24,7 @@ import {
   LucideIcon
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -92,7 +93,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           <h1 className="font-black text-base tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
           <p className="text-[7px] text-emerald-200 dark:text-emerald-400 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <PWAInstallButton />
           <button 
             onClick={toggleTheme} 
             className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors text-emerald-100 dark:text-amber-300"
@@ -156,6 +158,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           </div>
 
           <div className="mt-auto pt-3 border-t border-emerald-800 dark:border-slate-800 shrink-0 space-y-3">
+            <div className="flex justify-center">
+              <PWAInstallButton />
+            </div>
             {/* Alternador de Modo Noturno no Menu */}
             <button
               onClick={toggleTheme}

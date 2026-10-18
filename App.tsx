@@ -149,6 +149,8 @@ export const App: React.FC = () => {
     } catch {}
     return 'guest';
   });
+
+  const { isDark, toggleTheme } = useTheme();
   
   const [isSyncing, setIsSyncing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -946,8 +948,6 @@ export const App: React.FC = () => {
         return null;
     }
   };
-
-  const { isDark, toggleTheme } = useTheme();
 
   return (
     <Layout currentView={view} setView={setView} userRole={userRole}>
