@@ -18,10 +18,10 @@ export const PWAInstallButton: React.FC = () => {
         <button
           onClick={install}
           className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-3.5 py-2 text-xs font-black text-white shadow-md transition-all cursor-pointer active:scale-95"
-          title="Instalar na tela de início"
+          title="Instalar no aparelho"
         >
           <Download size={15} />
-          <span>Instalar App</span>
+          <span>Instalar no aparelho</span>
         </button>
       )}
 
@@ -30,10 +30,10 @@ export const PWAInstallButton: React.FC = () => {
         <button
           onClick={() => setShowIOSGuide(true)}
           className="flex items-center gap-1.5 rounded-xl border border-emerald-600/50 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 px-3 py-1.5 text-xs font-black transition-all cursor-pointer shadow-xs active:scale-95"
-          title="Como instalar no iPhone (Tela de Início)"
+          title="Instalar no aparelho"
         >
           <Smartphone size={14} className="text-emerald-600 dark:text-emerald-400" />
-          <span>Instalar no iPhone</span>
+          <span>Instalar no aparelho</span>
         </button>
       )}
 
@@ -48,7 +48,7 @@ export const PWAInstallButton: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">
-                    Instalar no iPhone / iPad
+                    Instalar no aparelho
                   </h3>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
                     Atalho na Tela de Início
@@ -71,7 +71,7 @@ export const PWAInstallButton: React.FC = () => {
                 <div>
                   <p className="font-bold text-slate-800 dark:text-white">1. Botão Compartilhar</p>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    No Safari do seu iPhone, toque no botão <strong>Compartilhar</strong> (ícone com quadrado e seta para cima no rodapé).
+                    No navegador Safari do seu aparelho, toque no botão <strong>Compartilhar</strong> (ícone com quadrado e seta para cima no rodapé).
                   </p>
                 </div>
               </div>

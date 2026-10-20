@@ -291,7 +291,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <div>
               <h2 className="text-base font-black text-slate-900 dark:text-white">
-                Atalho na Tela de Início (iPhone & Android)
+                Instalar no aparelho (Tela de Início)
               </h2>
               <p className="text-xs text-slate-400 dark:text-slate-400">
                 Abra o Louvor PIBJE em tela cheia como um aplicativo nativo, sem barras do navegador.

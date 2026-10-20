@@ -96,7 +96,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
         </div>
         <div className="flex items-center gap-1.5">
           <NotificationCenter setView={setView} />
-          <PWAInstallButton />
           <button 
             onClick={toggleTheme} 
             className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors text-emerald-100 dark:text-amber-300"
