@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ViewType, UserRoleType } from '../types';
+import { ViewType, UserRoleType, Member } from '../types';
 import { 
   LayoutDashboard, 
   Users, 
@@ -7,21 +7,22 @@ import {
   CalendarDays, 
   Menu, 
   X,
-  ShieldCheck,
-  User,
-  Key,
-  Check,
-  Sparkles,
-  BarChart3,
-  Calendar,
-  Shirt,
-  Wand2,
-  StickyNote,
-  CalendarCheck,
-  Settings,
-  Sun,
-  Moon,
-  LucideIcon
+  ShieldCheck, 
+  User, 
+  Key, 
+  Check, 
+  Sparkles, 
+  BarChart3, 
+  Calendar, 
+  Shirt, 
+  Wand2, 
+  StickyNote, 
+  CalendarCheck, 
+  Settings, 
+  Sun, 
+  Moon, 
+  RefreshCw,
+  LucideIcon 
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
@@ -31,6 +32,8 @@ interface LayoutProps {
   currentView: ViewType;
   setView: (view: ViewType) => void;
   userRole: UserRoleType;
+  currentMember?: Member | null;
+  onSwitchMember?: () => void;
 }
 
 interface NavItemDef {
@@ -55,7 +58,14 @@ const DEFAULT_NAV_ITEMS: NavItemDef[] = [
   { id: 'settings', label: 'Configurações', icon: Settings, adminOnly: false },
 ];
 
-export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, userRole }) => {
+export const Layout: React.FC<LayoutProps> = ({ 
+  children, 
+  currentView, 
+  setView, 
+  userRole, 
+  currentMember, 
+  onSwitchMember 
+}) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPass, setNewPass] = useState('');
@@ -91,12 +101,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
       <header className="md:hidden bg-emerald-700 dark:bg-slate-900 dark:border-b dark:border-slate-800 text-white p-4 flex justify-between items-center z-50 shadow-md h-16 shrink-0 transition-colors">
         <div className="flex flex-col">
           <h1 className="font-black text-base tracking-tight leading-none uppercase">Minist. Louvor Pibje</h1>
-          <p className="text-[7px] text-emerald-200 dark:text-emerald-400 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
+          <p className="text-[8px] text-emerald-200 dark:text-emerald-400 font-bold uppercase tracking-tighter mt-0.5">
+            {isAdmin ? 'Gestão Ministerial • Admin' : currentMember ? `Olá, ${currentMember.name}` : 'Gestão Ministerial'}
+          </p>
         </div>
         <div className="flex items-center gap-1.5">
           <button 
             onClick={toggleTheme} 
-            className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors text-emerald-100 dark:text-amber-300"
+            className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors text-emerald-100 dark:text-amber-300 cursor-pointer"
             aria-label={isDark ? "Mudar para Modo Claro" : "Mudar para Modo Noturno"}
             title={isDark ? "Modo Claro" : "Modo Noturno (Tela Escura)"}
           >
@@ -104,7 +116,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           </button>
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-            className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors"
+            className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors cursor-pointer"
             aria-label={isMobileMenuOpen ? "Fechar menu" : "Abrir menu"}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -178,17 +190,37 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
             <div>
               <p className="text-[10px] text-emerald-400 dark:text-slate-400 font-black uppercase tracking-widest mb-2">Sessão Atual</p>
               <div className="flex items-center gap-3 bg-emerald-800/50 dark:bg-slate-800/60 p-3 rounded-2xl border border-emerald-700 dark:border-slate-700">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shrink-0 ${isAdmin ? 'bg-emerald-500' : 'bg-slate-600'}`}>
-                  {isAdmin ? <ShieldCheck size={20} /> : <User size={20} />}
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-lg shrink-0 overflow-hidden ${isAdmin ? 'bg-emerald-500' : 'bg-slate-700'}`}>
+                  {isAdmin ? (
+                    <ShieldCheck size={20} />
+                  ) : currentMember?.photoUrl ? (
+                    <img src={currentMember.photoUrl} alt={currentMember.name} className="w-full h-full object-cover" />
+                  ) : currentMember ? (
+                    <span className="text-xs font-black">{currentMember.name.slice(0, 2).toUpperCase()}</span>
+                  ) : (
+                    <User size={20} />
+                  )}
                 </div>
                 <div className="overflow-hidden flex-1">
-                  <p className="text-sm font-black truncate">{isAdmin ? 'Administrador' : 'Membro'}</p>
-                  <button 
-                    onClick={() => isAdmin && setShowPasswordModal(true)}
-                    className="text-[9px] text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-widest truncate hover:text-white transition-colors flex items-center gap-1"
-                  >
-                    {isAdmin ? <><Key size={10} /> Trocar Senha</> : 'Acesso Visualização'}
-                  </button>
+                  <p className="text-sm font-black truncate text-white">
+                    {isAdmin ? 'Administrador' : (currentMember?.name || 'Membro')}
+                  </p>
+                  {isAdmin ? (
+                    <button 
+                      onClick={() => setShowPasswordModal(true)}
+                      className="text-[9px] text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-widest truncate hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Key size={10} /> Trocar Senha
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={onSwitchMember}
+                      className="text-[9px] text-emerald-400 dark:text-emerald-300 font-bold uppercase tracking-widest truncate hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Trocar integrante logado"
+                    >
+                      <RefreshCw size={10} /> Trocar Integrante
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

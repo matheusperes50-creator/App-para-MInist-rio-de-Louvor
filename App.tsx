@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { Members } from './components/Members';
@@ -196,6 +196,18 @@ export const App: React.FC = () => {
     } catch {}
     return DEFAULT_MEMBERS;
   });
+
+  const [currentMemberId, setCurrentMemberId] = useState<string>(() => {
+    try {
+      return localStorage.getItem('louvor_current_member_id') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const currentMember = useMemo(() => {
+    return members.find(m => m.id === currentMemberId) || null;
+  }, [members, currentMemberId]);
 
   const [songs, setSongs] = useState<Song[]>(() => {
     try {
@@ -753,9 +765,16 @@ export const App: React.FC = () => {
     await syncFromSheets(false, force);
   }, [syncFromSheets]);
 
-  // Login handler that sets role and immediately triggers a cloud sync to load fresh data
-  const handleLogin = useCallback((role: UserRoleType) => {
+  // Login handler that sets role, stores selected member and immediately triggers a cloud sync to load fresh data
+  const handleLogin = useCallback((role: UserRoleType, selectedMember?: Member) => {
     setUserRole(role);
+    if (selectedMember) {
+      setCurrentMemberId(selectedMember.id);
+      try {
+        localStorage.setItem('louvor_current_member_id', selectedMember.id);
+        localStorage.setItem('louvor_current_member_name', selectedMember.name);
+      } catch (e) {}
+    }
     syncFromSheets(true);
   }, [syncFromSheets]);
 
@@ -881,7 +900,7 @@ export const App: React.FC = () => {
   };
 
   if (userRole === 'guest') {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} members={members} />;
   }
 
   const renderContent = () => {
@@ -950,7 +969,13 @@ export const App: React.FC = () => {
   };
 
   return (
-    <Layout currentView={view} setView={setView} userRole={userRole}>
+    <Layout 
+      currentView={view} 
+      setView={setView} 
+      userRole={userRole}
+      currentMember={currentMember}
+      onSwitchMember={() => setUserRole('guest')}
+    >
       {/* Barra superior limpa: status da planilha conectada, alternador de modo noturno e botão de sair */}
       <div className="flex justify-between items-center gap-3 mb-4 md:mb-6 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
