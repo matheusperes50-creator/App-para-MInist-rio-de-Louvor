@@ -120,14 +120,4 @@ export interface AttendanceEvent {
   createdScheduleId?: string;
 }
 
-export interface AppNotification {
-  id: string;
-  title: string;
-  body: string;
-  date: string;
-  scheduleId?: string;
-  read: boolean;
-  type: 'schedule_published' | 'schedule_updated' | 'system_alert' | 'test';
-}
-
 export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance' | 'settings';

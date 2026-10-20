@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
-import { NotificationCenter } from './NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -95,7 +94,6 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           <p className="text-[7px] text-emerald-200 dark:text-emerald-400 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
         </div>
         <div className="flex items-center gap-1.5">
-          <NotificationCenter setView={setView} />
           <button 
             onClick={toggleTheme} 
             className="p-2 active:bg-emerald-600 dark:active:bg-slate-800 rounded-lg transition-colors text-emerald-100 dark:text-amber-300"

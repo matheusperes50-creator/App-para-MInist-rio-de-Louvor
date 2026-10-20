@@ -12,8 +12,6 @@ import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
 import { Attendance } from './components/Attendance';
 import { Settings } from './components/Settings';
-import { NotificationCenter } from './components/NotificationCenter';
-import { checkAndNotifyUnseenSchedules } from './services/notificationService';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database, Sun, Moon } from 'lucide-react';
 import { useTheme } from './themeContext';
@@ -173,15 +171,6 @@ export const App: React.FC = () => {
       }
     } catch {}
   }, [userRole]);
-
-  // Listen for notification clicks to navigate directly to schedules
-  useEffect(() => {
-    const handleNavigate = () => {
-      setView('schedules');
-    };
-    window.addEventListener('louvor:navigate-schedule', handleNavigate);
-    return () => window.removeEventListener('louvor:navigate-schedule', handleNavigate);
-  }, []);
 
   // Synchronize view with URL query/hash changes
   useEffect(() => {
@@ -693,11 +682,6 @@ export const App: React.FC = () => {
           try {
             localStorage.setItem('louvor_schedules', JSON.stringify(normalized));
           } catch (e) {}
-
-          // Notificar membros se houver novas escalas publicadas na nuvem
-          try {
-            checkAndNotifyUnseenSchedules(normalized, membersRef.current);
-          } catch (err) {}
         }
 
         // Attendance: authoritative attendance events from Google Sheets
@@ -996,11 +980,6 @@ export const App: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Central de Notificações Push de Escalas (Desktop) */}
-          <div className="hidden md:block">
-            <NotificationCenter setView={setView} />
-          </div>
-
           {/* Botão de Alternar Modo Noturno / Tela Escura */}
           <button
             onClick={toggleTheme}
