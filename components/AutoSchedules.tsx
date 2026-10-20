@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Member, Schedule, ScheduleAssignment, ViewType, Role, SongStatus, AttendanceEvent } from '../types';
+import { notifyNewSchedulePublished } from '../services/notificationService';
 import { 
   Calendar as CalendarIcon, 
   Users, 
@@ -448,6 +449,15 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     // Save immediately to cloud if admin
     if (onSaveToCloud) {
       onSaveToCloud({ schedules: updatedList });
+    }
+
+    // Alert members via push notifications for published auto-schedules
+    try {
+      realSchedules.forEach(sch => {
+        notifyNewSchedulePublished(sch, members);
+      });
+    } catch (notifErr) {
+      console.warn('Erro ao notificar escalas automáticas:', notifErr);
     }
 
     setExportSuccessToast(true);

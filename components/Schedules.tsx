@@ -28,8 +28,10 @@ import {
   CheckSquare,
   CheckCircle2,
   Circle,
-  UserCheck
+  UserCheck,
+  Bell
 } from 'lucide-react';
+import { notifyNewSchedulePublished } from '../services/notificationService';
 
 interface SchedulesProps {
   schedules: Schedule[];
@@ -86,6 +88,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
+  const [notifyMembersOnSave, setNotifyMembersOnSave] = useState(true);
   const suggestionRef = useRef<HTMLDivElement>(null);
 
   const [leaderIds, setLeaderIds] = useState<string[]>([]);
@@ -646,6 +649,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
       console.error('Erro ao salvar no localStorage:', e);
     }
 
+    // Disparar notificação push para alertar os membros sobre a nova escala publicada
+    if (notifyMembersOnSave) {
+      try {
+        notifyNewSchedulePublished(scheduleData, members, { isUpdate: !!editingId });
+      } catch (notifErr) {
+        console.warn('Erro ao disparar notificação push da escala:', notifErr);
+      }
+    }
+
     if (onSaveToCloud) {
       setSaveFeedback('Sincronizando com a planilha Google...');
       Promise.resolve(onSaveToCloud({ 
@@ -1030,9 +1042,26 @@ export const Schedules: React.FC<SchedulesProps> = ({
             </div>
           </div>
 
-          <div className="pt-6 border-t flex justify-end gap-4">
-            <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400">CANCELAR</button>
-            <button type="submit" className="px-10 py-3 bg-emerald-600 text-white font-black rounded-2xl shadow-lg hover:scale-105 transition-all">{editingId ? 'ATUALIZAR ESCALA' : 'SALVAR ESCALA'}</button>
+          <div className="pt-6 border-t flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none bg-emerald-50/70 dark:bg-emerald-950/40 px-3.5 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800">
+              <input 
+                type="checkbox" 
+                checked={notifyMembersOnSave} 
+                onChange={(e) => setNotifyMembersOnSave(e.target.checked)}
+                className="w-4 h-4 rounded text-emerald-600 accent-emerald-600 cursor-pointer"
+              />
+              <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5">
+                <Bell size={13} className="text-emerald-600 dark:text-emerald-400" />
+                Alertar membros por notificação push ao salvar
+              </span>
+            </label>
+
+            <div className="flex items-center gap-4 w-full sm:w-auto justify-end">
+              <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">CANCELAR</button>
+              <button type="submit" className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
+                {editingId ? 'ATUALIZAR ESCALA' : 'PUBLICAR & SALVAR'}
+              </button>
+            </div>
           </div>
         </form>
       )}

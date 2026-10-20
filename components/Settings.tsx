@@ -22,11 +22,19 @@ import {
   CalendarDays,
   Sun,
   Moon,
-  Smartphone
+  Smartphone,
+  Bell,
+  BellRing
 } from 'lucide-react';
 import { Member, Song, Schedule, AttendanceEvent } from '../types';
 import { useTheme } from '../themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
+import { 
+  getNotificationPermission, 
+  requestNotificationPermission, 
+  sendTestPushNotification, 
+  NotificationPermissionState 
+} from '../services/notificationService';
 
 interface SettingsProps {
   onSync: (forceReplace?: boolean) => Promise<void>;
@@ -66,6 +74,36 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showPassChange, setShowPassChange] = useState(false);
   const [newAdminPass, setNewAdminPass] = useState('');
   const [passFeedback, setPassFeedback] = useState<string | null>(null);
+
+  // Push notifications state & testing
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermissionState>(() => getNotificationPermission());
+  const [testPushStatus, setTestPushStatus] = useState<string | null>(null);
+  const [isActivatingPush, setIsActivatingPush] = useState(false);
+
+  const handleActivatePush = async () => {
+    setIsActivatingPush(true);
+    const granted = await requestNotificationPermission();
+    setNotificationPermission(getNotificationPermission());
+    setIsActivatingPush(false);
+    if (granted) {
+      setTestPushStatus('✓ Notificações push ativadas com sucesso neste dispositivo!');
+    } else {
+      setTestPushStatus('Permissão não concedida no navegador.');
+    }
+    setTimeout(() => setTestPushStatus(null), 4000);
+  };
+
+  const handleTestPush = async () => {
+    setTestPushStatus('Disparando notificação de teste...');
+    const ok = await sendTestPushNotification();
+    setNotificationPermission(getNotificationPermission());
+    if (ok) {
+      setTestPushStatus('✓ Notificação push enviada! Verifique a barra de notificações do seu celular ou PC.');
+    } else {
+      setTestPushStatus('Alerta gerado no app. Verifique se as notificações estão permitidas nas permissões do site.');
+    }
+    setTimeout(() => setTestPushStatus(null), 4500);
+  };
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -265,6 +303,60 @@ export const Settings: React.FC<SettingsProps> = ({
             <PWAInstallButton />
           </div>
         </div>
+      </div>
+
+      {/* SEÇÃO 0.7: NOTIFICAÇÕES PUSH PARA ESCALAS */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <BellRing size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-black text-slate-900 dark:text-white">
+                  Notificações Push de Novas Escalas
+                </h2>
+                <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                  notificationPermission === 'granted'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800'
+                    : notificationPermission === 'denied'
+                      ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/70 dark:text-red-300 dark:border-red-800'
+                      : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/70 dark:text-amber-300 dark:border-amber-800'
+                }`}>
+                  {notificationPermission === 'granted' ? 'Ativadas' : notificationPermission === 'denied' ? 'Bloqueadas' : 'Pendente'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-400 mt-0.5">
+                Alerta os integrantes automaticamente quando novas escalas de louvor forem publicadas ou atualizadas pelos líderes.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+            {notificationPermission !== 'granted' && (
+              <button
+                onClick={handleActivatePush}
+                disabled={isActivatingPush}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {isActivatingPush ? 'Ativando...' : 'Ativar Notificações'}
+              </button>
+            )}
+            <button
+              onClick={handleTestPush}
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Bell size={14} /> Testar Notificação
+            </button>
+          </div>
+        </div>
+
+        {testPushStatus && (
+          <div className="p-3 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs font-bold rounded-2xl border border-emerald-200 dark:border-emerald-800 animate-in fade-in">
+            {testPushStatus}
+          </div>
+        )}
       </div>
 
       {/* SEÇÃO 1: BANCO DE DADOS & PLANILHA GOOGLE */}

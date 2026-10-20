@@ -21,12 +21,11 @@ import {
   Settings,
   Sun,
   Moon,
-  Headphones,
-  Disc,
   LucideIcon
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
 import { PWAInstallButton } from './PWAInstallButton';
+import { NotificationCenter } from './NotificationCenter';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -47,8 +46,6 @@ const DEFAULT_NAV_ITEMS: NavItemDef[] = [
   { id: 'attendance', label: 'Presença', icon: CalendarCheck, adminOnly: false },
   { id: 'schedules', label: 'Escalas', icon: CalendarDays, adminOnly: false },
   { id: 'songs', label: 'Músicas', icon: Music, adminOnly: false },
-  { id: 'studio', label: 'Estúdio', icon: Headphones, adminOnly: false },
-  { id: 'pads', label: 'Pads', icon: Disc, adminOnly: false },
   { id: 'members', label: 'Membros', icon: Users, adminOnly: true },
   { id: 'new-songs', label: 'Músicas Novas', icon: Sparkles, adminOnly: false },
   { id: 'reports', label: 'Relatórios', icon: BarChart3, adminOnly: true },
@@ -98,6 +95,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, currentView, setView, 
           <p className="text-[7px] text-emerald-200 dark:text-emerald-400 font-bold uppercase tracking-tighter mt-0.5">Gestão Ministerial</p>
         </div>
         <div className="flex items-center gap-1.5">
+          <NotificationCenter setView={setView} />
           <PWAInstallButton />
           <button 
             onClick={toggleTheme} 
