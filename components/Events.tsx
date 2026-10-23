@@ -60,9 +60,17 @@ export const Events: React.FC<EventsProps> = ({ events = [], setEvents, members 
     if (event.repertoire && event.repertoire.length > 0) {
       text += `\n🎶 *REPERTÓRIO:*\n`;
       event.repertoire.forEach((sId, i) => {
-        const song = songs.find(s => s.id === sId);
+        const song = songs.find(s => s.id === sId || (s.title && s.title.toLowerCase() === sId?.toLowerCase()));
         if (song) {
-          text += `${i + 1}. ${song.title}\n`;
+          const rawLink = song.youtubeUrl || (song as any).link || (song as any).url;
+          const trimmedLink = rawLink && typeof rawLink === 'string' ? rawLink.trim() : '';
+          const validLink = trimmedLink ? (/^https?:\/\//i.test(trimmedLink) ? trimmedLink : `https://${trimmedLink}`) : null;
+
+          text += `${i + 1}. ${song.title}${song.key ? ` (${song.key})` : ''}\n`;
+          if (validLink) {
+            const icon = validLink.includes('youtu') ? '▶️' : '🔗';
+            text += `   ${icon} ${validLink}\n`;
+          }
         }
       });
     }

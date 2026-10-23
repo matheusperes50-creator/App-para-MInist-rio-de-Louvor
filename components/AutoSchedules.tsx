@@ -604,14 +604,14 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 <select 
                   value={requirements.vocalsCount}
                   onChange={(e) => setRequirements(r => ({ ...r, vocalsCount: parseInt(e.target.value) }))}
-                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-black text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 outline-none shadow-xs"
+                  className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-xl text-xs font-black text-emerald-700 dark:text-emerald-400 focus:ring-emerald-500 outline-none shadow-xs cursor-pointer"
                 >
-                  <option value={0}>0 Vocais</option>
-                  <option value={1}>1 Vocal</option>
-                  <option value={2}>2 Vocais</option>
-                  <option value={3}>3 Vocais</option>
-                  <option value={4}>4 Vocais (4 Vocais + 1 Ministro)</option>
-                  <option value={5}>5 Vocais</option>
+                  <option value={0} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">0 Vocais</option>
+                  <option value={1} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">1 Vocal</option>
+                  <option value={2} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">2 Vocais</option>
+                  <option value={3} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">3 Vocais</option>
+                  <option value={4} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">4 Vocais (4 Vocais + 1 Ministro)</option>
+                  <option value={5} className="bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100">5 Vocais</option>
                 </select>
               </div>
 

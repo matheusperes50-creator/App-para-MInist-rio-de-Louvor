@@ -28,7 +28,8 @@ import {
   CheckSquare,
   CheckCircle2,
   Circle,
-  UserCheck
+  UserCheck,
+  ExternalLink
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -196,10 +197,20 @@ export const Schedules: React.FC<SchedulesProps> = ({
       sch.songs.forEach((songData, i) => {
         const sId = typeof songData === 'string' ? songData : songData.id;
         const sKey = typeof songData === 'string' ? '' : songData.key;
-        const s = songs.find(x => x.id === sId);
+        const s = songs.find(x => x.id === sId || (x.title && x.title.toLowerCase() === sId?.toLowerCase()));
         if (s) {
           const displayKey = sKey || s.key;
+          const rawLink = s.youtubeUrl || (s as any).link || (s as any).url;
+          const trimmedLink = rawLink && typeof rawLink === 'string' ? rawLink.trim() : '';
+          const validLink = trimmedLink ? (/^https?:\/\//i.test(trimmedLink) ? trimmedLink : `https://${trimmedLink}`) : null;
+
           text += `${i+1}. ${s.title}${displayKey ? ` (${displayKey})` : ''}\n`;
+          if (validLink) {
+            const icon = validLink.includes('youtu') ? '▶️' : '🔗';
+            text += `   ${icon} ${validLink}\n`;
+          }
+        } else if (typeof songData === 'object' && (songData as any).title) {
+          text += `${i+1}. ${(songData as any).title}${sKey ? ` (${sKey})` : ''}\n`;
         }
       });
     } else {
@@ -213,9 +224,17 @@ export const Schedules: React.FC<SchedulesProps> = ({
     if (sch.postSermonSong) {
       const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
       const psKey = typeof sch.postSermonSong === 'string' ? '' : sch.postSermonSong.key;
-      const s = songs.find(x => x.id === psId);
+      const s = songs.find(x => x.id === psId || (x.title && x.title.toLowerCase() === psId?.toLowerCase()));
       if (s) {
+        const rawLink = s.youtubeUrl || (s as any).link || (s as any).url;
+        const trimmedLink = rawLink && typeof rawLink === 'string' ? rawLink.trim() : '';
+        const validLink = trimmedLink ? (/^https?:\/\//i.test(trimmedLink) ? trimmedLink : `https://${trimmedLink}`) : null;
+
         text += `\n📖 *Música Pós-Pregação:* ${s.title}${psKey ? ` (${psKey})` : ''}`;
+        if (validLink) {
+          const icon = validLink.includes('youtu') ? '▶️' : '🔗';
+          text += `\n   ${icon} ${validLink}`;
+        }
       } else if (typeof sch.postSermonSong === 'string') {
         text += `\n📖 *Música Pós-Pregação:* ${sch.postSermonSong}`;
       }
@@ -830,9 +849,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
             <span className="text-[10px] font-black uppercase tracking-widest">Filtrar por Mês</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-emerald-200'}`}>TODAS</button>
+            <button onClick={() => setSelectedMonthFilter('all')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === 'all' ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400'}`}>TODAS</button>
             {availableMonths.map(month => (
-              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 hover:border-emerald-200'}`}>{formatMonthLabel(month).toUpperCase()}</button>
+              <button key={month} onClick={() => setSelectedMonthFilter(month)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 whitespace-nowrap cursor-pointer ${selectedMonthFilter === month ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400'}`}>{formatMonthLabel(month).toUpperCase()}</button>
             ))}
           </div>
         </div>
@@ -877,17 +896,17 @@ export const Schedules: React.FC<SchedulesProps> = ({
           <h3 className="text-xl font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-tighter">{editingId ? 'Editar Escala' : 'Criar Nova Escala'}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">DATA DO EVENTO</label>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold" required />
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 ml-2">DATA DO EVENTO</label>
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold dark:[color-scheme:dark]" required />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">PERÍODO / TIPO</label>
-              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold">
-                <option className="dark:bg-slate-900">Domingo/semana</option>
-                <option className="dark:bg-slate-900">Domingo (Noite)</option>
-                <option className="dark:bg-slate-900">Domingo (Manhã)</option>
-                <option className="dark:bg-slate-900">Quarta-feira</option>
-                <option className="dark:bg-slate-900">Evento Especial</option>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 ml-2">PERÍODO / TIPO</label>
+              <select value={serviceType} onChange={(e) => setServiceType(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold cursor-pointer">
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Domingo/semana</option>
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Domingo (Noite)</option>
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Domingo (Manhã)</option>
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Quarta-feira</option>
+                <option className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Evento Especial</option>
               </select>
             </div>
           </div>
@@ -895,7 +914,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
             <div className="space-y-6">
               <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase text-xs tracking-widest"><Mic2 size={16} className="text-emerald-600 dark:text-emerald-400" /> Equipe Ministerial</h4>
               <div className="space-y-4">
-                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
                   <label className="block text-[10px] font-black text-emerald-700 dark:text-emerald-400 mb-2 uppercase">🎤 LÍDER(ES) / MINISTRO(S)</label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
                     {(members || []).filter(m => m.isActive).map(m => (
@@ -903,18 +922,25 @@ export const Schedules: React.FC<SchedulesProps> = ({
                         key={m.id}
                         type="button"
                         onClick={() => toggleLeader(m.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 cursor-pointer ${leaderIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400'}`}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 cursor-pointer ${leaderIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm font-black' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-white'}`}
                       >
                         {m.name}
                       </button>
                     ))}
                   </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                  <label className="block text-[10px] font-black text-slate-500 mb-2 uppercase">🗣️ VOCALS (BACKING) - Exceto Ministros</label>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <label className="block text-[10px] font-black text-slate-700 dark:text-slate-300 mb-2 uppercase">🗣️ VOCALS (BACKING) - Exceto Ministros</label>
                   <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
                     {(members || []).filter(m => m.isActive && !leaderIds.includes(m.id)).map(m => (
-                      <button key={m.id} type="button" onClick={() => toggleVocal(m.id)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 ${vocalIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-200 text-slate-400'}`}>{m.name}</button>
+                      <button 
+                        key={m.id} 
+                        type="button" 
+                        onClick={() => toggleVocal(m.id)} 
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border-2 cursor-pointer ${vocalIds.includes(m.id) ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm font-black' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-white'}`}
+                      >
+                        {m.name}
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -922,13 +948,21 @@ export const Schedules: React.FC<SchedulesProps> = ({
                   {Object.keys(instruments).map(role => {
                     const Icon = instrumentIcons[role] || Music;
                     return (
-                      <div key={role} className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col gap-2">
-                        <div className="flex items-center gap-2 text-emerald-600">
+                      <div key={role} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                           <Icon size={16} /><label className="block text-[10px] font-black uppercase tracking-widest">{role}</label>
                         </div>
-                        <select value={instruments[role]} onChange={(e) => setInstruments(prev => ({...prev, [role]: e.target.value}))} className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold outline-none focus:border-emerald-500">
-                          <option value="">Selecione...</option>
-                          {(members || []).filter(m => m.isActive).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        <select 
+                          value={instruments[role]} 
+                          onChange={(e) => setInstruments(prev => ({...prev, [role]: e.target.value}))} 
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-xs font-bold outline-none text-slate-800 dark:text-slate-100 focus:border-emerald-500 dark:focus:border-emerald-400 cursor-pointer shadow-xs"
+                        >
+                          <option value="" className="bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400">Selecione...</option>
+                          {(members || []).filter(m => m.isActive).map(m => (
+                            <option key={m.id} value={m.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {m.name}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     );
@@ -937,49 +971,62 @@ export const Schedules: React.FC<SchedulesProps> = ({
               </div>
             </div>
             <div className="space-y-6">
-              <h4 className="font-black text-slate-800 flex items-center gap-2 border-b pb-2 uppercase text-xs tracking-widest"><Music size={16} className="text-emerald-600" /> Repertório</h4>
+              <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase text-xs tracking-widest"><Music size={16} className="text-emerald-600 dark:text-emerald-400" /> Repertório</h4>
               <div className="space-y-3">
                 {tempSetlist.map((item, idx) => {
                   const filteredSongs = songs.filter(s => item.title && s.title.toLowerCase().includes(item.title.toLowerCase())).slice(0, 5);
                   return (
                     <div key={idx} className="flex gap-2 items-start relative">
                       <div className="flex-1 relative">
-                        <input type="text" placeholder="Nome da Música" value={item.title} onChange={(e) => updateSetlistItem(idx, 'title', e.target.value)} onFocus={() => item.title && setActiveSuggestionIdx(idx)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500" />
+                        <input 
+                          type="text" 
+                          placeholder="Nome da Música" 
+                          value={item.title} 
+                          onChange={(e) => updateSetlistItem(idx, 'title', e.target.value)} 
+                          onFocus={() => item.title && setActiveSuggestionIdx(idx)} 
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
+                        />
                         {activeSuggestionIdx === idx && filteredSongs.length > 0 && (
-                          <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                          <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                             {filteredSongs.map((s) => (
-                              <button key={s.id} type="button" onClick={() => selectSongFromSuggestion(idx, s)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-colors border-b last:border-0 border-slate-50 group">
+                              <button key={s.id} type="button" onClick={() => selectSongFromSuggestion(idx, s)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 dark:hover:bg-slate-700/60 transition-colors border-b last:border-0 border-slate-100 dark:border-slate-700 group cursor-pointer">
                                 <div className="text-left">
-                                  <p className="text-sm font-black text-slate-800 group-hover:text-emerald-700">{s.title}</p>
-                                  <p className="text-[10px] font-bold text-slate-400 uppercase">{s.artist !== 'Manual' ? s.artist : 'Repertório'}</p>
+                                  <p className="text-sm font-black text-slate-800 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300">{s.title}</p>
+                                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase">{s.artist !== 'Manual' ? s.artist : 'Repertório'}</p>
                                 </div>
-                                <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-lg">{s.key}</div>
+                                <div className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-lg">{s.key}</div>
                               </button>
                             ))}
                           </div>
                         )}
                       </div>
-                      <input type="text" placeholder="Tom" value={item.key} onChange={(e) => updateSetlistItem(idx, 'key', e.target.value)} className="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-3 font-black text-center text-xs uppercase text-emerald-600 outline-none focus:border-emerald-500" />
-                      <button type="button" onClick={() => removeSetlistItem(idx)} className="p-3 text-slate-300 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                      <input 
+                        type="text" 
+                        placeholder="Tom" 
+                        value={item.key} 
+                        onChange={(e) => updateSetlistItem(idx, 'key', e.target.value)} 
+                        className="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-emerald-400 rounded-xl px-2 py-3 font-black text-center text-xs uppercase outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
+                      />
+                      <button type="button" onClick={() => removeSetlistItem(idx)} className="p-3 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"><Trash2 size={16} /></button>
                     </div>
                   );
                 })}
-                <button type="button" onClick={addSetlistItem} className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-slate-400 font-bold text-xs hover:border-emerald-300 hover:text-emerald-500 transition-all">+ ADICIONAR MÚSICA</button>
+                <button type="button" onClick={addSetlistItem} className="w-full py-3 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl text-slate-500 dark:text-slate-300 font-bold text-xs hover:border-emerald-300 dark:hover:border-emerald-500 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all cursor-pointer">+ ADICIONAR MÚSICA</button>
               </div>
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">OBSERVAÇÕES ADICIONAIS</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 ml-2">OBSERVAÇÕES ADICIONAIS</label>
             <textarea 
               value={observations} 
               onChange={(e) => setObservations(e.target.value)} 
               placeholder="Ex: Trazer instrumentos extras, ensaio antes do culto, etc."
-              className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:border-emerald-500 outline-none font-bold min-h-[100px] resize-none"
+              className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-emerald-500 dark:focus:border-emerald-400 outline-none font-bold min-h-[100px] resize-none"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Música Pós-Pregação (Pedida durante o culto)</label>
+            <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-300 ml-2">Música Pós-Pregação (Pedida durante o culto)</label>
             <div className="flex gap-2 items-start relative">
               <div className="flex-1 relative">
                 <input 
@@ -992,10 +1039,10 @@ export const Schedules: React.FC<SchedulesProps> = ({
                     setShowPostSermonSuggestions(val.length > 0);
                   }}
                   onFocus={() => postSermonItem.title && setShowPostSermonSuggestions(true)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500" 
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
                 />
                 {showPostSermonSuggestions && (
-                  <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                  <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
                     {songs
                       .filter(s => s.title && s.title.toLowerCase().includes(postSermonItem.title.toLowerCase()))
                       .slice(0, 5)
@@ -1007,13 +1054,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
                             setPostSermonItem({ title: s.title, key: s.key || '' });
                             setShowPostSermonSuggestions(false);
                           }} 
-                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 transition-colors border-b last:border-0 border-slate-50 group"
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-emerald-50 dark:hover:bg-slate-700/60 transition-colors border-b last:border-0 border-slate-100 dark:border-slate-700 group cursor-pointer"
                         >
                           <div className="text-left">
-                            <p className="text-sm font-black text-slate-800 group-hover:text-emerald-700">{s.title}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">{s.artist !== 'Manual' ? s.artist : 'Repertório'}</p>
+                            <p className="text-sm font-black text-slate-800 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-300">{s.title}</p>
+                            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-400 uppercase">{s.artist !== 'Manual' ? s.artist : 'Repertório'}</p>
                           </div>
-                          <div className="bg-emerald-100 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-lg">{s.key}</div>
+                          <div className="bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-lg">{s.key}</div>
                         </button>
                       ))
                     }
@@ -1025,13 +1072,13 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 placeholder="Tom" 
                 value={postSermonItem.key} 
                 onChange={(e) => setPostSermonItem(prev => ({ ...prev, key: e.target.value }))} 
-                className="w-16 bg-slate-50 border border-slate-200 rounded-xl px-2 py-3 font-black text-center text-xs uppercase text-emerald-600 outline-none focus:border-emerald-500" 
+                className="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-emerald-400 rounded-xl px-2 py-3 font-black text-center text-xs uppercase outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
               />
             </div>
           </div>
 
-          <div className="pt-6 border-t flex items-center justify-end gap-4">
-            <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">CANCELAR</button>
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-4">
+            <button type="button" onClick={() => { setIsAdding(false); resetForm(); }} className="px-6 py-3 font-bold text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer">CANCELAR</button>
             <button type="submit" className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
               {editingId ? 'ATUALIZAR ESCALA' : 'PUBLICAR & SALVAR'}
             </button>
@@ -1240,9 +1287,21 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
                     return (
                       <div key={i} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-xl text-xs group/song">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold opacity-90">{i+1}. {s?.title || 'Música Desconhecida'}</span>
                           {displayKey && <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-black uppercase">{displayKey}</span>}
+                          {s?.youtubeUrl && (
+                            <a
+                              href={s.youtubeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-emerald-300/80 hover:text-emerald-200 transition-colors p-0.5 inline-flex items-center"
+                              title="Abrir link da música"
+                            >
+                              <ExternalLink size={12} />
+                            </a>
+                          )}
                         </div>
                         {isAdmin && (
                           <button 
@@ -1270,10 +1329,26 @@ export const Schedules: React.FC<SchedulesProps> = ({
                         {(() => {
                           const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
                           const psKey = typeof sch.postSermonSong === 'string' ? '' : sch.postSermonSong.key;
-                          const s = songs.find(x => x.id === psId);
+                          const s = songs.find(x => x.id === psId || (x.title && x.title.toLowerCase() === psId?.toLowerCase()));
                           return s ? `${s.title}${psKey ? ` (${psKey})` : ''}` : (typeof sch.postSermonSong === 'string' ? sch.postSermonSong : 'Música Desconhecida');
                         })()}
                       </span>
+                      {(() => {
+                        const psId = typeof sch.postSermonSong === 'string' ? sch.postSermonSong : sch.postSermonSong.id;
+                        const s = songs.find(x => x.id === psId || (x.title && x.title.toLowerCase() === psId?.toLowerCase()));
+                        return s?.youtubeUrl ? (
+                          <a
+                            href={s.youtubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-emerald-300/80 hover:text-emerald-200 transition-colors p-0.5 inline-flex items-center"
+                            title="Abrir link da música"
+                          >
+                            <ExternalLink size={12} />
+                          </a>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -1303,9 +1378,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
           );
         })}
         {filteredSchedules.length === 0 && !isAdding && (
-          <div className="col-span-full py-20 text-center bg-white rounded-[3rem] border-2 border-dashed border-slate-100">
-            <CalendarIcon size={40} className="text-slate-200 mx-auto mb-4" />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhuma escala para este período</p>
+          <div className="col-span-full py-20 text-center bg-white dark:bg-slate-900 rounded-[3rem] border-2 border-dashed border-slate-100 dark:border-slate-800">
+            <CalendarIcon size={40} className="text-slate-200 dark:text-slate-700 mx-auto mb-4" />
+            <p className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-xs">Nenhuma escala para este período</p>
           </div>
         )}
       </div>
