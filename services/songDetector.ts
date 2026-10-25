@@ -80,7 +80,16 @@ const KNOWN_WORSHIP_CATALOG: Array<{
   { keywords: ['me esvaziar'], title: 'Me Esvaziar', artist: 'Nivea Soares', key: 'G', bpm: 68 },
   { keywords: ['teu reino'], title: 'Teu Reino', artist: 'Ministério Cristo Vivo', key: 'A', bpm: 74 },
   { keywords: ['deus cuida de mim'], title: 'Deus Cuida de Mim', artist: 'Kleber Lucas', key: 'G', bpm: 70 },
-  { keywords: ['aos pes da cruz', 'aos pés da cruz'], title: 'Aos Pés da Cruz', artist: 'Kleber Lucas', key: 'D', bpm: 72 }
+  { keywords: ['aos pes da cruz', 'aos pés da cruz'], title: 'Aos Pés da Cruz', artist: 'Kleber Lucas', key: 'D', bpm: 72 },
+  { keywords: ['pode morar aqui'], title: 'Pode Morar Aqui', artist: 'Theo Rubia', key: 'C', bpm: 70 },
+  { keywords: ['bencaos que nao tem fim', 'bençãos que não tem fim', 'counting my blessings'], title: 'Bençãos Que Não Tem Fim', artist: 'Isadora Pompeo', key: 'G', bpm: 74 },
+  { keywords: ['deserto'], title: 'Deserto', artist: 'Maria Marçal', key: 'C', bpm: 68 },
+  { keywords: ['acende outra vez'], title: 'Acende Outra Vez', artist: 'Jefferson e Suellen', key: 'G', bpm: 72 },
+  { keywords: ['vem me buscar'], title: 'Vem Me Buscar', artist: 'Jefferson e Suellen', key: 'C', bpm: 70 },
+  { keywords: ['alfa e omega', 'alfa e ômega'], title: 'Alfa e Ômega', artist: 'Marine Friesen', key: 'E', bpm: 70 },
+  { keywords: ['so quero ver voce', 'só quero ver você'], title: 'Só Quero Ver Você', artist: 'FHOP Music', key: 'G', bpm: 68 },
+  { keywords: ['tu es bom', 'tu és bom'], title: 'Tu És Bom', artist: 'Fred Arrais', key: 'E', bpm: 128 },
+  { keywords: ['ele continua sendo bom'], title: 'Ele Continua Sendo Bom', artist: 'Paulo César Baruk', key: 'C', bpm: 70 }
 ];
 
 export const extractYoutubeVideoId = (url?: string): string | null => {
@@ -89,6 +98,16 @@ export const extractYoutubeVideoId = (url?: string): string | null => {
   const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
   const match = clean.match(regExp);
   return match ? match[1] : null;
+};
+
+// Clean channel author to remove suffix clutter like "Oficial", "Vevo", etc.
+export const cleanChannelAuthor = (author?: string): string => {
+  if (!author) return '';
+  return author
+    .replace(/\s*[-–]\s*(?:tópico|topic)\b/gi, '')
+    .replace(/\s*(?:oficial|official|vevo|canal oficial|ministério faz chover)\b/gi, '')
+    .replace(/["']/g, '')
+    .trim();
 };
 
 // Fetch official YouTube title and channel name via public oEmbed
@@ -151,7 +170,6 @@ export const extractKeyAndBpmFromText = (text: string): { key?: string; bpm?: nu
   const result: { key?: string; bpm?: number } = {};
 
   // BPM extraction:
-  // e.g. "BPM: 70", "70 BPM", "BPM 128", "Andamento: 68", "68bpm"
   const bpmMatch = text.match(/(?:bpm|andamento)\s*[:=–-]?\s*(\d{2,3})\b/i) ||
                    text.match(/\b(\d{2,3})\s*bpm\b/i);
   if (bpmMatch) {
@@ -162,7 +180,6 @@ export const extractKeyAndBpmFromText = (text: string): { key?: string; bpm?: nu
   }
 
   // Key extraction:
-  // e.g. "Tom: G", "Tom - F#m", "Key: Bb", "Tonalidade: C", "Tom C / 68 BPM"
   const keyMatch = text.match(/(?:tom|tonalidade|key)\s*[:=–-]?\s*([A-G][#b]?(?:m|maj|min)?)\b/i) ||
                   text.match(/\b([A-G][#b]?(?:m)?)\s*(?:-|\||\/)\s*\d{2,3}\s*bpm\b/i) ||
                   text.match(/\b\d{2,3}\s*bpm\s*(?:-|\||\/)\s*([A-G][#b]?(?:m)?)\b/i);
@@ -189,29 +206,52 @@ export const matchKnownCatalog = (text: string): typeof KNOWN_WORSHIP_CATALOG[0]
 };
 
 // Clean video title to remove clutter like "(Ao Vivo)", "[Clipe Oficial]", "Lyric Video"
-export const cleanVideoTitle = (title: string): { title: string; artist: string } => {
-  let cleaned = title
+export const cleanVideoTitle = (rawTitle: string, authorName?: string): { title: string; artist: string } => {
+  let cleaned = rawTitle
     .replace(/\[[^\]]*\]/g, ' ')
-    .replace(/\([^\)]*(?:ao vivo|live|clipe|oficial|lyric|audio|vídeo|video|oficial|cover)[^\)]*\)/gi, ' ')
-    .replace(/(?:ao vivo|live session|clipe oficial|vídeo oficial|video oficial|lyric video|playback)/gi, ' ')
+    .replace(/\([^\)]*(?:ao vivo|live|clipe|oficial|lyric|audio|vídeo|video|playback|cover|legendado|acústico|acustico)[^\)]*\)/gi, ' ')
+    .replace(/(?:ao vivo|live session|clipe oficial|vídeo oficial|video oficial|lyric video|playback|áudio oficial|audio oficial)/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // If title has "Artista - Música" or "Música - Artista"
+  // Try splitters: " - ", " | ", " // "
+  let parts: string[] = [];
   if (cleaned.includes(' - ')) {
-    const parts = cleaned.split(' - ').map(p => p.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      return {
-        artist: parts[0],
-        title: parts[1]
-      };
-    }
+    parts = cleaned.split(' - ').map(p => p.trim()).filter(Boolean);
+  } else if (cleaned.includes(' | ')) {
+    parts = cleaned.split(' | ').map(p => p.trim()).filter(Boolean);
+  } else if (cleaned.includes(' // ')) {
+    parts = cleaned.split(' // ').map(p => p.trim()).filter(Boolean);
   }
 
-  return { title: cleaned, artist: '' };
+  if (parts.length >= 2) {
+    const part0 = parts[0];
+    const part1 = parts[1];
+
+    if (authorName) {
+      const normAuthor = authorName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const normPart0 = part0.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const normPart1 = part1.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+      if (normPart1.includes(normAuthor) || normAuthor.includes(normPart1)) {
+        return { artist: part1, title: part0 };
+      }
+      if (normPart0.includes(normAuthor) || normAuthor.includes(normPart0)) {
+        return { artist: part0, title: part1 };
+      }
+    }
+
+    // Default convention: "Artist - Title"
+    return {
+      artist: part0,
+      title: part1
+    };
+  }
+
+  return { title: cleaned, artist: authorName || '' };
 };
 
-// Main function to detect Key and BPM from YouTube URL
+// Main function to detect Artist, Key and BPM from YouTube URL
 export const detectSongKeyAndBpmFromYoutube = async (
   youtubeUrl: string,
   hints?: { currentTitle?: string; currentArtist?: string }
@@ -222,9 +262,9 @@ export const detectSongKeyAndBpmFromYoutube = async (
   // Step 1: Fetch YouTube video title and author
   const meta = await fetchYoutubeMetadata(youtubeUrl);
   const videoTitle = meta?.title || '';
-  const author = meta?.author || '';
+  const cleanAuthor = cleanChannelAuthor(meta?.author || '');
 
-  const combinedSearchText = `${videoTitle} ${author} ${hints?.currentTitle || ''} ${hints?.currentArtist || ''}`.trim();
+  const combinedSearchText = `${videoTitle} ${cleanAuthor} ${hints?.currentTitle || ''} ${hints?.currentArtist || ''}`.trim();
 
   // Step 2: Check for direct regex in video title (e.g. "Tom: G | 70 BPM")
   const regexResult = extractKeyAndBpmFromText(videoTitle);
@@ -235,22 +275,26 @@ export const detectSongKeyAndBpmFromYoutube = async (
   let detectedTitle = catalogMatch?.title;
   let detectedArtist = catalogMatch?.artist;
 
-  if (!detectedTitle && videoTitle) {
-    const parsed = cleanVideoTitle(videoTitle);
-    detectedTitle = parsed.title;
-    if (!detectedArtist) detectedArtist = parsed.artist || author;
+  if (videoTitle) {
+    const parsed = cleanVideoTitle(videoTitle, cleanAuthor);
+    if (!detectedTitle && parsed.title) detectedTitle = parsed.title;
+    if (!detectedArtist && parsed.artist) detectedArtist = parsed.artist;
   }
 
-  // Step 3: If Key or BPM are still missing, query Gemini AI
+  if (!detectedArtist && cleanAuthor) {
+    detectedArtist = cleanAuthor;
+  }
+
+  // Step 3: If Key, BPM or Artist are still missing, query Gemini AI
   const apiKey = (typeof process !== 'undefined' && (process.env?.API_KEY || (process.env as any)?.GEMINI_API_KEY)) || '';
-  if ((!detectedKey || !detectedBpm) && apiKey) {
+  if ((!detectedKey || !detectedBpm || !detectedArtist) && apiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `Você é um músico profissional especializado em ministério de louvor e adoração cristã.
 Analise este vídeo musical do YouTube:
 - Link: "${youtubeUrl}"
 - Título do vídeo no YouTube: "${videoTitle}"
-- Canal do YouTube: "${author}"
+- Canal do YouTube: "${cleanAuthor}"
 - Título informado: "${hints?.currentTitle || ''}"
 - Artista informado: "${hints?.currentArtist || ''}"
 
@@ -308,7 +352,7 @@ Retorne SOMENTE um JSON estrito no formato:
     }
   }
 
-  if (detectedKey || detectedBpm || detectedTitle) {
+  if (detectedKey || detectedBpm || detectedTitle || detectedArtist) {
     return {
       key: detectedKey,
       bpm: detectedBpm,

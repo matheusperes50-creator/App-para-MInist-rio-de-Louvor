@@ -1,6 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Song, Schedule, SongStatus } from '../types';
-import { Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, LayoutGrid, List, ArrowDownAZ, ArrowUpAZ, AlertCircle } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { 
+  Music, Search, Trash2, Library, RefreshCw, Calendar, Plus, X, Edit3, 
+  CheckCircle2, Clock, PlayCircle, Play, Youtube, ExternalLink, Sparkles, 
+  LayoutGrid, List, ArrowDownAZ, ArrowUpAZ, AlertCircle, FileSpreadsheet, 
+  MessageCircle, Copy, Check, Download 
+} from 'lucide-react';
 import { detectSongKeyAndBpmFromYoutube, extractYoutubeVideoId } from '../services/songDetector';
 
 interface SongsProps {
@@ -56,12 +62,17 @@ export const Songs: React.FC<SongsProps> = ({
   const [newStatus, setNewStatus] = useState<SongStatus>(filterMode === 'new' ? SongStatus.PENDING : SongStatus.READY);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  // States for automatic Key and BPM detection from YouTube
+  // States for automatic Key, BPM and Artist detection from YouTube
   const [isDetectingKeyBpm, setIsDetectingKeyBpm] = useState(false);
   const [detectFeedback, setDetectFeedback] = useState<{ type: 'success' | 'loading' | 'info'; message: string } | null>(null);
-  const [autoUpdatedBadges, setAutoUpdatedBadges] = useState<{ key: boolean; bpm: boolean }>({ key: false, bpm: false });
+  const [autoUpdatedBadges, setAutoUpdatedBadges] = useState<{ key: boolean; bpm: boolean; artist: boolean }>({ key: false, bpm: false, artist: false });
   const lastDetectedUrlRef = useRef<string>('');
   const debounceTimerRef = useRef<any>(null);
+
+  // States for Report (WhatsApp message & Excel)
+  const [reportCopyFeedback, setReportCopyFeedback] = useState<boolean>(false);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [exportScope, setExportScope] = useState<'all' | 'repertoire' | 'filtered'>('all');
 
   const resetForm = () => {
     setNewTitle('');
@@ -72,7 +83,7 @@ export const Songs: React.FC<SongsProps> = ({
     setNewStatus(filterMode === 'new' ? SongStatus.PENDING : SongStatus.READY);
     setEditingId(null);
     setDetectFeedback(null);
-    setAutoUpdatedBadges({ key: false, bpm: false });
+    setAutoUpdatedBadges({ key: false, bpm: false, artist: false });
     lastDetectedUrlRef.current = '';
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
   };
@@ -93,7 +104,7 @@ export const Songs: React.FC<SongsProps> = ({
     lastDetectedUrlRef.current = cleanUrl;
 
     setIsDetectingKeyBpm(true);
-    setDetectFeedback({ type: 'loading', message: 'Analisando vídeo no YouTube e identificando Tom e BPM...' });
+    setDetectFeedback({ type: 'loading', message: 'Analisando link e identificando Artista, Tom e BPM...' });
 
     try {
       const result = await detectSongKeyAndBpmFromYoutube(cleanUrl, {
@@ -101,9 +112,17 @@ export const Songs: React.FC<SongsProps> = ({
         currentArtist: newArtist
       });
 
-      if (result && (result.key || result.bpm)) {
+      if (result && (result.key || result.bpm || result.artist || result.title)) {
         const parts: string[] = [];
-        const badgeState: { key: boolean; bpm: boolean } = { key: false, bpm: false };
+        const badgeState: { key: boolean; bpm: boolean; artist: boolean } = { key: false, bpm: false, artist: false };
+
+        // Automatically update the artist when link is inserted!
+        if (result.artist && result.artist.trim()) {
+          const cleanArt = result.artist.trim();
+          setNewArtist(cleanArt);
+          parts.push(`Artista: ${cleanArt}`);
+          badgeState.artist = true;
+        }
 
         if (result.key) {
           setNewKey(result.key);
@@ -117,30 +136,28 @@ export const Songs: React.FC<SongsProps> = ({
           badgeState.bpm = true;
         }
 
-        // Suggest clean title and artist if fields are empty
-        if (!newTitle.trim() && result.title) {
+        // Suggest clean title if empty or 'Manual'
+        if ((!newTitle.trim() || newTitle.trim().toLowerCase() === 'manual') && result.title) {
           setNewTitle(result.title);
-        }
-        if (!newArtist.trim() && result.artist) {
-          setNewArtist(result.artist);
+          parts.push(`Título: ${result.title}`);
         }
 
         setAutoUpdatedBadges(badgeState);
         setDetectFeedback({
           type: 'success',
-          message: `✓ Atualizado automaticamente com sucesso (${parts.join(' • ')})!`
+          message: `✓ Atualizado automaticamente (${parts.join(' • ')})!`
         });
       } else {
         setDetectFeedback({
           type: 'info',
-          message: 'Vídeo encontrado. Tom e BPM não detectados automaticamente; informe se desejar.'
+          message: 'Vídeo encontrado. Dados adicionais podem ser informados manualmente.'
         });
       }
     } catch (err) {
-      console.warn('Erro ao detectar tom e bpm:', err);
+      console.warn('Erro ao detectar dados da música:', err);
       setDetectFeedback({
         type: 'info',
-        message: 'Não foi possível analisar o Tom e BPM deste link automaticamente.'
+        message: 'Não foi possível analisar os dados deste link automaticamente.'
       });
     } finally {
       setIsDetectingKeyBpm(false);
@@ -215,7 +232,7 @@ export const Songs: React.FC<SongsProps> = ({
     setNewYoutubeUrl(song.youtubeUrl || '');
     setNewStatus(song.status);
     setDetectFeedback(null);
-    setAutoUpdatedBadges({ key: false, bpm: false });
+    setAutoUpdatedBadges({ key: false, bpm: false, artist: false });
     lastDetectedUrlRef.current = song.youtubeUrl || '';
     setShowAddModal(true);
   };
@@ -316,6 +333,127 @@ export const Songs: React.FC<SongsProps> = ({
     }
   };
 
+  // Helper to get songs list for reporting
+  const getSongsForExport = (scope: 'all' | 'repertoire' | 'filtered') => {
+    let list: Song[] = [];
+    if (scope === 'filtered') {
+      list = sortedSongs;
+    } else if (scope === 'repertoire') {
+      list = (songs || []).filter(s => s.status === SongStatus.READY || s.status === SongStatus.REHEARSING);
+    } else {
+      list = songs || [];
+    }
+    return [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR', { sensitivity: 'base' }));
+  };
+
+  // Format complete message for WhatsApp
+  // Helper to format clean artist name for report (stripping 'Ministério', 'Manual', etc.)
+  const formatSongArtistForReport = (rawArtist?: string): string => {
+    if (!rawArtist) return '';
+    const trimmed = rawArtist.trim();
+    const lower = trimmed.toLowerCase();
+    if (
+      lower === 'manual' || 
+      lower === 'ministério' || 
+      lower === 'ministerio' || 
+      lower === 'sem artista' || 
+      lower === 'desconhecido' || 
+      lower === 'a definir'
+    ) {
+      return '';
+    }
+    return trimmed.replace(/^minist[eé]rio\s*[:–-]?\s*/i, '').trim();
+  };
+
+  // Format complete message for WhatsApp (without BPM, without Tom, without the word "Ministério")
+  const generateWhatsAppSongsReport = (scope: 'all' | 'repertoire' | 'filtered' = exportScope) => {
+    const list = getSongsForExport(scope);
+    const scopeTitle = scope === 'filtered' 
+      ? 'MÚSICAS SELECIONADAS / FILTRADAS' 
+      : scope === 'repertoire' 
+      ? 'REPERTÓRIO DE LOUVOR' 
+      : 'REPERTÓRIO COMPLETO DE MÚSICAS';
+
+    let text = `🎶 *${scopeTitle}* ⛪\n`;
+    text += `📊 Total: *${list.length} músicas cadastradas*\n`;
+    text += `------------------------------------------\n\n`;
+
+    list.forEach((s, idx) => {
+      const title = s.title ? `*${s.title}*` : '*Sem título*';
+      const cleanArtist = formatSongArtistForReport(s.artist);
+      const songLine = cleanArtist ? `${title} - ${cleanArtist}` : title;
+
+      text += `${idx + 1}. ${songLine}\n`;
+
+      const link = s.youtubeUrl ? s.youtubeUrl.trim() : '';
+      if (link) {
+        const fullLink = /^https?:\/\//i.test(link) ? link : `https://${link}`;
+        const icon = fullLink.includes('youtu') ? '▶️' : '🔗';
+        text += `   ${icon} ${fullLink}\n`;
+      }
+
+      text += `\n`;
+    });
+
+    text += `------------------------------------------\n`;
+    text += `_Gerado pelo App Minist. Louvor Pibje_`;
+    return text;
+  };
+
+  const handleCopySongsReport = async (scope: 'all' | 'repertoire' | 'filtered' = exportScope) => {
+    const text = generateWhatsAppSongsReport(scope);
+    try {
+      await navigator.clipboard.writeText(text);
+      setReportCopyFeedback(true);
+      setTimeout(() => setReportCopyFeedback(false), 3000);
+      setShowExportModal(false);
+    } catch (err) {
+      console.error('Falha ao copiar relatório de músicas:', err);
+    }
+  };
+
+  const handleExportSongsExcel = (scope: 'all' | 'repertoire' | 'filtered' = exportScope) => {
+    const list = getSongsForExport(scope);
+    const scopeLabel = scope === 'filtered' ? 'Filtradas' : scope === 'repertoire' ? 'Repertorio' : 'Geral';
+
+    if (list.length === 0) {
+      alert("Nenhuma música disponível para exportar.");
+      return;
+    }
+
+    const data: any[][] = [];
+    data.push(["REPERTÓRIO DE MÚSICAS ⛪"]);
+    data.push([`Data de emissão: ${new Date().toLocaleDateString('pt-BR')} | Total: ${list.length} músicas`]);
+    data.push([]);
+    data.push(["Nº", "Título da Música", "Artista", "Status", "Link do YouTube / Vídeo"]);
+
+    list.forEach((song, idx) => {
+      const cleanArtist = formatSongArtistForReport(song.artist);
+      data.push([
+        idx + 1,
+        song.title || '',
+        cleanArtist || '-',
+        song.status || 'Pronta',
+        song.youtubeUrl || '-'
+      ]);
+    });
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(data);
+
+    ws['!cols'] = [
+      { wch: 6 },  // Nº
+      { wch: 38 }, // Título
+      { wch: 28 }, // Artista
+      { wch: 15 }, // Status
+      { wch: 60 }  // Link
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, "Músicas");
+    XLSX.writeFile(wb, `Repertorio_Musicas_${scopeLabel}.xlsx`);
+    setShowExportModal(false);
+  };
+
   const viewTitle = filterMode === 'repertoire' ? 'Músicas' : 'Novas Músicas';
   const viewDesc = filterMode === 'repertoire' 
     ? 'Catálogo e repertório de músicas do ministério.' 
@@ -328,7 +466,25 @@ export const Songs: React.FC<SongsProps> = ({
           <h2 className="text-3xl font-black text-slate-900 dark:text-white">{viewTitle}</h2>
           <p className="text-slate-500 dark:text-slate-400 font-medium">{viewDesc}</p>
         </div>
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <button 
+            onClick={() => handleCopySongsReport('all')}
+            className={`p-3 rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest border cursor-pointer ${reportCopyFeedback ? 'bg-emerald-500 border-emerald-500 text-white shadow-emerald-500/20' : 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border-slate-200 dark:border-slate-800 hover:bg-emerald-50 dark:hover:bg-slate-800'}`}
+            title="Copiar relatório completo com links para WhatsApp"
+          >
+            {reportCopyFeedback ? <Check size={18} /> : <MessageCircle size={18} />}
+            <span>{reportCopyFeedback ? 'COPIADO!' : 'RELATÓRIO WHATSAPP'}</span>
+          </button>
+          
+          <button 
+            onClick={() => setShowExportModal(true)}
+            className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-slate-800 transition-all shadow-sm flex items-center gap-1.5 font-black text-[10px] uppercase tracking-widest cursor-pointer"
+            title="Exportar Músicas para Excel ou Opções de Relatório"
+          >
+            <FileSpreadsheet size={18} className="text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">EXCEL</span>
+          </button>
+
           <button 
             onClick={onSync}
             disabled={isSyncing}
@@ -337,6 +493,7 @@ export const Songs: React.FC<SongsProps> = ({
           >
             <RefreshCw className={isSyncing ? 'animate-spin' : ''} size={20} />
           </button>
+
           <button 
             onClick={() => { resetForm(); setShowAddModal(true); }}
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-lg text-xs uppercase tracking-widest cursor-pointer"
@@ -346,6 +503,90 @@ export const Songs: React.FC<SongsProps> = ({
           </button>
         </div>
       </header>
+
+      {/* Modal de Relatório / Exportação */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight flex items-center gap-2">
+                <FileSpreadsheet className="text-emerald-600 dark:text-emerald-400" /> Relatório de Músicas
+              </h3>
+              <button onClick={() => setShowExportModal(false)} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 font-medium">
+              Gere o relatório completo das músicas cadastradas com todos os links para WhatsApp ou baixe a planilha em Excel.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Selecione o Escopo</label>
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExportScope('all')}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-bold text-xs transition-all flex items-center justify-between cursor-pointer ${exportScope === 'all' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-300'}`}
+                  >
+                    <div>
+                      <p className="font-black">Todas as Músicas Cadastradas</p>
+                      <p className="text-[10px] opacity-75 font-medium">Catálogo completo ({songs.length} músicas)</p>
+                    </div>
+                    {exportScope === 'all' && <Check size={16} className="text-emerald-600" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExportScope('repertoire')}
+                    className={`p-3.5 rounded-2xl border-2 text-left font-bold text-xs transition-all flex items-center justify-between cursor-pointer ${exportScope === 'repertoire' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-300'}`}
+                  >
+                    <div>
+                      <p className="font-black">Apenas Repertório Ativo</p>
+                      <p className="text-[10px] opacity-75 font-medium">Prontas e ensaiando ({songs.filter(s => s.status !== SongStatus.PENDING).length} músicas)</p>
+                    </div>
+                    {exportScope === 'repertoire' && <Check size={16} className="text-emerald-600" />}
+                  </button>
+
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setExportScope('filtered')}
+                      className={`p-3.5 rounded-2xl border-2 text-left font-bold text-xs transition-all flex items-center justify-between cursor-pointer ${exportScope === 'filtered' ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-emerald-300'}`}
+                    >
+                      <div>
+                        <p className="font-black">Músicas da Busca Atual</p>
+                        <p className="text-[10px] opacity-75 font-medium">Filtradas por "{searchTerm}" ({sortedSongs.length} músicas)</p>
+                      </div>
+                      {exportScope === 'filtered' && <Check size={16} className="text-emerald-600" />}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => handleExportSongsExcel(exportScope)}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  <FileSpreadsheet size={18} /> BAIXAR EXCEL (.XLSX)
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => handleCopySongsReport(exportScope)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-300 font-black py-4 rounded-2xl border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  <MessageCircle size={18} /> COPIAR MENSAGEM COM LINKS (WHATSAPP)
+                </button>
+                <button type="button" onClick={() => setShowExportModal(false)} className="w-full text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest py-2 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Adicionar/Editar */}
       {showAddModal && (
@@ -368,10 +609,28 @@ export const Songs: React.FC<SongsProps> = ({
                   <input autoFocus type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hosana" required />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Artista / Ministério</label>
-                  <input type="text" value={newArtist} onChange={(e) => setNewArtist(e.target.value)} className="w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all" placeholder="Ex: Hillsong United" />
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Artista / Ministério</label>
+                    {autoUpdatedBadges.artist && (
+                      <span className="text-[9px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-2 py-0.5 rounded-md flex items-center gap-0.5 animate-in zoom-in-95">
+                        <CheckCircle2 size={9} /> Auto
+                      </span>
+                    )}
+                  </div>
+                  <input 
+                    type="text" 
+                    value={newArtist} 
+                    onChange={(e) => {
+                      setNewArtist(e.target.value);
+                      setAutoUpdatedBadges(prev => ({ ...prev, artist: false }));
+                    }} 
+                    className={`w-full px-6 py-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-2 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold transition-all ${
+                      autoUpdatedBadges.artist ? 'border-emerald-400 dark:border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/20' : 'border-slate-100 dark:border-slate-700'
+                    }`} 
+                    placeholder="Ex: Hillsong United" 
+                  />
                 </div>
-                {/* Link do YouTube com detecção automática de Tom e BPM */}
+                {/* Link do YouTube com detecção automática de Artista, Tom e BPM */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center px-1">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Link do YouTube (Opcional)</label>
@@ -381,10 +640,10 @@ export const Songs: React.FC<SongsProps> = ({
                         onClick={() => handleDetectKeyAndBpm(newYoutubeUrl, true)}
                         disabled={isDetectingKeyBpm}
                         className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 cursor-pointer transition-colors"
-                        title="Identificar Tom e BPM a partir do link do YouTube"
+                        title="Identificar Artista, Tom e BPM a partir do link do YouTube"
                       >
                         <Sparkles size={11} className={isDetectingKeyBpm ? "animate-spin" : ""} />
-                        <span>{isDetectingKeyBpm ? 'Identificando...' : 'Re-identificar Tom/BPM'}</span>
+                        <span>{isDetectingKeyBpm ? 'Identificando...' : 'Re-identificar Dados'}</span>
                       </button>
                     )}
                   </div>
@@ -396,7 +655,7 @@ export const Songs: React.FC<SongsProps> = ({
                       onChange={(e) => handleYoutubeChange(e.target.value)}
                       onPaste={handleYoutubePaste}
                       onBlur={() => {
-                        if (newYoutubeUrl.trim() && extractYoutubeVideoId(newYoutubeUrl.trim()) && (!newKey || !newBpm)) {
+                        if (newYoutubeUrl.trim() && extractYoutubeVideoId(newYoutubeUrl.trim()) && (!newKey || !newBpm || !newArtist || newArtist === 'Manual')) {
                           handleDetectKeyAndBpm(newYoutubeUrl.trim(), false);
                         }
                       }}
