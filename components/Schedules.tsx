@@ -29,7 +29,8 @@ import {
   CheckCircle2,
   Circle,
   UserCheck,
-  ExternalLink
+  ExternalLink,
+  GripVertical
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -100,6 +101,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
   });
 
   const [tempSetlist, setTempSetlist] = useState<{title: string, key: string}[]>([{title: '', key: ''}]);
+  const [draggedSongIdx, setDraggedSongIdx] = useState<number | null>(null);
+  const [dragOverSongIdx, setDragOverSongIdx] = useState<number | null>(null);
+  const setlistContainerRef = useRef<HTMLDivElement>(null);
 
   const instrumentIcons: Record<string, any> = {
     'Teclado': Piano,
@@ -409,8 +413,9 @@ export const Schedules: React.FC<SchedulesProps> = ({
     const currentSongs = (sch.songs || []).map(songData => {
       const sId = typeof songData === 'string' ? songData : songData.id;
       const sKey = typeof songData === 'string' ? '' : songData.key;
-      const song = songs.find(s => s.id === sId);
-      return { title: song?.title || '', key: sKey || song?.key || '' };
+      const song = songs.find(s => s.id === sId || (s.title && s.title.toLowerCase() === sId?.toLowerCase()));
+      const fallbackTitle = typeof songData === 'object' && (songData as any).title ? (songData as any).title : (typeof songData === 'string' ? songData : '');
+      return { title: song?.title || fallbackTitle || '', key: sKey || song?.key || '' };
     });
     setTempSetlist(currentSongs.length > 0 ? currentSongs : [{title: '', key: ''}]);
     
@@ -433,6 +438,45 @@ export const Schedules: React.FC<SchedulesProps> = ({
 
   const addSetlistItem = () => setTempSetlist([...tempSetlist, { title: '', key: '' }]);
   const removeSetlistItem = (index: number) => setTempSetlist(tempSetlist.filter((_, i) => i !== index));
+
+  const moveSetlistItem = (fromIndex: number, toIndex: number) => {
+    if (toIndex < 0 || toIndex >= tempSetlist.length || fromIndex === toIndex) return;
+    setTempSetlist(prev => {
+      const newList = [...prev];
+      const [moved] = newList.splice(fromIndex, 1);
+      newList.splice(toIndex, 0, moved);
+      return newList;
+    });
+    setActiveSuggestionIdx(null);
+  };
+
+  const handleTouchStart = (idx: number) => {
+    setDraggedSongIdx(idx);
+    setDragOverSongIdx(idx);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (draggedSongIdx === null || !setlistContainerRef.current) return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!element) return;
+    const songRow = element.closest('[data-setlist-index]');
+    if (songRow) {
+      const targetIdx = Number(songRow.getAttribute('data-setlist-index'));
+      if (!isNaN(targetIdx) && targetIdx !== dragOverSongIdx) {
+        setDragOverSongIdx(targetIdx);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (draggedSongIdx !== null && dragOverSongIdx !== null && draggedSongIdx !== dragOverSongIdx) {
+      moveSetlistItem(draggedSongIdx, dragOverSongIdx);
+    }
+    setDraggedSongIdx(null);
+    setDragOverSongIdx(null);
+  };
   
   const updateSetlistItem = (index: number, field: 'title' | 'key', value: string) => {
     const newList = [...tempSetlist];
@@ -696,6 +740,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
     setVocalIds([]);
     setInstruments({ 'Teclado': '', 'Violão': '', 'Guitarra': '', 'Baixo': '', 'Bateria': '' });
     setTempSetlist([{title: '', key: ''}]);
+    setDraggedSongIdx(null);
+    setDragOverSongIdx(null);
     setDate('');
     setObservations('');
     setPostSermonItem({ title: '', key: '' });
@@ -971,12 +1017,77 @@ export const Schedules: React.FC<SchedulesProps> = ({
               </div>
             </div>
             <div className="space-y-6">
-              <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 uppercase text-xs tracking-widest"><Music size={16} className="text-emerald-600 dark:text-emerald-400" /> Repertório</h4>
-              <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2 gap-1">
+                <h4 className="font-black text-slate-800 dark:text-white flex items-center gap-2 uppercase text-xs tracking-widest">
+                  <Music size={16} className="text-emerald-600 dark:text-emerald-400" /> Repertório
+                </h4>
+                {tempSetlist.length > 1 && (
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                    <GripVertical size={12} /> Pressione e arraste para reordenar
+                  </span>
+                )}
+              </div>
+              <div 
+                ref={setlistContainerRef}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onTouchCancel={handleTouchEnd}
+                className="space-y-2.5"
+              >
                 {tempSetlist.map((item, idx) => {
                   const filteredSongs = songs.filter(s => item.title && s.title.toLowerCase().includes(item.title.toLowerCase())).slice(0, 5);
+                  const isBeingDragged = draggedSongIdx === idx;
+                  const isDragTarget = dragOverSongIdx === idx && draggedSongIdx !== idx;
+
                   return (
-                    <div key={idx} className="flex gap-2 items-start relative">
+                    <div 
+                      key={idx}
+                      data-setlist-index={idx}
+                      draggable={tempSetlist.length > 1}
+                      onDragStart={(e) => {
+                        setDraggedSongIdx(idx);
+                        e.dataTransfer.setData('text/plain', idx.toString());
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        setDraggedSongIdx(null);
+                        setDragOverSongIdx(null);
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (dragOverSongIdx !== idx) setDragOverSongIdx(idx);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const from = draggedSongIdx !== null ? draggedSongIdx : parseInt(e.dataTransfer.getData('text/plain'), 10);
+                        if (!isNaN(from) && from !== idx) {
+                          moveSetlistItem(from, idx);
+                        }
+                        setDraggedSongIdx(null);
+                        setDragOverSongIdx(null);
+                      }}
+                      className={`flex gap-1.5 sm:gap-2 items-center relative p-1 rounded-2xl transition-all duration-150 ${
+                        isBeingDragged ? 'opacity-40 scale-[0.98] border border-dashed border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20' : ''
+                      } ${
+                        isDragTarget ? 'ring-2 ring-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40' : ''
+                      }`}
+                    >
+                      {/* Alça para Pressionar e Arrastar (Celular e Computador) */}
+                      {tempSetlist.length > 1 ? (
+                        <div 
+                          onTouchStart={() => handleTouchStart(idx)}
+                          className="p-2 -mr-1 text-slate-300 dark:text-slate-600 hover:text-emerald-600 dark:hover:text-emerald-400 active:text-emerald-600 cursor-grab active:cursor-grabbing transition-colors shrink-0 select-none touch-none"
+                          title="Pressione e arraste para alterar a ordem"
+                          style={{ touchAction: 'none' }}
+                        >
+                          <GripVertical size={18} />
+                        </div>
+                      ) : (
+                        <div className="w-1 shrink-0" />
+                      )}
+
+                      {/* Campo da Música */}
                       <div className="flex-1 relative">
                         <input 
                           type="text" 
@@ -984,7 +1095,7 @@ export const Schedules: React.FC<SchedulesProps> = ({
                           value={item.title} 
                           onChange={(e) => updateSetlistItem(idx, 'title', e.target.value)} 
                           onFocus={() => item.title && setActiveSuggestionIdx(idx)} 
-                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
+                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-xl px-3 sm:px-4 py-3 font-bold text-sm outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
                         />
                         {activeSuggestionIdx === idx && filteredSongs.length > 0 && (
                           <div ref={suggestionRef} className="absolute z-50 left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
@@ -1000,14 +1111,25 @@ export const Schedules: React.FC<SchedulesProps> = ({
                           </div>
                         )}
                       </div>
+
+                      {/* Tom */}
                       <input 
                         type="text" 
                         placeholder="Tom" 
                         value={item.key} 
                         onChange={(e) => updateSetlistItem(idx, 'key', e.target.value)} 
-                        className="w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-emerald-400 rounded-xl px-2 py-3 font-black text-center text-xs uppercase outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
+                        className="w-14 sm:w-16 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-emerald-400 rounded-xl px-1.5 sm:px-2 py-3 font-black text-center text-xs uppercase outline-none focus:border-emerald-500 dark:focus:border-emerald-400" 
                       />
-                      <button type="button" onClick={() => removeSetlistItem(idx)} className="p-3 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer"><Trash2 size={16} /></button>
+
+                      {/* Excluir da lista */}
+                      <button 
+                        type="button" 
+                        onClick={() => removeSetlistItem(idx)} 
+                        className="p-2.5 sm:p-3 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors cursor-pointer shrink-0"
+                        title="Remover música do repertório"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   );
                 })}
