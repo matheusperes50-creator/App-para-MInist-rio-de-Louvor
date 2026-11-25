@@ -311,6 +311,7 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     try { localStorage.removeItem('louvor_user_role'); } catch {}
     setUserRole('guest');
+    setView(checkIsAttendanceDirectLink() ? 'attendance' : 'dashboard');
   };
 
   // Queue of pending data to be written to Google Sheets
@@ -768,6 +769,9 @@ export const App: React.FC = () => {
   // Login handler that sets role, stores selected member and immediately triggers a cloud sync to load fresh data
   const handleLogin = useCallback((role: UserRoleType, selectedMember?: Member) => {
     setUserRole(role);
+    if (role !== 'admin' && (view === 'reports' || view === 'members' || view === 'auto-schedules')) {
+      setView('dashboard');
+    }
     if (selectedMember) {
       setCurrentMemberId(selectedMember.id);
       try {
@@ -776,7 +780,7 @@ export const App: React.FC = () => {
       } catch (e) {}
     }
     syncFromSheets(true);
-  }, [syncFromSheets]);
+  }, [syncFromSheets, view]);
 
   // Initial cloud fetch from Google Sheets database immediately on initial mount
   useEffect(() => {
@@ -936,7 +940,9 @@ export const App: React.FC = () => {
       case 'schedules': 
         return <Schedules schedules={schedules} setSchedules={handleSetSchedules} members={members} songs={songs} setSongs={handleSetSongs} {...syncProps} />;
       case 'reports': 
-        return <Reports schedules={schedules} members={members} songs={songs} events={events} />;
+        return isAdmin 
+          ? <Reports schedules={schedules} members={members} songs={songs} events={events} isAdmin={isAdmin} /> 
+          : <Dashboard members={members} songs={songs} schedules={schedules} announcements={announcements} setAnnouncements={handleUpdateAnnouncements} {...syncProps} />;
       case 'events': 
         return <Events events={events} setEvents={handleSetEvents} members={members} songs={songs} isAdmin={isAdmin} />;
       case 'style': 
