@@ -22,6 +22,7 @@ import {
   Sun, 
   Moon, 
   RefreshCw,
+  MonitorPlay,
   LucideIcon 
 } from 'lucide-react';
 import { useTheme } from '../themeContext';
@@ -55,6 +56,7 @@ const DEFAULT_NAV_ITEMS: NavItemDef[] = [
   { id: 'notes', label: 'Anotações', icon: StickyNote, adminOnly: false },
   { id: 'style', label: 'Look/Style', icon: Shirt, adminOnly: false },
   { id: 'auto-schedules', label: 'Escala Automática', icon: Wand2, adminOnly: true },
+  { id: 'holyrics', label: 'Holyrics (IP)', icon: MonitorPlay, adminOnly: false },
   { id: 'settings', label: 'Configurações', icon: Settings, adminOnly: false },
 ];
 

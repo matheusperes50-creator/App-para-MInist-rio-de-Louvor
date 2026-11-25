@@ -33,6 +33,7 @@ export interface Song {
   key?: string;
   status: SongStatus;
   youtubeUrl?: string;
+  holyricsId?: string;
 }
 
 export interface ScheduleSong {
@@ -120,4 +121,37 @@ export interface AttendanceEvent {
   createdScheduleId?: string;
 }
 
-export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance' | 'settings';
+export interface HolyricsConfig {
+  host: string;
+  port: string;
+  token: string;
+  protocol: 'http' | 'https';
+  bridgeUrl?: string;
+}
+
+export interface HolyricsSong {
+  id: string;
+  title: string;
+  artist?: string;
+  author?: string;
+  key?: string;
+  bpm?: number;
+}
+
+export interface HolyricsSlide {
+  text?: string;
+  description?: string;
+}
+
+export interface HolyricsPresentation {
+  id?: string;
+  title?: string;
+  artist?: string;
+  type?: string;
+  slide_index?: number;
+  total_slides?: number;
+  slides?: HolyricsSlide[];
+}
+
+export type ViewType = 'dashboard' | 'members' | 'songs' | 'schedules' | 'new-songs' | 'reports' | 'events' | 'style' | 'auto-schedules' | 'notes' | 'attendance' | 'holyrics' | 'settings';
+

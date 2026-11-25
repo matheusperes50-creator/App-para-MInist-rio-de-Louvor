@@ -22,7 +22,8 @@ import {
   Users,
   Search, 
   Eye,
-  Settings2
+  Settings2,
+  Archive
 } from 'lucide-react';
 
 interface AttendanceProps {
@@ -57,6 +58,20 @@ const formatDateDisplay = (dateStr: string): { weekday: string; shortDate: strin
   } catch {
     return { weekday: '', shortDate: dateStr, fullText: dateStr };
   }
+};
+
+const formatMonthLabel = (yearMonth: string): string => {
+  if (!yearMonth || yearMonth === 'all') return 'Todos os Meses';
+  const [year, month] = yearMonth.split('-');
+  if (!year || !month) return yearMonth;
+  const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, 1);
+  const monthName = date.toLocaleDateString('pt-BR', { month: 'long' });
+  return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} / ${year}`;
+};
+
+const getCurrentYearMonth = (): string => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
 export const Attendance: React.FC<AttendanceProps> = ({
@@ -116,6 +131,48 @@ export const Attendance: React.FC<AttendanceProps> = ({
   const currentMember = useMemo(() => {
     return activeMembers.find(m => m.id === currentMemberId) || activeMembers[0];
   }, [activeMembers, currentMemberId]);
+
+  // Mês selecionado na enquete (separa por mês e preserva os anteriores guardados)
+  const currentYearMonth = useMemo(() => getCurrentYearMonth(), []);
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>();
+    (attendanceEvents || []).forEach(evt => {
+      if (evt?.date && evt.date.length >= 7) {
+        set.add(evt.date.slice(0, 7));
+      }
+    });
+    return Array.from(set).sort().reverse();
+  }, [attendanceEvents]);
+
+  const pickBestDefaultMonth = (months: string[]): string => {
+    if (months.length === 0) return 'all';
+    if (months.includes(currentYearMonth)) return currentYearMonth;
+    const upcoming = months.filter(m => m >= currentYearMonth).sort();
+    if (upcoming.length > 0) return upcoming[0];
+    return months[0];
+  };
+
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => pickBestDefaultMonth(availableMonths));
+
+  useEffect(() => {
+    if (availableMonths.length === 0) {
+      if (selectedMonth !== 'all') setSelectedMonth('all');
+      return;
+    }
+    if (selectedMonth !== 'all' && !availableMonths.includes(selectedMonth)) {
+      setSelectedMonth(pickBestDefaultMonth(availableMonths));
+    } else if (selectedMonth === 'all' && availableMonths.length > 0) {
+      // Ao carregar dados da nuvem pela primeira vez, foca automaticamente no mês atual/próximo
+      setSelectedMonth(pickBestDefaultMonth(availableMonths));
+    }
+  }, [availableMonths]);
+
+  const filteredEvents = useMemo(() => {
+    const base = selectedMonth === 'all'
+      ? [...(attendanceEvents || [])]
+      : (attendanceEvents || []).filter(e => e.date?.startsWith(selectedMonth));
+    return base.sort((a, b) => a.date.localeCompare(b.date));
+  }, [attendanceEvents, selectedMonth]);
 
   // Se o integrante selecionado não existir mais, reseta para o primeiro
   useEffect(() => {
@@ -206,12 +263,14 @@ export const Attendance: React.FC<AttendanceProps> = ({
     }
   };
 
-  // Marcar ou desmarcar todas as datas para o membro atual
+  // Marcar ou desmarcar todas as datas do mês selecionado para o integrante atual
   const handleVoteAll = (confirmAll: boolean) => {
     if (!currentMember) return;
     const nowStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    const targetIds = new Set(filteredEvents.map(e => e.id));
 
     const updatedEvents = attendanceEvents.map(evt => {
+      if (!targetIds.has(evt.id)) return evt;
       const currentConfirmations = evt.confirmations || [];
       if (confirmAll) {
         const withoutCurrent = currentConfirmations.filter(c => c.memberId !== currentMember.id);
@@ -231,7 +290,11 @@ export const Attendance: React.FC<AttendanceProps> = ({
     });
 
     setAttendanceEvents(updatedEvents);
-    showToast(confirmAll ? '✅ Todas as datas confirmadas!' : 'Todas as presenças foram desmarcadas.');
+    showToast(
+      confirmAll
+        ? `✅ Todas as datas de ${formatMonthLabel(selectedMonth)} confirmadas!`
+        : `Presenças de ${formatMonthLabel(selectedMonth)} desmarcadas.`
+    );
     if (onSaveToCloud) {
       onSaveToCloud({ attendanceEvents: updatedEvents });
     }
@@ -284,6 +347,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
 
     const updated = [...attendanceEvents, newEvent].sort((a, b) => a.date.localeCompare(b.date));
     setAttendanceEvents(updated);
+    setSelectedMonth(formDate.slice(0, 7));
     setShowAddDateModal(false);
     setFormDate('');
     showToast(`Data adicionada à enquete: ${newEvent.title}`);
@@ -329,6 +393,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
       }));
 
     if (newEvents.length === 0) {
+      setSelectedMonth(monthToGen);
       showToast('Todos os domingos deste mês já estão na enquete!');
       setShowMonthGenModal(false);
       return;
@@ -336,8 +401,9 @@ export const Attendance: React.FC<AttendanceProps> = ({
 
     const updated = [...attendanceEvents, ...newEvents].sort((a, b) => a.date.localeCompare(b.date));
     setAttendanceEvents(updated);
+    setSelectedMonth(monthToGen);
     setShowMonthGenModal(false);
-    showToast(`🎉 ${newEvents.length} domingos adicionados à enquete com sucesso!`);
+    showToast(`🎉 ${newEvents.length} domingos adicionados à enquete de ${formatMonthLabel(monthToGen)}!`);
 
     if (onSaveToCloud) {
       onSaveToCloud({ attendanceEvents: updated });
@@ -480,13 +546,13 @@ export const Attendance: React.FC<AttendanceProps> = ({
     }
   };
 
-  // GERAR TODAS AS ESCALAS COM 1 CLIQUE A PARTIR DOS VOTOS
+  // GERAR ESCALAS DO MÊS SELECIONADO A PARTIR DOS VOTOS
   const handleGenerateAllSchedules = () => {
-    if (attendanceEvents.length === 0) return;
+    if (filteredEvents.length === 0) return;
     let createdCount = 0;
     const newSchedulesMap = new Map<string, Schedule>();
 
-    attendanceEvents.forEach(evt => {
+    filteredEvents.forEach(evt => {
       const confirmed = getConfirmedMembersForEvent(evt);
       if (confirmed.length === 0) return;
 
@@ -545,7 +611,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
     });
 
     if (createdCount === 0) {
-      showToast('Nenhum culto com presenças confirmadas.');
+      showToast('Nenhum culto com presenças confirmadas neste mês.');
       return;
     }
 
@@ -554,7 +620,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
       ...schedules.filter(s => !newSchedulesMap.has(s.date))
     ];
     setSchedules(updated);
-    showToast(`🚀 ${createdCount} escalas geradas com sucesso a partir dos votos da enquete!`);
+    showToast(`🚀 ${createdCount} escalas geradas para ${formatMonthLabel(selectedMonth)}!`);
 
     if (onSaveToCloud) {
       onSaveToCloud({ schedules: updated });
@@ -569,17 +635,18 @@ export const Attendance: React.FC<AttendanceProps> = ({
     return `${origin}${pathname}?view=presenca`;
   };
 
-  // COPIAR ENQUETE FORMATADA PARA WHATSAPP
+  // COPIAR ENQUETE DO MÊS FORMATADA PARA WHATSAPP
   const handleCopyWhatsAppPoll = () => {
-    if (attendanceEvents.length === 0) {
-      showToast('Nenhuma data na enquete para copiar.');
+    if (filteredEvents.length === 0) {
+      showToast('Nenhuma data neste mês para copiar.');
       return;
     }
 
-    let text = `📊 *ENQUETE DE DISPONIBILIDADE - MINISTÉRIO DE LOUVOR*\n`;
-    text += `Olá equipe! Por favor, confirmem em quais datas vocês poderão servir este mês:\n\n`;
+    const monthTitle = selectedMonth !== 'all' ? ` - ${formatMonthLabel(selectedMonth).toUpperCase()}` : '';
+    let text = `📊 *ENQUETE DE DISPONIBILIDADE${monthTitle}*\n`;
+    text += `Olá equipe! Por favor, confirmem em quais datas vocês poderão servir:\n\n`;
 
-    attendanceEvents.forEach((evt, idx) => {
+    filteredEvents.forEach((evt, idx) => {
       const dt = formatDateDisplay(evt.date);
       const confirmed = getConfirmedMembersForEvent(evt);
       text += `*${idx + 1}️⃣ ${dt.fullText} - ${evt.title} (${evt.time || '19h'})*\n`;
@@ -596,18 +663,18 @@ export const Attendance: React.FC<AttendanceProps> = ({
     text += `📲 *Para votar direto pelo celular com 1 clique, acesse:*\n${directUrl}\n\nDeus abençoe! 🙏`;
 
     navigator.clipboard.writeText(text);
-    showToast('📋 Texto da enquete copiado com o link direto! Cole no grupo do WhatsApp.');
+    showToast(`📋 Enquete de ${formatMonthLabel(selectedMonth)} copiada com o link direto!`);
   };
 
   // Cálculo da porcentagem de votos para a barra de progresso estilo WhatsApp
   const maxVotes = useMemo(() => {
     let max = 0;
-    attendanceEvents.forEach(evt => {
+    filteredEvents.forEach(evt => {
       const count = getConfirmedMembersForEvent(evt).length;
       if (count > max) max = count;
     });
     return Math.max(max, activeMembers.length > 0 ? activeMembers.length : 1);
-  }, [attendanceEvents, activeMembers]);
+  }, [filteredEvents, activeMembers]);
 
   // Evento atualmente em exibição de votos
   const viewingEvent = useMemo(() => {
@@ -690,18 +757,18 @@ export const Attendance: React.FC<AttendanceProps> = ({
 
             <button
               onClick={handleGenerateAllSchedules}
-              disabled={attendanceEvents.length === 0}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-amber-500/20 disabled:opacity-40"
+              disabled={filteredEvents.length === 0}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-amber-500/20 disabled:opacity-40 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              Gerar Escalas de Todos os Cultos
+              {selectedMonth === 'all' ? 'Gerar Escalas das Datas' : `Gerar Escalas (${formatMonthLabel(selectedMonth)})`}
             </button>
 
             <button
               onClick={handleCopyWhatsAppPoll}
-              disabled={attendanceEvents.length === 0}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all ml-auto disabled:opacity-40"
-              title="Copiar texto da enquete para o grupo do WhatsApp"
+              disabled={filteredEvents.length === 0}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all ml-auto disabled:opacity-40 cursor-pointer"
+              title="Copiar texto da enquete do mês para o grupo do WhatsApp"
             >
               <Share2 className="w-4 h-4 text-emerald-500" />
               Copiar p/ WhatsApp
@@ -710,29 +777,100 @@ export const Attendance: React.FC<AttendanceProps> = ({
         )}
       </div>
 
+      {/* SELETOR DE MÊS DA ENQUETE (PRESERVA MESES ANTERIORES GUARDADOS) */}
+      {availableMonths.length > 0 && (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 px-2 shrink-0 flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-emerald-500" /> Mês:
+          </span>
+          {availableMonths.map((month) => {
+            const count = attendanceEvents.filter(e => e.date?.startsWith(month)).length;
+            const isPastMonth = month < currentYearMonth;
+            const isSelected = selectedMonth === month;
+
+            return (
+              <button
+                key={month}
+                type="button"
+                onClick={() => setSelectedMonth(month)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all border whitespace-nowrap flex items-center gap-2 cursor-pointer shrink-0 ${
+                  isSelected
+                    ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                    : isPastMonth
+                    ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700/70 text-slate-500 dark:text-slate-400 hover:border-emerald-400'
+                    : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-emerald-500'
+                }`}
+              >
+                {isPastMonth && <Archive className="w-3.5 h-3.5 opacity-75" />}
+                <span>{formatMonthLabel(month)}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${
+                  isSelected
+                    ? 'bg-white/20 text-white'
+                    : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+                }`}>
+                  {count}
+                </span>
+                {isPastMonth && (
+                  <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-md ${
+                    isSelected ? 'bg-black/20 text-emerald-100' : 'bg-slate-200/60 dark:bg-slate-700/80 text-slate-500 dark:text-slate-400'
+                  }`}>
+                    Guardado
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          {availableMonths.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setSelectedMonth('all')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all border whitespace-nowrap cursor-pointer shrink-0 ${
+                selectedMonth === 'all'
+                  ? 'bg-slate-800 dark:bg-emerald-600 border-slate-800 dark:border-emerald-600 text-white shadow-sm'
+                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-400'
+              }`}
+            >
+              Todos ({attendanceEvents.length})
+            </button>
+          )}
+        </div>
+      )}
+
       {/* O CARD DA ENQUETE ESTILO WHATSAPP */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 shadow-sm">
         {/* Topo do balão da enquete */}
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div>
-            <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
-              🗓️ Enquete de Disponibilidade
-            </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                🗓️ Enquete de Disponibilidade
+              </h2>
+              {selectedMonth !== 'all' && (
+                <span className={`text-xs font-black px-2.5 py-1 rounded-xl ${
+                  selectedMonth < currentYearMonth
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                    : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                }`}>
+                  {formatMonthLabel(selectedMonth)}
+                  {selectedMonth < currentYearMonth ? ' • Encerrada / Guardada' : ''}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Atalhos rápidos para o integrante */}
-          {attendanceEvents.length > 0 && currentMember && (
+          {filteredEvents.length > 0 && currentMember && (
             <div className="flex items-center gap-2 self-start md:self-auto">
               <button
                 onClick={() => handleVoteAll(true)}
-                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline px-2 py-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline px-2 py-1 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
               >
-                ✓ Marcar todas
+                ✓ Marcar todas do mês
               </button>
               <span className="text-slate-300 dark:text-slate-700">•</span>
               <button
                 onClick={() => handleVoteAll(false)}
-                className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:underline px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 ✕ Desmarcar todas
               </button>
@@ -741,13 +879,13 @@ export const Attendance: React.FC<AttendanceProps> = ({
         </div>
 
         {/* LISTA DE OPÇÕES (DATAS) */}
-        {attendanceEvents.length === 0 ? (
+        {filteredEvents.length === 0 ? (
           <div className="text-center py-16 px-4 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Calendar className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-              Nenhuma data cadastrada na enquete
+              {attendanceEvents.length === 0 ? 'Nenhuma data cadastrada na enquete' : `Nenhuma data em ${formatMonthLabel(selectedMonth)}`}
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
               Como administrador, clique abaixo para gerar os domingos do mês ou adicionar datas avulsas para os integrantes confirmarem presença.
@@ -756,14 +894,14 @@ export const Attendance: React.FC<AttendanceProps> = ({
               <div className="flex flex-wrap items-center justify-center gap-3">
                 <button
                   onClick={() => setShowMonthGenModal(true)}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-md flex items-center gap-2"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer"
                 >
                   <Calendar className="w-4 h-4" />
                   Gerar Domingos do Mês Agora
                 </button>
                 <button
                   onClick={() => setShowAddDateModal(true)}
-                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center gap-2"
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-sm rounded-xl transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Adicionar Data Manual
@@ -773,7 +911,7 @@ export const Attendance: React.FC<AttendanceProps> = ({
           </div>
         ) : (
           <div className="space-y-3.5">
-            {attendanceEvents.map((event) => {
+            {filteredEvents.map((event) => {
               const dt = formatDateDisplay(event.date);
               const confirmedList = getConfirmedMembersForEvent(event);
               const isChecked = currentMember ? isMemberConfirmed(event, currentMember.id) : false;
@@ -919,21 +1057,23 @@ export const Attendance: React.FC<AttendanceProps> = ({
         )}
 
         {/* Rodapé da Enquete */}
-        {attendanceEvents.length > 0 && (
+        {filteredEvents.length > 0 && (
           <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 dark:text-slate-400 gap-3">
             <div>
-              Total de <strong>{attendanceEvents.length}</strong> datas na enquete •{' '}
-              {activeMembers.length} integrantes ativos no ministério
+              <strong>{filteredEvents.length}</strong> {filteredEvents.length === 1 ? 'data exibida' : 'datas exibidas'}
+              {selectedMonth !== 'all' ? ` em ${formatMonthLabel(selectedMonth)}` : ''} •{' '}
+              <strong>{attendanceEvents.length}</strong> guardadas no total •{' '}
+              {activeMembers.length} integrantes ativos
             </div>
 
             {isAdmin && (
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleGenerateAllSchedules}
-                  className="font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
+                  className="font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  Gerar todas as escalas dos votos
+                  {selectedMonth === 'all' ? 'Gerar todas as escalas dos votos' : `Gerar escalas de ${formatMonthLabel(selectedMonth)}`}
                 </button>
               </div>
             )}

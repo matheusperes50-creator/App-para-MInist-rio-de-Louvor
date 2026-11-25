@@ -30,7 +30,8 @@ import {
   Circle,
   UserCheck,
   ExternalLink,
-  GripVertical
+  GripVertical,
+  MonitorPlay
 } from 'lucide-react';
 
 interface SchedulesProps {
@@ -43,6 +44,7 @@ interface SchedulesProps {
   onSaveToCloud?: (payload?: any) => Promise<any>;
   isSyncing: boolean;
   isAdmin: boolean;
+  onSendToHolyrics?: (scheduleId: string) => void;
 }
 
 const generateShortId = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -70,7 +72,8 @@ export const Schedules: React.FC<SchedulesProps> = ({
   onSync,
   onSaveToCloud,
   isSyncing,
-  isAdmin
+  isAdmin,
+  onSendToHolyrics
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -1261,6 +1264,15 @@ export const Schedules: React.FC<SchedulesProps> = ({
                 </div>
                 {!isSelectionMode && (
                   <div className="flex gap-1">
+                    {onSendToHolyrics && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onSendToHolyrics(sch.id); }}
+                        className="p-2 rounded-lg bg-white/10 hover:bg-emerald-500 text-white transition-all"
+                        title="Enviar músicas para o Holyrics"
+                      >
+                        <MonitorPlay size={16} />
+                      </button>
+                    )}
                     <button onClick={(e) => { e.stopPropagation(); handleCopyText(sch); }} className={`p-2 rounded-lg transition-all flex items-center gap-1 ${isCopied ? 'bg-emerald-500 text-white' : 'bg-white/10 hover:bg-emerald-500 text-white'}`} title="Copiar para WhatsApp">{isCopied ? <Check size={16} /> : <Copy size={16} />}{isCopied && <span className="text-[10px] font-black uppercase">Copiado!</span>}</button>
                     {isAdmin && (
                       <>

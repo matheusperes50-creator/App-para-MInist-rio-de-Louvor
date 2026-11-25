@@ -55,6 +55,30 @@ interface GeneratedSchedule {
   availableMemberIds: string[]; // carried over for adjustments
 }
 
+const formatMonthLabel = (yearMonth: string): string => {
+  if (!yearMonth || !yearMonth.includes('-')) return yearMonth;
+  try {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const date = new Date(year, month - 1, 1, 12, 0, 0);
+    const label = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  } catch {
+    return yearMonth;
+  }
+};
+
+const formatShortMonthLabel = (yearMonth: string): string => {
+  if (!yearMonth || !yearMonth.includes('-')) return yearMonth;
+  try {
+    const [year, month] = yearMonth.split('-').map(Number);
+    const date = new Date(year, month - 1, 1, 12, 0, 0);
+    const monthShort = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+    return `${monthShort.charAt(0).toUpperCase() + monthShort.slice(1)}/${year}`;
+  } catch {
+    return yearMonth;
+  }
+};
+
 export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
   schedules,
   setSchedules,
@@ -108,6 +132,34 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     return (members || []).filter(m => m.isActive);
   }, [members]);
 
+  // Meses disponíveis nas enquetes de presença (ordenados do mais recente para o mais antigo)
+  const availableAttendanceMonths = useMemo(() => {
+    const monthSet = new Set<string>();
+    (attendanceEvents || []).forEach(evt => {
+      if (evt.date && evt.date.length >= 7) {
+        monthSet.add(evt.date.slice(0, 7));
+      }
+    });
+    return Array.from(monthSet).sort((a, b) => b.localeCompare(a));
+  }, [attendanceEvents]);
+
+  // Eventos de presença filtrados exclusivamente pelo mês selecionado
+  const attendanceEventsForMonth = useMemo(() => {
+    if (!selectedMonth) return [];
+    return (attendanceEvents || [])
+      .filter(evt => evt.date && evt.date.startsWith(selectedMonth))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  }, [attendanceEvents, selectedMonth]);
+
+  const handleSelectMonth = (newMonth: string) => {
+    if (newMonth !== selectedMonth) {
+      setSelectedMonth(newMonth);
+      setDrafts([]);
+      setGenerated([]);
+      setExpandedDraftId(null);
+    }
+  };
+
   // Handle month generation with option for only Sundays
   const handleGenerateMonthDrafts = () => {
     if (!selectedMonth) return;
@@ -153,7 +205,8 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     const today = new Date();
     const dayStr = String(today.getDate()).padStart(2, '0');
     const monthStr = String(today.getMonth() + 1).padStart(2, '0');
-    const dateStr = `${today.getFullYear()}-${monthStr}-${dayStr}`;
+    const todayStr = `${today.getFullYear()}-${monthStr}-${dayStr}`;
+    const dateStr = selectedMonth && !todayStr.startsWith(selectedMonth) ? `${selectedMonth}-01` : todayStr;
 
     const newDraft: DraftSchedule = {
       id: `draft-${Date.now()}`,
@@ -166,10 +219,18 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
     setExpandedDraftId(newDraft.id);
   };
 
-  // Import drafts from attendance confirmations
-  const handleImportFromAttendance = () => {
-    if (!attendanceEvents || attendanceEvents.length === 0) return;
-    const importedDrafts: DraftSchedule[] = attendanceEvents.map((evt, index) => {
+  // Import drafts from attendance confirmations strictly for the selected month
+  const handleImportFromAttendance = (targetMonth?: string) => {
+    const monthToUse = targetMonth || selectedMonth;
+    if (!monthToUse || !attendanceEvents || attendanceEvents.length === 0) return;
+
+    const monthEvents = attendanceEvents
+      .filter(evt => evt.date && evt.date.startsWith(monthToUse))
+      .sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    if (monthEvents.length === 0) return;
+
+    const importedDrafts: DraftSchedule[] = monthEvents.map((evt, index) => {
       const confirmedIds = (evt.confirmations || [])
         .filter(c => c.status === 'confirmed')
         .map(c => c.memberId);
@@ -184,6 +245,9 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
       };
     });
 
+    if (targetMonth && targetMonth !== selectedMonth) {
+      setSelectedMonth(targetMonth);
+    }
     setDrafts(importedDrafts);
     setGenerated([]);
     if (importedDrafts.length > 0) {
@@ -520,7 +584,7 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
               <input 
                 type="month" 
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) => handleSelectMonth(e.target.value)}
                 className="flex-1 px-4 py-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:border-emerald-500 outline-none font-bold"
               />
               <button 
@@ -530,6 +594,34 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
                 Gerar Datas
               </button>
             </div>
+
+            {availableAttendanceMonths.length > 0 && (
+              <div className="space-y-1.5">
+                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-400 block">
+                  Enquetes salvas por mês:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableAttendanceMonths.map((monthKey) => {
+                    const count = attendanceEvents.filter(e => e.date?.startsWith(monthKey)).length;
+                    const isSelected = selectedMonth === monthKey;
+                    return (
+                      <button
+                        key={monthKey}
+                        type="button"
+                        onClick={() => handleSelectMonth(monthKey)}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wide border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-purple-600 border-purple-600 text-white shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-purple-400'
+                        }`}
+                      >
+                        {formatShortMonthLabel(monthKey)} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 rounded-2xl">
               <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -557,11 +649,20 @@ export const AutoSchedules: React.FC<AutoSchedulesProps> = ({
             </button>
             {attendanceEvents && attendanceEvents.length > 0 && (
               <button 
-                onClick={handleImportFromAttendance}
-                className="w-full px-4 py-2.5 bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 font-black rounded-2xl text-[10px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
-                title="Carregar datas e integrantes confirmados da aba Presença"
+                onClick={() => handleImportFromAttendance()}
+                disabled={attendanceEventsForMonth.length === 0}
+                className={`w-full px-4 py-2.5 rounded-2xl text-[10px] uppercase tracking-wider font-black transition-all flex items-center justify-center gap-1.5 border ${
+                  attendanceEventsForMonth.length > 0
+                    ? 'bg-purple-50 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 shadow-2xs cursor-pointer'
+                    : 'bg-slate-50 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 cursor-not-allowed opacity-70'
+                }`}
+                title={attendanceEventsForMonth.length > 0 ? `Carregar datas e integrantes confirmados de ${formatMonthLabel(selectedMonth)}` : `Nenhuma enquete encontrada para ${formatMonthLabel(selectedMonth)}`}
               >
-                <UserCheck size={14} /> Carregar das Presenças ({attendanceEvents.length} datas)
+                <UserCheck size={14} /> 
+                {attendanceEventsForMonth.length > 0
+                  ? `Carregar Presenças • ${formatShortMonthLabel(selectedMonth)} (${attendanceEventsForMonth.length})`
+                  : `Sem Enquete em ${formatShortMonthLabel(selectedMonth)}`
+                }
               </button>
             )}
           </div>

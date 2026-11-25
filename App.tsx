@@ -12,6 +12,7 @@ import { AutoSchedules } from './components/AutoSchedules';
 import { Notes } from './components/Notes';
 import { Attendance } from './components/Attendance';
 import { Settings } from './components/Settings';
+import { Holyrics } from './components/Holyrics';
 import { Member, Song, Schedule, ViewType, UserRoleType, SongStatus, ExternalEvent, LookStyle as LookStyleType, RehearsalNote, AttendanceEvent } from './types';
 import { Cloud, RefreshCw, CheckCircle2, AlertCircle, LogOut, History, Download, Upload, X, ShieldAlert, ShieldCheck, FileSpreadsheet, RotateCcw, Database, Sun, Moon } from 'lucide-react';
 import { useTheme } from './themeContext';
@@ -74,6 +75,7 @@ export const compactPayloadForCloud = (payload: {
     if (s.status && s.status !== SongStatus.READY) clean.status = s.status;
     if (s.youtubeUrl) clean.youtubeUrl = s.youtubeUrl;
     if (s.bpm) clean.bpm = s.bpm;
+    if (s.holyricsId) clean.holyricsId = s.holyricsId;
     return clean;
   });
 
@@ -157,6 +159,7 @@ export const App: React.FC = () => {
   const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [hasFetchedFromCloud, setHasFetchedFromCloud] = useState(false);
   const [restoreFeedback, setRestoreFeedback] = useState<string | null>(null);
+  const [holyricsPreselectedScheduleId, setHolyricsPreselectedScheduleId] = useState<string | null>(null);
   const [lastSavedTimestamp, setLastSavedTimestamp] = useState<string | null>(() => {
     try { return localStorage.getItem('louvor_last_saved_time'); } catch { return null; }
   });
@@ -938,7 +941,20 @@ export const App: React.FC = () => {
       case 'new-songs': 
         return <Songs songs={songs} setSongs={handleSetSongs} schedules={schedules} filterMode="new" {...syncProps} />;
       case 'schedules': 
-        return <Schedules schedules={schedules} setSchedules={handleSetSchedules} members={members} songs={songs} setSongs={handleSetSongs} {...syncProps} />;
+        return (
+          <Schedules 
+            schedules={schedules} 
+            setSchedules={handleSetSchedules} 
+            members={members} 
+            songs={songs} 
+            setSongs={handleSetSongs} 
+            onSendToHolyrics={(scheduleId) => {
+              setHolyricsPreselectedScheduleId(scheduleId);
+              setView('holyrics');
+            }}
+            {...syncProps} 
+          />
+        );
       case 'reports': 
         return isAdmin 
           ? <Reports schedules={schedules} members={members} songs={songs} events={events} isAdmin={isAdmin} /> 
@@ -951,6 +967,17 @@ export const App: React.FC = () => {
         return <AutoSchedules schedules={schedules} setSchedules={handleSetSchedules} members={members} setView={setView} attendanceEvents={attendanceEvents} {...syncProps} />;
       case 'notes': 
         return <Notes notes={notes} setNotes={handleSetNotes} songs={songs} {...syncProps} />;
+      case 'holyrics':
+        return (
+          <Holyrics
+            schedules={schedules}
+            songs={songs}
+            setSongs={handleSetSongs}
+            isAdmin={isAdmin}
+            preselectedScheduleId={holyricsPreselectedScheduleId}
+            onClearPreselectedSchedule={() => setHolyricsPreselectedScheduleId(null)}
+          />
+        );
       case 'settings':
         return (
           <Settings 
